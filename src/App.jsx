@@ -25,6 +25,7 @@ import Videos from './pages/Videos';
 import NewsPage from './pages/NewsPage';
 import NewsDetail from './pages/NewsDetail';
 import Events from './pages/Events';
+import Partnership from './pages/Partnership';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -34,6 +35,8 @@ import AdminReleases from './pages/admin/AdminReleases';
 import AdminVideos from './pages/admin/AdminVideos';
 import AdminNews from './pages/admin/AdminNews';
 import AdminEvents from './pages/admin/AdminEvents';
+import AdminRequests from './pages/admin/AdminRequests';
+import AdminInvites from './pages/admin/AdminInvites';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -73,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/actualites" element={<NewsPage />} />
         <Route path="/actualites/:id" element={<NewsDetail />} />
         <Route path="/evenements" element={<Events />} />
+        <Route path="/partenaires" element={<Partnership />} />
       </Route>
 
       {/* Admin routes (protected) */}
@@ -84,6 +88,8 @@ const AuthenticatedApp = () => {
           <Route path="/admin/videos" element={<AdminVideos />} />
           <Route path="/admin/actualites" element={<AdminNews />} />
           <Route path="/admin/evenements" element={<AdminEvents />} />
+          <Route path="/admin/demandes" element={<AdminRequests />} />
+          <Route path="/admin/invitations" element={<AdminInvites />} />
         </Route>
       </Route>
 

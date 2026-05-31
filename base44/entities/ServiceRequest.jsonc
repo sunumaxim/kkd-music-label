@@ -1,0 +1,76 @@
+{
+  "name": "ServiceRequest",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Nom complet du demandeur"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email de contact"
+    },
+    "phone": {
+      "type": "string",
+      "description": "T\u00e9l\u00e9phone de contact"
+    },
+    "organization": {
+      "type": "string",
+      "description": "Nom du label / entreprise / artiste"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "distribution",
+        "promotion_clip",
+        "promotion_musique",
+        "collaboration",
+        "partenariat_label",
+        "autre"
+      ],
+      "default": "distribution",
+      "description": "Type de demande"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste concern\u00e9"
+    },
+    "genre": {
+      "type": "string",
+      "description": "Genre musical"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description d\u00e9taill\u00e9e de la demande"
+    },
+    "music_link": {
+      "type": "string",
+      "description": "Lien vers la musique / clip (YouTube, SoundCloud, etc.)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Fichier joint (EPK, musique, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "en_cours",
+        "accepte",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de la demande"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes de l'\u00e9quipe KKD"
+    }
+  },
+  "required": [
+    "full_name",
+    "email",
+    "request_type",
+    "description"
+  ]
+}

@@ -1,16 +1,20 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Music, Video, Newspaper, CalendarDays, LayoutDashboard, ArrowLeft } from 'lucide-react';
+import { Users, Music, Video, Newspaper, CalendarDays, LayoutDashboard, ArrowLeft, Inbox, UserPlus, Building2 } from 'lucide-react';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
 const sidebarLinks = [
   { label: 'Tableau de bord', path: '/admin', icon: LayoutDashboard },
+  { divider: true, label: 'CONTENU' },
   { label: 'Artistes', path: '/admin/artistes', icon: Users },
   { label: 'Sorties musicales', path: '/admin/sorties', icon: Music },
   { label: 'Vidéos', path: '/admin/videos', icon: Video },
   { label: 'Actualités', path: '/admin/actualites', icon: Newspaper },
   { label: 'Événements', path: '/admin/evenements', icon: CalendarDays },
+  { divider: true, label: 'PARTENAIRES' },
+  { label: 'Demandes', path: '/admin/demandes', icon: Inbox },
+  { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
 ];
 
 export default function AdminLayout() {
@@ -24,8 +28,15 @@ export default function AdminLayout() {
           <img src={LOGO_URL} alt="KKD Music" className="h-10 w-auto" />
           <p className="text-xs text-muted-foreground mt-1 font-mono">Administration</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {sidebarLinks.map((link) => {
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {sidebarLinks.map((link, i) => {
+            if (link.divider) {
+              return (
+                <div key={i} className="pt-4 pb-1 px-3">
+                  <p className="text-[10px] font-mono text-muted-foreground/50 tracking-widest uppercase">{link.label}</p>
+                </div>
+              );
+            }
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
             return (

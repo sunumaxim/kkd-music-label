@@ -1,0 +1,57 @@
+{
+  "name": "ArtistInvite",
+  "type": "object",
+  "properties": {
+    "artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste li\u00e9"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email de l'artiste invit\u00e9"
+    },
+    "invite_type": {
+      "type": "string",
+      "enum": [
+        "artiste_kkd",
+        "label_partenaire"
+      ],
+      "default": "artiste_kkd",
+      "description": "Type d'invitation"
+    },
+    "contract_start": {
+      "type": "string",
+      "format": "date",
+      "description": "D\u00e9but du contrat"
+    },
+    "contract_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Fin du contrat"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "invite",
+        "actif",
+        "expire",
+        "resilie"
+      ],
+      "default": "invite",
+      "description": "Statut du contrat"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes sur l'invitation / contrat"
+    }
+  },
+  "required": [
+    "artist_name",
+    "email",
+    "invite_type"
+  ]
+}

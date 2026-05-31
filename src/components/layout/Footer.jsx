@@ -32,6 +32,7 @@ export default function Footer() {
                 { label: 'Vidéos', path: '/videos' },
                 { label: 'Actualités', path: '/actualites' },
                 { label: 'Événements', path: '/evenements' },
+                { label: 'Travailler avec nous', path: '/partenaires' },
               ].map((link) => (
                 <Link
                   key={link.path}
