@@ -33,7 +33,7 @@ export default function HeroBanner({ featuredRelease }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-display text-6xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter leading-none"
+          className="font-display text-5xl md:text-7xl font-extrabold tracking-tight leading-none"
         >
           <span className="text-foreground">KKD</span>
           <span className="text-primary"> MUSIC</span>
