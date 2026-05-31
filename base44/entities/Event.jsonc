@@ -1,0 +1,55 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'\u00e9v\u00e9nement"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Image de l'\u00e9v\u00e9nement"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "concert",
+        "showcase",
+        "festival",
+        "rencontre"
+      ],
+      "default": "concert",
+      "description": "Type d'\u00e9v\u00e9nement"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date et heure"
+    },
+    "location": {
+      "type": "string",
+      "description": "Lieu"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ville"
+    },
+    "ticket_url": {
+      "type": "string",
+      "description": "Lien billetterie"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mise en avant"
+    }
+  },
+  "required": [
+    "title",
+    "event_date"
+  ]
+}

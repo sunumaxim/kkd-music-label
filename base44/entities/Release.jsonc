@@ -1,0 +1,63 @@
+{
+  "name": "Release",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la sortie"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Pochette"
+    },
+    "release_type": {
+      "type": "string",
+      "enum": [
+        "single",
+        "album",
+        "ep",
+        "projet_special"
+      ],
+      "default": "single",
+      "description": "Type de sortie"
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de sortie"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "spotify_url": {
+      "type": "string",
+      "description": "Lien Spotify"
+    },
+    "youtube_url": {
+      "type": "string",
+      "description": "Lien YouTube"
+    },
+    "apple_music_url": {
+      "type": "string",
+      "description": "Lien Apple Music"
+    },
+    "audiomack_url": {
+      "type": "string",
+      "description": "Lien Audiomack"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mise en avant sur la page d'accueil"
+    }
+  },
+  "required": [
+    "title",
+    "artist_name"
+  ]
+}

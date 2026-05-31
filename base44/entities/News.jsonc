@@ -1,0 +1,47 @@
+{
+  "name": "News",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de l'actualit\u00e9"
+    },
+    "content": {
+      "type": "string",
+      "description": "Contenu de l'article"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Image de couverture"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "communique",
+        "nouveaute",
+        "article",
+        "info_artiste"
+      ],
+      "default": "nouveaute",
+      "description": "Cat\u00e9gorie"
+    },
+    "excerpt": {
+      "type": "string",
+      "description": "R\u00e9sum\u00e9 court"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de publication"
+    },
+    "is_published": {
+      "type": "boolean",
+      "default": true,
+      "description": "Publi\u00e9"
+    }
+  },
+  "required": [
+    "title",
+    "content"
+  ]
+}

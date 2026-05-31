@@ -1,0 +1,63 @@
+{
+  "name": "Artist",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo de l'artiste"
+    },
+    "biography": {
+      "type": "string",
+      "description": "Biographie de l'artiste"
+    },
+    "genre": {
+      "type": "string",
+      "description": "Genre musical"
+    },
+    "spotify_url": {
+      "type": "string",
+      "description": "Lien Spotify"
+    },
+    "youtube_url": {
+      "type": "string",
+      "description": "Lien YouTube"
+    },
+    "apple_music_url": {
+      "type": "string",
+      "description": "Lien Apple Music"
+    },
+    "audiomack_url": {
+      "type": "string",
+      "description": "Lien Audiomack"
+    },
+    "instagram_url": {
+      "type": "string",
+      "description": "Lien Instagram"
+    },
+    "facebook_url": {
+      "type": "string",
+      "description": "Lien Facebook"
+    },
+    "tiktok_url": {
+      "type": "string",
+      "description": "Lien TikTok"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Artiste mis en avant"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordre d'affichage"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

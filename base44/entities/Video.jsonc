@@ -1,0 +1,51 @@
+{
+  "name": "Video",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la vid\u00e9o"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "youtube_url": {
+      "type": "string",
+      "description": "Lien YouTube"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "description": "Miniature"
+    },
+    "video_type": {
+      "type": "string",
+      "enum": [
+        "clip_officiel",
+        "teaser",
+        "interview",
+        "making_of"
+      ],
+      "default": "clip_officiel",
+      "description": "Type de vid\u00e9o"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "publish_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de publication"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mise en avant"
+    }
+  },
+  "required": [
+    "title",
+    "youtube_url"
+  ]
+}
