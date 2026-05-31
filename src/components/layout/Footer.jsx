@@ -9,12 +9,12 @@ export default function Footer() {
       {/* Big brand text */}
       <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
         <div className="text-center mb-12">
-          <h2 className="font-display text-5xl md:text-8xl font-extrabold tracking-tighter bg-gradient-to-r from-primary via-red-600 to-primary bg-clip-text text-transparent">
-            KKD MUSIC
+          <h2 className="font-display text-5xl md:text-8xl tracking-tighter from-primary via-red-600 to-primary bg-clip-text text-transparent font-medium">KKD MUSIC
+
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 hidden">
           <div>
             <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -24,24 +24,24 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Navigation</h3>
+            <h3 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary hidden">Navigation</h3>
             <div className="space-y-2">
               {[
-                { label: 'Artistes', path: '/artistes' },
-                { label: 'Musique', path: '/musique' },
-                { label: 'Vidéos', path: '/videos' },
-                { label: 'Actualités', path: '/actualites' },
-                { label: 'Événements', path: '/evenements' },
-                { label: 'Travailler avec nous', path: '/partenaires' },
-              ].map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+              { label: 'Artistes', path: '/artistes' },
+              { label: 'Musique', path: '/musique' },
+              { label: 'Vidéos', path: '/videos' },
+              { label: 'Actualités', path: '/actualites' },
+              { label: 'Événements', path: '/evenements' },
+              { label: 'Travailler avec nous', path: '/partenaires' }].
+              map((link) =>
+              <Link
+                key={link.path}
+                to={link.path}
+                className="block text-sm text-muted-foreground hover:text-foreground transition-colors">
+                
                   {link.label}
                 </Link>
-              ))}
+              )}
             </div>
           </div>
 
@@ -65,6 +65,6 @@ export default function Footer() {
           </p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>);
+
 }
