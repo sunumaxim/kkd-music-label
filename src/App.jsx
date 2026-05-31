@@ -16,6 +16,9 @@ import ResetPassword from '@/pages/ResetPassword';
 // Public layout
 import PublicLayout from './components/layout/PublicLayout';
 
+// Partner
+import PartnerDashboard from './pages/partner/PartnerDashboard';
+
 // Public pages
 import Home from './pages/Home';
 import Artists from './pages/Artists';
@@ -77,6 +80,11 @@ const AuthenticatedApp = () => {
         <Route path="/actualites/:id" element={<NewsDetail />} />
         <Route path="/evenements" element={<Events />} />
         <Route path="/partenaires" element={<Partnership />} />
+      </Route>
+
+      {/* Partner dashboard (protected) */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/mon-espace" element={<PartnerDashboard />} />
       </Route>
 
       {/* Admin routes (protected) */}

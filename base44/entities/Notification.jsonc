@@ -1,0 +1,43 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email du destinataire"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre de la notification"
+    },
+    "message": {
+      "type": "string",
+      "description": "Contenu de la notification"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "info",
+        "success",
+        "warning",
+        "demande"
+      ],
+      "default": "info",
+      "description": "Type de notification"
+    },
+    "link": {
+      "type": "string",
+      "description": "Lien de redirection"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Lu par l'utilisateur"
+    }
+  },
+  "required": [
+    "user_email",
+    "title",
+    "message"
+  ]
+}
