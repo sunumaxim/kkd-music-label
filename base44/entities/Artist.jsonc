@@ -8,7 +8,14 @@
     },
     "photo_url": {
       "type": "string",
-      "description": "Photo de l'artiste"
+      "description": "Photo principale de l'artiste"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Galerie de photos (URLs)"
     },
     "biography": {
       "type": "string",

@@ -29,11 +29,11 @@ import Partnership from './pages/Partnership';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
-import Dashboard from './pages/admin/Dashboard';
-import AdminArtists from './pages/admin/AdminArtists';
+import Dashboard from './pages/admin/Dashboard.jsx';
+import AdminArtists from './pages/admin/AdminArtists.jsx';
 import AdminReleases from './pages/admin/AdminReleases';
-import AdminVideos from './pages/admin/AdminVideos';
-import AdminNews from './pages/admin/AdminNews';
+import AdminVideos from './pages/admin/AdminVideos.jsx';
+import AdminNews from './pages/admin/AdminNews.jsx';
 import AdminEvents from './pages/admin/AdminEvents';
 import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites';
