@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-background border-t border-border/30">
       {/* Big brand text */}
-      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 bg-[#284067]">
         <div className="text-center mb-12">
           <h2 className="font-display text-5xl md:text-8xl tracking-tighter from-primary via-red-600 to-primary bg-clip-text text-transparent font-medium">KKD MUSIC
 
