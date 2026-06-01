@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
   LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
-  Menu, X, ChevronRight
+  Menu, X, ChevronRight, UploadCloud
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -30,6 +30,7 @@ const navGroups = [
     label: 'Partenaires',
     links: [
       { label: 'Demandes', path: '/admin/demandes', icon: Inbox },
+      { label: 'Publications', path: '/admin/publications', icon: UploadCloud },
       { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
     ]
   },

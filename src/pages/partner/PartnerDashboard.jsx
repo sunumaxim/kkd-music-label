@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FileText, Music, Video, Bell, Clock, CheckCircle, XCircle, ArrowRight, LogOut, Trash2 } from 'lucide-react';
+import { FileText, Music, Video, Bell, Clock, CheckCircle, XCircle, ArrowRight, LogOut, Trash2, Plus, Instagram, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
+import PublishForm from '@/components/partner/PublishForm';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -29,8 +30,16 @@ const REQUEST_LABELS = {
   autre: 'Autre',
 };
 
+const PUB_STATUS = {
+  en_attente: { label: 'En attente', color: 'bg-yellow-500/10 text-yellow-400' },
+  approuve: { label: 'Approuvé', color: 'bg-blue-500/10 text-blue-400' },
+  publie: { label: 'Publié', color: 'bg-green-500/10 text-green-400' },
+  refuse: { label: 'Refusé', color: 'bg-red-500/10 text-red-400' },
+};
+
 export default function PartnerDashboard() {
   const [deleting, setDeleting] = useState(false);
+  const [showPublishForm, setShowPublishForm] = useState(false);
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
@@ -67,6 +76,12 @@ export default function PartnerDashboard() {
     queryFn: () => base44.entities.Video.list('-created_date', 4),
   });
 
+  const { data: myPublications = [] } = useQuery({
+    queryKey: ['my-publications', user?.email],
+    queryFn: () => base44.entities.PartnerPublication.filter({ partner_email: user.email }, '-created_date'),
+    enabled: !!user?.email,
+  });
+
   const accepted = myRequests.filter(r => r.status === 'accepte').length;
   const pending = myRequests.filter(r => r.status === 'en_attente').length;
 
@@ -95,6 +110,15 @@ export default function PartnerDashboard() {
           </div>
         </div>
       </header>
+
+      {/* Formulaire de publication (overlay) */}
+      {showPublishForm && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-4 py-8">
+            <PublishForm user={user} onClose={() => setShowPublishForm(false)} />
+          </div>
+        </div>
+      )}
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         {/* Bienvenue */}
@@ -129,6 +153,53 @@ export default function PartnerDashboard() {
               {invite.contract_end && (
                 <p className="text-xs text-muted-foreground">Expire le : {new Date(invite.contract_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Bouton Publier */}
+        <button
+          onClick={() => setShowPublishForm(true)}
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all group active:scale-[0.99]"
+        >
+          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors shrink-0">
+            <Plus size={24} className="text-primary" />
+          </div>
+          <div className="text-left">
+            <p className="font-display font-extrabold text-base text-primary">Publier mon contenu</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Sortie, album, clip, playlist… en quelques secondes via un lien</p>
+          </div>
+        </button>
+
+        {/* Mes publications */}
+        {myPublications.length > 0 && (
+          <div>
+            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Mes publications</p>
+            <div className="space-y-2">
+              {myPublications.map((pub) => {
+                const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
+                return (
+                  <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Music size={16} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-heading font-bold text-sm truncate">{pub.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <a href={pub.streaming_link} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-0.5">
+                          <ExternalLink size={10} /> Voir le lien
+                        </a>
+                        {pub.instagram_link && (
+                          <span className="text-[11px] text-pink-400 flex items-center gap-0.5">
+                            <Instagram size={10} /> Instagram
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

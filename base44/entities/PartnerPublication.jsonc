@@ -1,0 +1,99 @@
+{
+  "name": "PartnerPublication",
+  "type": "object",
+  "properties": {
+    "partner_email": {
+      "type": "string",
+      "description": "Email du partenaire qui publie"
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "Nom du partenaire / artiste"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "sortie_musicale",
+        "video_clip",
+        "playlist",
+        "album",
+        "ep",
+        "autre"
+      ],
+      "default": "sortie_musicale",
+      "description": "Type de contenu"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre de la publication"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "streaming_link": {
+      "type": "string",
+      "description": "Lien principal (Spotify, Apple Music, YouTube, Audiomack\u2026)"
+    },
+    "streaming_platform": {
+      "type": "string",
+      "enum": [
+        "spotify",
+        "apple_music",
+        "youtube",
+        "audiomack",
+        "amazon_music",
+        "deezer",
+        "soundcloud",
+        "autre"
+      ],
+      "default": "spotify",
+      "description": "Plateforme de streaming"
+    },
+    "secondary_link": {
+      "type": "string",
+      "description": "Lien secondaire (autre plateforme)"
+    },
+    "instagram_link": {
+      "type": "string",
+      "description": "Lien post ou compte Instagram associ\u00e9"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Pochette / miniature (optionnel)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Fichier joint (audio, vid\u00e9o, EPK\u2026)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Message ou description pour l'\u00e9quipe KKD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "refuse",
+        "publie"
+      ],
+      "default": "en_attente",
+      "description": "Statut de validation par l'admin"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes de l'\u00e9quipe KKD"
+    },
+    "published_as_release_id": {
+      "type": "string",
+      "description": "ID de la sortie cr\u00e9\u00e9e apr\u00e8s validation"
+    }
+  },
+  "required": [
+    "partner_email",
+    "title",
+    "streaming_link",
+    "content_type"
+  ]
+}

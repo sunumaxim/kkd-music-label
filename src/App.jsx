@@ -41,6 +41,7 @@ import AdminNews from './pages/admin/AdminNews.jsx';
 import AdminEvents from './pages/admin/AdminEvents';
 import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites';
+import AdminPublications from './pages/admin/AdminPublications';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -99,6 +100,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/evenements" element={<AdminEvents />} />
           <Route path="/admin/demandes" element={<AdminRequests />} />
           <Route path="/admin/invitations" element={<AdminInvites />} />
+          <Route path="/admin/publications" element={<AdminPublications />} />
         </Route>
       </Route>
 
