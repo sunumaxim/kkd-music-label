@@ -41,17 +41,33 @@
       "type": "string",
       "description": "Lien Audiomack"
     },
+    "deezer_url": {
+      "type": "string",
+      "description": "Lien Deezer"
+    },
+    "soundcloud_url": {
+      "type": "string",
+      "description": "Lien SoundCloud"
+    },
     "instagram_url": {
       "type": "string",
       "description": "Lien Instagram"
     },
-    "facebook_url": {
+    "instagram_username": {
       "type": "string",
-      "description": "Lien Facebook"
+      "description": "Nom d'utilisateur Instagram (sans @)"
     },
     "tiktok_url": {
       "type": "string",
       "description": "Lien TikTok"
+    },
+    "tiktok_username": {
+      "type": "string",
+      "description": "Nom d'utilisateur TikTok (sans @)"
+    },
+    "facebook_url": {
+      "type": "string",
+      "description": "Lien Facebook"
     },
     "is_featured": {
       "type": "boolean",

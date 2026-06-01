@@ -109,28 +109,45 @@ export default function AdminArtists() {
 
           {/* Liens streaming */}
           <div>
-            <p className="text-sm font-medium mb-3">Liens streaming & réseaux sociaux</p>
+            <p className="text-sm font-medium mb-3">Liens streaming</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { key: 'spotify_url', label: 'Spotify' },
                 { key: 'youtube_url', label: 'YouTube' },
                 { key: 'apple_music_url', label: 'Apple Music' },
                 { key: 'audiomack_url', label: 'Audiomack' },
-                { key: 'instagram_url', label: 'Instagram' },
+                { key: 'deezer_url', label: 'Deezer' },
+                { key: 'soundcloud_url', label: 'SoundCloud' },
                 { key: 'facebook_url', label: 'Facebook' },
-                { key: 'tiktok_url', label: 'TikTok' },
               ].map(({ key, label }) => (
                 <div key={key}>
                   <Label className="text-xs mb-1 block">{label}</Label>
-                  <Input
-                    type="url"
-                    value={form[key] || ''}
-                    onChange={e => set(key, e.target.value)}
-                    placeholder="https://..."
-                    className="text-sm"
-                  />
+                  <Input type="url" value={form[key] || ''} onChange={e => set(key, e.target.value)} placeholder="https://..." className="text-sm" />
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Réseaux sociaux */}
+          <div>
+            <p className="text-sm font-medium mb-3">Réseaux sociaux (Instagram & TikTok)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1 block">Instagram — URL du profil</Label>
+                <Input type="url" value={form.instagram_url || ''} onChange={e => set('instagram_url', e.target.value)} placeholder="https://instagram.com/..." className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Instagram — Nom d'utilisateur</Label>
+                <Input value={form.instagram_username || ''} onChange={e => set('instagram_username', e.target.value)} placeholder="nomdutilisateur (sans @)" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">TikTok — URL du profil</Label>
+                <Input type="url" value={form.tiktok_url || ''} onChange={e => set('tiktok_url', e.target.value)} placeholder="https://tiktok.com/@..." className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">TikTok — Nom d'utilisateur</Label>
+                <Input value={form.tiktok_username || ''} onChange={e => set('tiktok_username', e.target.value)} placeholder="nomdutilisateur (sans @)" className="text-sm" />
+              </div>
             </div>
           </div>
 

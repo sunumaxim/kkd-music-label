@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
 import { YouTubePlayer } from '../components/shared/StreamingEmbed';
 
 const VIDEO_TYPES = [
@@ -95,10 +97,12 @@ export default function Videos() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  onClick={() => setSelectedVideo(video)}
-                  className="cursor-pointer group"
+                  className="group"
                 >
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-card mb-3">
+                  <div
+                    className="relative aspect-video rounded-xl overflow-hidden bg-card mb-3 cursor-pointer"
+                    onClick={() => setSelectedVideo(video)}
+                  >
                     {thumbnail ? (
                       <img
                         src={thumbnail}
@@ -119,8 +123,26 @@ export default function Videos() {
                       </span>
                     )}
                   </div>
-                  <h3 className="font-heading font-bold text-sm group-hover:text-primary transition-colors">{video.title}</h3>
-                  {video.artist_name && <p className="text-xs text-muted-foreground mt-0.5">{video.artist_name}</p>}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3
+                        className="font-heading font-bold text-sm group-hover:text-primary transition-colors cursor-pointer"
+                        onClick={() => setSelectedVideo(video)}
+                      >
+                        {video.title}
+                      </h3>
+                      {video.artist_name && <p className="text-xs text-muted-foreground mt-0.5">{video.artist_name}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Link
+                        to={`/videos/${video.id}`}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="Page dédiée"
+                      >
+                        <Share2 size={13} />
+                      </Link>
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}

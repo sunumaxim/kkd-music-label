@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music, Video, ListMusic, Disc, Upload,
-  Link2, Instagram, CheckCircle, ArrowLeft, Loader2
+  Link2, Instagram, CheckCircle, ArrowLeft, Loader2, Plus, X
 } from 'lucide-react';
 
 const CONTENT_TYPES = [
@@ -45,10 +45,12 @@ export default function PublishForm({ user, onClose }) {
     streaming_link: '',
     secondary_link: '',
     instagram_link: '',
+    tiktok_link: '',
     description: '',
     cover_url: '',
     file_url: '',
   });
+  const [extraLinks, setExtraLinks] = useState([]); // [{platform, url}]
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
@@ -82,11 +84,13 @@ export default function PublishForm({ user, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const allLinks = extraLinks.filter(l => l.url).map(l => l.url).join('\n');
     mutation.mutate({
       ...form,
       content_type: contentType,
       partner_email: user.email,
       partner_name: user.full_name || user.email,
+      description: form.description + (allLinks ? `\n\n---\nLiens supplémentaires:\n${allLinks}` : ''),
     });
   };
 
@@ -220,32 +224,75 @@ export default function PublishForm({ user, onClose }) {
           </p>
         </div>
 
-        {/* Lien secondaire */}
-        <div>
-          <Label className="text-xs mb-1.5 block">Lien secondaire (autre plateforme — optionnel)</Label>
-          <Input
-            value={form.secondary_link}
-            onChange={e => set('secondary_link', e.target.value)}
-            placeholder="https://… (YouTube, Apple Music, Audiomack…)"
-            type="url"
-          />
+        {/* Liens supplémentaires */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs block">Liens supplémentaires (optionnel)</Label>
+            <button
+              type="button"
+              onClick={() => setExtraLinks(prev => [...prev, { platform: '', url: '' }])}
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              <Plus size={11} /> Ajouter un lien
+            </button>
+          </div>
+          {extraLinks.map((link, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <select
+                value={link.platform}
+                onChange={e => setExtraLinks(prev => prev.map((l, i) => i === idx ? { ...l, platform: e.target.value } : l))}
+                className="h-9 rounded-md border border-input bg-transparent px-2 text-xs text-foreground shrink-0"
+              >
+                <option value="">Plateforme</option>
+                {PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+              <Input
+                value={link.url}
+                onChange={e => setExtraLinks(prev => prev.map((l, i) => i === idx ? { ...l, url: e.target.value } : l))}
+                placeholder="https://..."
+                type="url"
+                className="text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setExtraLinks(prev => prev.filter((_, i) => i !== idx))}
+                className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
         </div>
 
-        {/* Instagram */}
-        <div className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Instagram size={15} className="text-pink-400" />
-            <p className="font-heading font-bold text-sm text-pink-400">Synchronisation Instagram</p>
+        {/* Réseaux sociaux */}
+        <div className="space-y-3">
+          <div className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Instagram size={15} className="text-pink-400" />
+              <p className="font-heading font-bold text-sm text-pink-400">Instagram</p>
+            </div>
+            <Input
+              value={form.instagram_link}
+              onChange={e => set('instagram_link', e.target.value)}
+              placeholder="https://instagram.com/p/... ou @votrecompte"
+              className="border-pink-500/30 focus-visible:ring-pink-500/50"
+            />
           </div>
-          <Input
-            value={form.instagram_link}
-            onChange={e => set('instagram_link', e.target.value)}
-            placeholder="https://instagram.com/p/... ou @votrecompte"
-            className="border-pink-500/30 focus-visible:ring-pink-500/50"
-          />
-          <p className="text-[11px] text-muted-foreground mt-1.5">
-            Partagez le lien de votre post Instagram ou votre compte pour une mise en avant coordonnée
-          </p>
+
+          <div className="bg-slate-500/5 border border-slate-500/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-slate-300">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+              </svg>
+              <p className="font-heading font-bold text-sm text-slate-200">TikTok</p>
+            </div>
+            <Input
+              value={form.tiktok_link || ''}
+              onChange={e => set('tiktok_link', e.target.value)}
+              placeholder="https://tiktok.com/@votrecompte ou lien d'une vidéo"
+              className="border-slate-500/30"
+            />
+          </div>
         </div>
 
         {/* Description */}
