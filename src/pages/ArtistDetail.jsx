@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Youtube, Instagram, Facebook, Share2, Copy, Check } from 'lucide-react';
-import { StreamingLinks, SpotifyPlayer } from '../components/shared/StreamingEmbed';
+import { EmbeddedPlayer } from '../components/shared/UniversalPlayer';
+import { StreamingLinks } from '../components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
 
@@ -131,36 +132,44 @@ export default function ArtistDetail() {
           </div>
         </div>
 
+        {/* Spotify artist embed — affiche le profil complet avec populaires */}
+        {artist.spotify_url && (
+          <div>
+            <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
+              <Music size={18} className="text-primary" /> Profil Spotify
+            </h2>
+            <EmbeddedPlayer url={artist.spotify_url} />
+          </div>
+        )}
+
         {/* Releases */}
         {releases.length > 0 && (
           <div>
             <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
               <Music size={18} className="text-primary" /> Discographie
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {releases.map((r) => (
-                <div key={r.id} className="bg-card border border-border/50 rounded-xl overflow-hidden group">
-                  {r.cover_url ? (
-                    <img src={r.cover_url} alt={r.title} className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                      <Music size={32} className="text-muted-foreground" />
+            <div className="space-y-4">
+              {releases.map((r) => {
+                const streamUrl = r.spotify_url || r.apple_music_url || r.audiomack_url || r.youtube_url;
+                return (
+                  <div key={r.id} className="bg-card border border-border/50 rounded-xl overflow-hidden">
+                    <div className="flex items-center gap-3 p-3">
+                      {r.cover_url ? (
+                        <img src={r.cover_url} alt={r.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <Music size={20} className="text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-heading font-bold text-sm truncate">{r.title}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{r.release_type?.replace('_', ' ')} {r.release_date ? `· ${r.release_date.slice(0,4)}` : ''}</p>
+                      </div>
                     </div>
-                  )}
-                  <div className="p-3">
-                    <p className="font-heading font-bold text-sm truncate">{r.title}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{r.release_type?.replace('_', ' ')}</p>
-                    <div className="mt-2">
-                      <StreamingLinks
-                        spotify={r.spotify_url}
-                        youtube={r.youtube_url}
-                        apple_music={r.apple_music_url}
-                        audiomack={r.audiomack_url}
-                      />
-                    </div>
+                    {streamUrl && <EmbeddedPlayer url={streamUrl} />}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

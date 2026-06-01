@@ -82,7 +82,8 @@ function getEmbedHeight(info) {
   if (info.platform === 'audiomack') return 252;
   // Spotify: album/playlist = tall, track = compact
   if (info.platform === 'spotify') {
-    if (info.type === 'album' || info.type === 'playlist') return 380;
+    if (info.type === 'album' || info.type === 'playlist') return 450;
+    if (info.type === 'artist') return 380;
     return 152;
   }
   return 152;

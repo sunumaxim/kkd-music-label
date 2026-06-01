@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { StreamingLinks } from '../components/shared/StreamingEmbed';
+import { EmbeddedPlayer, detectPlatform } from '../components/shared/UniversalPlayer';
 
 const TYPES = [
   { value: 'all', label: 'Tout' },
@@ -73,49 +73,40 @@ export default function Music() {
         ) : filtered.length === 0 ? (
           <p className="text-muted-foreground text-center py-20">Aucune sortie disponible.</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filtered.map((release, i) => (
-              <motion.div
-                key={release.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="group"
-              >
-                <div className="aspect-square rounded-xl overflow-hidden bg-card mb-3 relative">
-                  {release.cover_url ? (
-                    <img
-                      src={release.cover_url}
-                      alt={release.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
-                      <span className="font-display text-4xl text-primary/30">♪</span>
+          <div className="space-y-4 max-w-2xl mx-auto md:max-w-none md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+            {filtered.map((release, i) => {
+              const streamUrl = release.spotify_url || release.apple_music_url || release.audiomack_url || release.youtube_url;
+              return (
+                <motion.div
+                  key={release.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.04 }}
+                  className="bg-card border border-border/50 rounded-xl overflow-hidden"
+                >
+                  {/* Header */}
+                  <div className="flex items-center gap-3 p-3">
+                    {release.cover_url ? (
+                      <img src={release.cover_url} alt={release.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center shrink-0">
+                        <span className="font-display text-2xl text-primary/30">♪</span>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                        {release.release_type?.replace('_', ' ') || 'single'}
+                      </span>
+                      <h3 className="font-heading font-bold text-sm truncate">{release.title}</h3>
+                      <p className="text-xs text-muted-foreground truncate">{release.artist_name}</p>
                     </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-background/80 backdrop-blur-sm text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded text-foreground">
-                      {release.release_type?.replace('_', ' ') || 'single'}
-                    </span>
                   </div>
-                </div>
-                <h3 className="font-heading font-bold text-sm truncate">{release.title}</h3>
-                <p className="text-xs text-muted-foreground">{release.artist_name}</p>
-                {release.release_date && (
-                  <p className="text-[10px] font-mono text-muted-foreground/70 mt-1">{release.release_date}</p>
-                )}
-                <div className="mt-2">
-                  <StreamingLinks
-                    spotify={release.spotify_url}
-                    youtube={release.youtube_url}
-                    apple_music={release.apple_music_url}
-                    audiomack={release.audiomack_url}
-                  />
-                </div>
-              </motion.div>
-            ))}
+                  {/* Embed direct */}
+                  {streamUrl && <EmbeddedPlayer url={streamUrl} />}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
