@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FileText, Music, Video, Bell, Clock, CheckCircle, XCircle, ArrowRight, LogOut, Trash2, Plus, Instagram, ExternalLink } from 'lucide-react';
+import {
+  FileText, Music, Bell, Clock, CheckCircle, XCircle,
+  ArrowRight, LogOut, Trash2, Plus, ExternalLink,
+  User, LayoutDashboard, SendHorizonal, UserCheck, X
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import PublishForm from '@/components/partner/PublishForm';
+import ArtistProfileView from '@/components/partner/ArtistProfileView';
+import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -21,15 +27,6 @@ const STATUS_CONFIG = {
   refuse: { label: 'Refusé', color: 'bg-red-500/10 text-red-400', icon: XCircle },
 };
 
-const REQUEST_LABELS = {
-  distribution: 'Distribution',
-  promotion_clip: 'Promotion clip',
-  promotion_musique: 'Promotion musique',
-  collaboration: 'Collaboration',
-  partenariat_label: 'Partenariat label',
-  autre: 'Autre',
-};
-
 const PUB_STATUS = {
   en_attente: { label: 'En attente', color: 'bg-yellow-500/10 text-yellow-400' },
   approuve: { label: 'Approuvé', color: 'bg-blue-500/10 text-blue-400' },
@@ -37,14 +34,25 @@ const PUB_STATUS = {
   refuse: { label: 'Refusé', color: 'bg-red-500/10 text-red-400' },
 };
 
-export default function PartnerDashboard() {
-  const [deleting, setDeleting] = useState(false);
-  const [showPublishForm, setShowPublishForm] = useState(false);
+const REQUEST_LABELS = {
+  distribution: 'Distribution', promotion_clip: 'Promotion clip',
+  promotion_musique: 'Promotion musique', collaboration: 'Collaboration',
+  partenariat_label: 'Partenariat label', autre: 'Autre',
+};
 
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    await base44.auth.logout('/');
-  };
+const TABS = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'artiste', label: 'Mon Artiste', icon: User },
+  { id: 'publications', label: 'Publications', icon: Music },
+  { id: 'demandes', label: 'Demandes', icon: FileText },
+];
+
+export default function PartnerDashboard() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showPublishForm, setShowPublishForm] = useState(false);
+  const [showAccessForm, setShowAccessForm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -66,24 +74,25 @@ export default function PartnerDashboard() {
     enabled: !!user?.email,
   });
 
-  const { data: releases = [] } = useQuery({
-    queryKey: ['partner-releases'],
-    queryFn: () => base44.entities.Release.list('-created_date', 5),
-  });
-
-  const { data: videos = [] } = useQuery({
-    queryKey: ['partner-videos'],
-    queryFn: () => base44.entities.Video.list('-created_date', 4),
-  });
-
   const { data: myPublications = [] } = useQuery({
     queryKey: ['my-publications', user?.email],
     queryFn: () => base44.entities.PartnerPublication.filter({ partner_email: user.email }, '-created_date'),
     enabled: !!user?.email,
   });
 
-  const accepted = myRequests.filter(r => r.status === 'accepte').length;
-  const pending = myRequests.filter(r => r.status === 'en_attente').length;
+  const { data: myAccessRequests = [] } = useQuery({
+    queryKey: ['my-access-requests', user?.email],
+    queryFn: () => base44.entities.ArtistAccessRequest.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+
+  // Artiste approuvé lié au compte
+  const approvedAccess = myAccessRequests.find(r => r.status === 'approuve');
+  const linkedArtistId = invite?.artist_id || approvedAccess?.artist_id;
+
+  const pendingPubs = myPublications.filter(p => p.status === 'en_attente').length;
+  const acceptedReqs = myRequests.filter(r => r.status === 'accepte').length;
+  const pendingReqs = myRequests.filter(r => r.status === 'en_attente').length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -99,19 +108,15 @@ export default function PartnerDashboard() {
           </div>
           <div className="flex items-center gap-2">
             {user && <NotificationBell user={user} />}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => base44.auth.logout('/')}
-              className="text-muted-foreground hover:text-foreground text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={() => base44.auth.logout('/')}
+              className="text-muted-foreground hover:text-foreground text-xs">
               <LogOut size={14} className="mr-1" /> Déconnexion
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Formulaire de publication (overlay) */}
+      {/* Overlay PublishForm */}
       {showPublishForm && (
         <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-8">
@@ -120,202 +125,384 @@ export default function PartnerDashboard() {
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-        {/* Bienvenue */}
-        <div className="bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6">
-          <p className="text-xs font-mono text-primary uppercase tracking-widest mb-1">Espace Partenaire</p>
-          <h1 className="font-display text-2xl font-extrabold">
-            Bonjour, {user?.full_name?.split(' ')[0] || 'Partenaire'} 👋
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">Bienvenue dans votre espace KKD Music.</p>
+      {/* Overlay AccessRequest */}
+      {showAccessForm && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+          <div className="max-w-lg mx-auto px-4 py-12">
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <ArtistAccessRequestForm user={user} onClose={() => setShowAccessForm(false)} />
+            </div>
+          </div>
         </div>
+      )}
 
-        {/* Statut du contrat */}
-        {invite && (
-          <div className={`rounded-xl border p-5 flex items-center gap-4 ${
-            invite.status === 'actif' ? 'border-green-500/30 bg-green-500/5' :
-            invite.status === 'expire' ? 'border-orange-500/30 bg-orange-500/5' :
-            'border-border/30 bg-card'
-          }`}>
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              invite.status === 'actif' ? 'bg-green-500/20' : 'bg-orange-500/20'
-            }`}>
-              <CheckCircle size={20} className={invite.status === 'actif' ? 'text-green-400' : 'text-orange-400'} />
+      {/* Tabs */}
+      <div className="border-b border-border/30 bg-card/30 sticky top-16 z-30">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex gap-1 overflow-x-auto scrollbar-none">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                  {tab.id === 'publications' && pendingPubs > 0 && (
+                    <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{pendingPubs}</span>
+                  )}
+                  {tab.id === 'demandes' && pendingReqs > 0 && (
+                    <span className="bg-yellow-500 text-black text-[10px] px-1.5 py-0.5 rounded-full font-bold">{pendingReqs}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <main className="max-w-5xl mx-auto px-4 py-8">
+
+        {/* ── DASHBOARD TAB ── */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Welcome */}
+            <div className="bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-2xl p-6">
+              <p className="text-xs font-mono text-primary uppercase tracking-widest mb-1">Espace Partenaire</p>
+              <h1 className="font-display text-2xl font-extrabold">
+                Bonjour, {user?.full_name?.split(' ')[0] || 'Partenaire'} 👋
+              </h1>
+              <p className="text-muted-foreground text-sm mt-1">Bienvenue dans votre espace KKD Music.</p>
             </div>
-            <div className="flex-1">
-              <p className="font-heading font-bold text-sm">Contrat KKD Music</p>
-              <p className="text-xs text-muted-foreground">
-                Type : {invite.invite_type === 'artiste_kkd' ? 'Artiste KKD' : 'Label Partenaire'} •
-                Statut : <span className={invite.status === 'actif' ? 'text-green-400' : 'text-orange-400'}>
-                  {invite.status === 'actif' ? 'Actif' : invite.status === 'expire' ? 'Expiré' : invite.status}
-                </span>
-              </p>
-              {invite.contract_end && (
-                <p className="text-xs text-muted-foreground">Expire le : {new Date(invite.contract_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* Bouton Publier */}
-        <button
-          onClick={() => setShowPublishForm(true)}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all group active:scale-[0.99]"
-        >
-          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors shrink-0">
-            <Plus size={24} className="text-primary" />
-          </div>
-          <div className="text-left">
-            <p className="font-display font-extrabold text-base text-primary">Publier mon contenu</p>
-            <p className="text-sm text-muted-foreground mt-0.5">Sortie, album, clip, playlist… en quelques secondes via un lien</p>
-          </div>
-        </button>
-
-        {/* Mes publications */}
-        {myPublications.length > 0 && (
-          <div>
-            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Mes publications</p>
-            <div className="space-y-2">
-              {myPublications.map((pub) => {
-                const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
-                return (
-                  <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Music size={16} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading font-bold text-sm truncate">{pub.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <a href={pub.streaming_link} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline flex items-center gap-0.5">
-                          <ExternalLink size={10} /> Voir le lien
-                        </a>
-                        {pub.instagram_link && (
-                          <span className="text-[11px] text-pink-400 flex items-center gap-0.5">
-                            <Instagram size={10} /> Instagram
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Stats demandes */}
-        <div>
-          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Mes demandes</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Total', count: myRequests.length, color: 'bg-card border-border/50' },
-              { label: 'En attente', count: pending, color: 'bg-yellow-500/5 border-yellow-500/20' },
-              { label: 'Acceptées', count: accepted, color: 'bg-green-500/5 border-green-500/20' },
-              { label: 'En cours', count: myRequests.filter(r => r.status === 'en_cours').length, color: 'bg-blue-500/5 border-blue-500/20' },
-            ].map((s) => (
-              <div key={s.label} className={`border rounded-xl p-4 ${s.color}`}>
-                <p className="font-display text-3xl font-extrabold">{s.count}</p>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+            {/* Contrat */}
+            {invite && (
+              <div className={`rounded-xl border p-5 flex items-center gap-4 ${
+                invite.status === 'actif' ? 'border-green-500/30 bg-green-500/5' :
+                invite.status === 'expire' ? 'border-orange-500/30 bg-orange-500/5' :
+                'border-border/30 bg-card'
+              }`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${invite.status === 'actif' ? 'bg-green-500/20' : 'bg-orange-500/20'}`}>
+                  <CheckCircle size={20} className={invite.status === 'actif' ? 'text-green-400' : 'text-orange-400'} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-heading font-bold text-sm">
+                    Contrat KKD Music
+                    {invite.label_name && <span className="ml-2 text-xs text-muted-foreground">· {invite.label_name}</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {invite.invite_type === 'artiste_kkd' ? 'Artiste KKD' : 'Label Partenaire'} · Statut :{' '}
+                    <span className={invite.status === 'actif' ? 'text-green-400' : 'text-orange-400'}>
+                      {invite.status === 'actif' ? 'Actif' : invite.status === 'expire' ? 'Expiré' : invite.status}
+                    </span>
+                  </p>
+                  {invite.contract_end && (
+                    <p className="text-xs text-muted-foreground">
+                      Expire le : {new Date(invite.contract_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
-        {/* Liste des demandes */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Historique des demandes</p>
-            <Link to="/partenaires" className="text-xs text-primary hover:underline flex items-center gap-1">
-              Nouvelle demande <ArrowRight size={11} />
-            </Link>
-          </div>
-          {myRequests.length === 0 ? (
-            <div className="bg-card border border-border/30 rounded-xl p-8 text-center">
-              <FileText size={28} className="mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">Aucune demande soumise</p>
-              <Link to="/partenaires">
-                <Button size="sm" className="mt-4 bg-primary hover:bg-primary/80">Soumettre une demande</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {myRequests.map((req) => {
-                const cfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.en_attente;
-                const Icon = cfg.icon;
-                return (
-                  <div key={req.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-4">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${cfg.color}`}>
-                      <Icon size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading font-bold text-sm">{REQUEST_LABELS[req.request_type] || req.request_type}</p>
-                      <p className="text-xs text-muted-foreground truncate">{req.description?.slice(0, 60)}...</p>
-                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                        {new Date(req.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${cfg.color}`}>{cfg.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Dernières sorties KKD */}
-        {releases.length > 0 && (
-          <div>
-            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Dernières sorties KKD</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {releases.map((r) => (
-                <div key={r.id} className="group">
-                  <div className="aspect-square rounded-xl overflow-hidden bg-secondary mb-2">
-                    {r.cover_url
-                      ? <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      : <div className="w-full h-full flex items-center justify-center"><Music size={24} className="text-primary/30" /></div>
-                    }
-                  </div>
-                  <p className="font-heading font-bold text-xs truncate">{r.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{r.artist_name}</p>
+            {/* Stats rapides */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Publications', count: myPublications.length, sub: `${pendingPubs} en attente`, color: 'border-primary/20' },
+                { label: 'Demandes', count: myRequests.length, sub: `${acceptedReqs} acceptées`, color: 'border-border/50' },
+                { label: 'Mon Artiste', count: linkedArtistId ? 1 : 0, sub: linkedArtistId ? 'Profil lié' : 'Non lié', color: 'border-border/50' },
+                { label: 'Contrat', count: invite?.status === 'actif' ? 1 : 0, sub: invite ? (invite.status === 'actif' ? 'Actif' : 'Inactif') : 'Aucun', color: 'border-border/50' },
+              ].map(s => (
+                <div key={s.label} className={`bg-card border ${s.color} rounded-xl p-4`}>
+                  <p className="font-display text-3xl font-extrabold">{s.count}</p>
+                  <p className="text-xs font-medium mt-0.5">{s.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{s.sub}</p>
                 </div>
               ))}
             </div>
+
+            {/* Actions rapides */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button onClick={() => setShowPublishForm(true)}
+                className="flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all group active:scale-[0.99]">
+                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors shrink-0">
+                  <Plus size={24} className="text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="font-display font-extrabold text-base text-primary">Publier mon contenu</p>
+                  <p className="text-sm text-muted-foreground">Sortie, album, clip, playlist…</p>
+                </div>
+              </button>
+
+              {!linkedArtistId ? (
+                <button onClick={() => setShowAccessForm(true)}
+                  className="flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 transition-all group active:scale-[0.99]">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors shrink-0">
+                    <UserCheck size={24} className="text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-display font-extrabold text-base text-blue-400">Réclamer mon profil</p>
+                    <p className="text-sm text-muted-foreground">Demander l'accès à votre profil artiste</p>
+                  </div>
+                </button>
+              ) : (
+                <button onClick={() => setActiveTab('artiste')}
+                  className="flex items-center gap-4 p-5 rounded-2xl border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-all group">
+                  <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+                    <User size={24} className="text-green-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-display font-extrabold text-base text-green-400">Mon profil artiste</p>
+                    <p className="text-sm text-muted-foreground">Voir vos infos, sorties, vidéos</p>
+                  </div>
+                </button>
+              )}
+            </div>
+
+            {/* Récentes publications */}
+            {myPublications.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Dernières publications</p>
+                  <button onClick={() => setActiveTab('publications')} className="text-xs text-primary hover:underline flex items-center gap-1">
+                    Voir tout <ArrowRight size={11} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {myPublications.slice(0, 3).map(pub => {
+                    const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
+                    return (
+                      <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Music size={14} className="text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading font-bold text-sm truncate">{pub.title}</p>
+                          <p className="text-[11px] text-muted-foreground">{pub.artist_name}</p>
+                        </div>
+                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
-        {/* Delete Account */}
-        <div className="border border-destructive/30 rounded-2xl p-5">
-          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">Zone dangereuse</p>
-          <h3 className="font-heading font-bold text-sm mb-1">Supprimer mon compte</h3>
-          <p className="text-xs text-muted-foreground mb-4">
-            Cette action est irréversible. Toutes vos données seront supprimées définitivement.
-          </p>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="gap-2">
-                <Trash2 size={14} /> Supprimer mon compte
+
+        {/* ── ARTISTE TAB ── */}
+        {activeTab === 'artiste' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-extrabold">Mon Artiste</h2>
+              {!linkedArtistId && (
+                <Button size="sm" onClick={() => setShowAccessForm(true)} className="gap-2">
+                  <UserCheck size={14} /> Réclamer un profil
+                </Button>
+              )}
+            </div>
+
+            {/* Demandes d'accès en cours */}
+            {myAccessRequests.length > 0 && (
+              <div className="space-y-2">
+                {myAccessRequests.filter(r => r.status !== 'approuve').map(req => (
+                  <div key={req.id} className={`rounded-xl border p-4 flex items-center gap-3 ${
+                    req.status === 'en_attente' ? 'border-yellow-500/30 bg-yellow-500/5' :
+                    'border-red-500/30 bg-red-500/5'
+                  }`}>
+                    <div className="flex-1">
+                      <p className="font-heading font-bold text-sm">
+                        Demande d'accès : {req.artist_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {req.status === 'en_attente' ? '⏳ En attente de validation par l\'équipe KKD' : '❌ Demande refusée'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {linkedArtistId ? (
+              <ArtistProfileView artistId={linkedArtistId} />
+            ) : (
+              <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
+                <User size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                <h3 className="font-display font-bold text-lg mb-2">Aucun profil artiste lié</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
+                  Réclamez votre profil artiste pour accéder à toutes vos informations, sorties et vidéos.
+                </p>
+                <Button onClick={() => setShowAccessForm(true)} className="gap-2">
+                  <UserCheck size={16} /> Réclamer mon profil
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── PUBLICATIONS TAB ── */}
+        {activeTab === 'publications' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-extrabold">Mes Publications</h2>
+              <Button size="sm" onClick={() => setShowPublishForm(true)} className="gap-2">
+                <Plus size={14} /> Nouvelle publication
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer votre compte ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action est irréversible. Votre profil et toutes vos données associées seront définitivement supprimés. Voulez-vous continuer ?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteAccount}
-                  disabled={deleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleting ? 'Suppression…' : 'Oui, supprimer mon compte'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+            </div>
+
+            {myPublications.length === 0 ? (
+              <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
+                <Music size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground mb-4">Aucune publication soumise</p>
+                <Button onClick={() => setShowPublishForm(true)} className="gap-2">
+                  <Plus size={14} /> Soumettre mon premier contenu
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {myPublications.map(pub => {
+                  const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
+                  return (
+                    <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        {pub.cover_url ? (
+                          <img src={pub.cover_url} alt={pub.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Music size={18} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-heading font-bold text-sm">{pub.title}</p>
+                              <p className="text-xs text-muted-foreground">{pub.artist_name}</p>
+                            </div>
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <a href={pub.streaming_link} target="_blank" rel="noreferrer"
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                              <ExternalLink size={10} /> Voir le lien
+                            </a>
+                            <span className="text-[11px] text-muted-foreground">
+                              {new Date(pub.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                          {pub.admin_notes && (
+                            <p className="mt-2 text-xs bg-secondary/50 rounded-lg px-3 py-2 italic text-muted-foreground">
+                              💬 KKD : {pub.admin_notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── DEMANDES TAB ── */}
+        {activeTab === 'demandes' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-extrabold">Mes Demandes</h2>
+              <Link to="/partenaires">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Plus size={14} /> Nouvelle demande
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Total', count: myRequests.length },
+                { label: 'En attente', count: pendingReqs },
+                { label: 'Acceptées', count: acceptedReqs },
+                { label: 'En cours', count: myRequests.filter(r => r.status === 'en_cours').length },
+              ].map(s => (
+                <div key={s.label} className="bg-card border border-border/50 rounded-xl p-4">
+                  <p className="font-display text-3xl font-extrabold">{s.count}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {myRequests.length === 0 ? (
+              <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
+                <FileText size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground mb-4">Aucune demande soumise</p>
+                <Link to="/partenaires">
+                  <Button>Soumettre une demande</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myRequests.map(req => {
+                  const cfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.en_attente;
+                  const Icon = cfg.icon;
+                  return (
+                    <div key={req.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-4">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${cfg.color}`}>
+                        <Icon size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-heading font-bold text-sm">{REQUEST_LABELS[req.request_type] || req.request_type}</p>
+                        <p className="text-xs text-muted-foreground truncate">{req.description?.slice(0, 70)}…</p>
+                        <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                          {new Date(req.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${cfg.color}`}>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Zone dangereuse */}
+        {activeTab === 'dashboard' && (
+          <div className="border border-destructive/30 rounded-2xl p-5 mt-8">
+            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">Zone dangereuse</p>
+            <h3 className="font-heading font-bold text-sm mb-1">Supprimer mon compte</h3>
+            <p className="text-xs text-muted-foreground mb-4">Action irréversible. Toutes vos données seront supprimées.</p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2">
+                  <Trash2 size={14} /> Supprimer mon compte
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer votre compte ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est irréversible. Voulez-vous continuer ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => { setDeleting(true); base44.auth.logout('/'); }}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? 'Suppression…' : 'Confirmer'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </main>
     </div>
   );

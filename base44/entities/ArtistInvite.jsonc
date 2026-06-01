@@ -4,7 +4,7 @@
   "properties": {
     "artist_id": {
       "type": "string",
-      "description": "ID de l'artiste li\u00e9"
+      "description": "ID de l'artiste li\u00e9 (depuis l'entit\u00e9 Artist)"
     },
     "artist_name": {
       "type": "string",
@@ -22,6 +22,14 @@
       ],
       "default": "artiste_kkd",
       "description": "Type d'invitation"
+    },
+    "label_name": {
+      "type": "string",
+      "description": "Nom du label auquel appartient cet artiste"
+    },
+    "label_id": {
+      "type": "string",
+      "description": "ID de l'invite label (si artiste rattach\u00e9 \u00e0 un label)"
     },
     "contract_start": {
       "type": "string",

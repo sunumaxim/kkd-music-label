@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Music, Video, ListMusic, Disc, Upload,
   Link2, Instagram, CheckCircle, ArrowLeft, Loader2, Plus, X
 } from 'lucide-react';
+import ArtistSelector from './ArtistSelector';
 
 const CONTENT_TYPES = [
   { value: 'sortie_musicale', label: 'Single / Titre', icon: Music, desc: 'Un titre disponible sur les plateformes' },
@@ -177,13 +178,29 @@ export default function PublishForm({ user, onClose }) {
             />
           </div>
           <div>
-            <Label className="text-xs mb-1.5 block">Nom de l'artiste *</Label>
-            <Input
-              value={form.artist_name}
-              onChange={e => set('artist_name', e.target.value)}
-              placeholder="Nom de scène"
-              required
+            <Label className="text-xs mb-1.5 block">Artiste *</Label>
+            <ArtistSelector
+              value={form.artist_id || ''}
+              onChange={(id, name) => { set('artist_id', id); set('artist_name', name); }}
+              placeholder="Sélectionner l'artiste…"
             />
+            {!form.artist_id && (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Ou saisissez manuellement :{' '}
+                <button type="button" className="text-primary underline"
+                  onClick={() => { set('artist_id', null); }}>
+                  écrire le nom
+                </button>
+              </p>
+            )}
+            {!form.artist_id && (
+              <Input
+                className="mt-1"
+                value={form.artist_name}
+                onChange={e => set('artist_name', e.target.value)}
+                placeholder="Nom de scène (si non listé)"
+              />
+            )}
           </div>
         </div>
 

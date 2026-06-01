@@ -1,0 +1,45 @@
+{
+  "name": "ArtistAccessRequest",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur qui demande l'acc\u00e8s"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur"
+    },
+    "artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste r\u00e9clam\u00e9"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste r\u00e9clam\u00e9"
+    },
+    "message": {
+      "type": "string",
+      "description": "Message de justification du demandeur"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de la demande"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes admin"
+    }
+  },
+  "required": [
+    "user_email",
+    "artist_id",
+    "artist_name"
+  ]
+}

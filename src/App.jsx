@@ -18,7 +18,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import PublicLayout from './components/layout/PublicLayout';
 
 // Partner
-import PartnerDashboard from './pages/partner/PartnerDashboard';
+import PartnerDashboard from './pages/partner/PartnerDashboard.jsx';
 
 // Public pages
 import Home from './pages/Home';
@@ -41,7 +41,7 @@ import AdminVideos from './pages/admin/AdminVideos.jsx';
 import AdminNews from './pages/admin/AdminNews.jsx';
 import AdminEvents from './pages/admin/AdminEvents';
 import AdminRequests from './pages/admin/AdminRequests';
-import AdminInvites from './pages/admin/AdminInvites';
+import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminMailing from './pages/admin/AdminMailing';
 
