@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, Sparkles, Loader2, ArrowLeft, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles, Loader2, ArrowLeft, X, Link2, Check, ExternalLink } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'communique', label: 'Communiqué' },
@@ -29,6 +29,14 @@ const EMPTY_FORM = {
 export default function AdminNews() {
   const [editing, setEditing] = useState(null); // null = list, 'new' or object = form
   const [form, setForm] = useState(EMPTY_FORM);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const copyArticleLink = async (id) => {
+    const url = `${window.location.origin}/actualites/${id}`;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
   const [generating, setGenerating] = useState(null); // 'excerpt' | 'content'
   const [aiContext, setAiContext] = useState('');
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -230,7 +238,7 @@ export default function AdminNews() {
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-wrap gap-3 pt-2 items-center">
           <Button
             onClick={handleSave}
             disabled={!form.title || createMutation.isPending || updateMutation.isPending}
@@ -239,6 +247,17 @@ export default function AdminNews() {
             {createMutation.isPending || updateMutation.isPending ? 'Enregistrement...' : editing === 'new' ? 'Publier l\'article' : 'Enregistrer'}
           </Button>
           <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
+          {editing && editing !== 'new' && editing.id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground text-xs gap-1.5"
+              onClick={() => copyArticleLink(editing.id)}
+            >
+              {copiedId === editing.id ? <Check size={12} className="text-green-500" /> : <Link2 size={12} />}
+              {copiedId === editing.id ? 'Lien copié !' : 'Copier le lien de l\'article'}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -268,6 +287,20 @@ export default function AdminNews() {
                 <p className="text-xs text-muted-foreground">{CATEGORIES.find(c => c.value === item.category)?.label} • {item.is_published ? '✓ Publié' : 'Brouillon'}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Copier le lien de l'article"
+                  onClick={() => copyArticleLink(item.id)}
+                  className={copiedId === item.id ? 'text-green-500' : 'text-muted-foreground'}
+                >
+                  {copiedId === item.id ? <Check size={14} /> : <Link2 size={14} />}
+                </Button>
+                <Button variant="ghost" size="icon" asChild title="Voir l'article">
+                  <a href={`/actualites/${item.id}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink size={14} />
+                  </a>
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil size={14} /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { if (confirm('Supprimer cet article ?')) deleteMutation.mutate(item.id); }}>
                   <Trash2 size={14} className="text-destructive" />
