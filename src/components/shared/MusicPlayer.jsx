@@ -4,6 +4,7 @@ import {
   X, Music, ExternalLink, ChevronUp, ChevronDown, ListMusic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import UniversalPlayer from './UniversalPlayer';
 
 // Persistent global player state via module-level ref
 let globalSetPlayer = null;
@@ -11,80 +12,30 @@ export function openPlayer(tracks, startIndex = 0) {
   if (globalSetPlayer) globalSetPlayer({ tracks, currentIndex: startIndex, open: true });
 }
 
-function SpotifyEmbed({ url }) {
-  const trackId = url.match(/spotify\.com\/(?:intl-[a-z]+\/)?(?:track|album)\/([a-zA-Z0-9]+)/)?.[1];
-  const type = url.includes('/album/') ? 'album' : 'track';
-  if (!trackId) return <a href={url} target="_blank" rel="noreferrer" className="text-green-400 underline text-sm">Ouvrir sur Spotify</a>;
-  return (
-    <iframe
-      src={`https://open.spotify.com/embed/${type}/${trackId}?utm_source=generator&theme=0`}
-      width="100%" height="152" frameBorder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-      className="rounded-xl"
-    />
-  );
-}
 
-function YouTubeEmbed({ url, autoplay = false }) {
-  const videoId = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
-  if (!videoId) return <a href={url} target="_blank" rel="noreferrer" className="text-red-400 underline text-sm">Ouvrir sur YouTube</a>;
-  return (
-    <iframe
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&rel=0`}
-      width="100%" height="315" frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      className="rounded-xl w-full"
-    />
-  );
-}
-
-// ── RELEASE CARD with Spotify embed ──
+// ── RELEASE CARD with Universal Player ──
 export function ReleaseCard({ release, allReleases = [], onPlayAll }) {
-  const [expanded, setExpanded] = useState(false);
+  // Pick the best available streaming link
+  const streamingUrl = release.spotify_url || release.youtube_url || release.apple_music_url || release.audiomack_url;
+  const hasPlayer = !!streamingUrl;
 
   return (
     <div className="bg-card border border-border/50 rounded-xl overflow-hidden group">
-      <div className="relative aspect-square cursor-pointer" onClick={() => setExpanded(!expanded)}>
+      <div className="relative aspect-square">
         {release.cover_url
           ? <img src={release.cover_url} alt={release.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           : <div className="w-full h-full bg-primary/5 flex items-center justify-center"><Music size={28} className="text-primary/30" /></div>
         }
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-          >
-            <Play size={20} className="text-white ml-0.5" fill="white" />
-          </button>
+      </div>
+      <div className="p-3 space-y-2">
+        <div>
+          <p className="font-heading font-bold text-sm truncate">{release.title}</p>
+          <p className="text-[11px] text-muted-foreground capitalize">{release.release_type} · {release.release_date?.slice(0,4)}</p>
         </div>
-      </div>
-      <div className="p-3">
-        <p className="font-heading font-bold text-sm truncate">{release.title}</p>
-        <p className="text-[11px] text-muted-foreground capitalize">{release.release_type} · {release.release_date?.slice(0,4)}</p>
-        {release.spotify_url && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors text-xs font-medium"
-          >
-            {expanded ? <Pause size={11} /> : <Play size={11} fill="currentColor" />}
-            {expanded ? 'Masquer' : 'Écouter'}
-          </button>
+        {hasPlayer && (
+          <UniversalPlayer url={streamingUrl} label={release.title} />
         )}
       </div>
-      <AnimatePresence>
-        {expanded && release.spotify_url && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden px-3 pb-3"
-          >
-            <SpotifyEmbed url={release.spotify_url} />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -118,7 +69,13 @@ export function VideoCard({ video, onClick }) {
             </div>
           </div>
         ) : (
-          <YouTubeEmbed url={video.youtube_url} autoplay />
+          <iframe
+            src={`https://www.youtube.com/embed/${video.youtube_url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)?.[1]}?autoplay=1&rel=0`}
+            width="100%" height="315" frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full rounded-none"
+          />
         )}
       </div>
       <div className="p-3 flex items-start justify-between gap-2">
@@ -143,15 +100,18 @@ export function VideoCard({ video, onClick }) {
   );
 }
 
-// ── PLAYLIST PLAYER (Spotify embeds) ──
+// ── PLAYLIST PLAYER (Universal embeds) ──
 export function PlaylistPlayer({ releases, artistName }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const releasesWithSpotify = releases.filter(r => r.spotify_url);
+  const playableReleases = releases.filter(r =>
+    r.spotify_url || r.youtube_url || r.apple_music_url || r.audiomack_url
+  );
 
-  if (releasesWithSpotify.length === 0) return null;
+  if (playableReleases.length === 0) return null;
 
-  const current = releasesWithSpotify[currentIndex];
+  const current = playableReleases[currentIndex];
+  const currentUrl = current.spotify_url || current.youtube_url || current.apple_music_url || current.audiomack_url;
 
   return (
     <div className="bg-card border border-primary/20 rounded-2xl overflow-hidden">
@@ -167,7 +127,7 @@ export function PlaylistPlayer({ releases, artistName }) {
             <p className="font-heading font-bold text-sm">
               Playlist {artistName ? `— ${artistName}` : ''}
             </p>
-            <p className="text-xs text-muted-foreground">{releasesWithSpotify.length} titre{releasesWithSpotify.length > 1 ? 's' : ''} disponibles</p>
+            <p className="text-xs text-muted-foreground">{playableReleases.length} titre{playableReleases.length > 1 ? 's' : ''} disponibles</p>
           </div>
         </div>
         {isOpen ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
@@ -183,11 +143,11 @@ export function PlaylistPlayer({ releases, artistName }) {
           >
             <div className="px-5 pb-5 space-y-4">
               {/* Current track embed */}
-              <SpotifyEmbed url={current.spotify_url} />
+              <UniversalPlayer key={currentIndex} url={currentUrl} label={current.title} autoExpand />
 
               {/* Track list */}
               <div className="space-y-1 max-h-64 overflow-y-auto">
-                {releasesWithSpotify.map((r, i) => (
+                {playableReleases.map((r, i) => (
                   <button
                     key={r.id || i}
                     onClick={() => setCurrentIndex(i)}
