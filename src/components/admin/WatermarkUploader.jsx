@@ -52,7 +52,7 @@ async function applyWatermark(imageFile) {
       };
       logo.src = LOGO_URL + '?t=' + Date.now();
     };
-    img.onerror = reject;
+    img.onerror = () => resolve(imageFile); // fallback: upload sans watermark si l'image échoue
     img.src = URL.createObjectURL(imageFile);
   });
 }
