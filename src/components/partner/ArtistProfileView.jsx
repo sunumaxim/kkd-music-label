@@ -1,16 +1,16 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Music, Video, ExternalLink, Instagram, Youtube, Disc } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ExternalLink, Instagram } from 'lucide-react';
+import { ReleaseCard, VideoCard, PlaylistPlayer } from '@/components/shared/MusicPlayer';
 
 const STREAMING_LINKS = [
-  { key: 'spotify_url', label: 'Spotify', color: 'text-green-400' },
-  { key: 'apple_music_url', label: 'Apple Music', color: 'text-pink-400' },
-  { key: 'audiomack_url', label: 'Audiomack', color: 'text-orange-400' },
-  { key: 'deezer_url', label: 'Deezer', color: 'text-purple-400' },
-  { key: 'soundcloud_url', label: 'SoundCloud', color: 'text-orange-500' },
-  { key: 'youtube_url', label: 'YouTube', color: 'text-red-400' },
+  { key: 'spotify_url', label: 'Spotify', color: 'text-green-400', bg: 'bg-green-500/10 hover:bg-green-500/20' },
+  { key: 'apple_music_url', label: 'Apple Music', color: 'text-pink-400', bg: 'bg-pink-500/10 hover:bg-pink-500/20' },
+  { key: 'audiomack_url', label: 'Audiomack', color: 'text-orange-400', bg: 'bg-orange-500/10 hover:bg-orange-500/20' },
+  { key: 'deezer_url', label: 'Deezer', color: 'text-purple-400', bg: 'bg-purple-500/10 hover:bg-purple-500/20' },
+  { key: 'soundcloud_url', label: 'SoundCloud', color: 'text-orange-500', bg: 'bg-orange-500/10 hover:bg-orange-500/20' },
+  { key: 'youtube_url', label: 'YouTube', color: 'text-red-400', bg: 'bg-red-500/10 hover:bg-red-500/20' },
 ];
 
 export default function ArtistProfileView({ artistId }) {
@@ -48,6 +48,8 @@ export default function ArtistProfileView({ artistId }) {
     );
   }
 
+  const releasesWithSpotify = releases.filter(r => r.spotify_url);
+
   return (
     <div className="space-y-6">
       {/* Hero */}
@@ -83,16 +85,10 @@ export default function ArtistProfileView({ artistId }) {
       <div className="bg-card border border-border/50 rounded-xl p-5">
         <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-widest mb-3">Plateformes de streaming</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {STREAMING_LINKS.map(({ key, label, color }) => artist[key] ? (
-            <a
-              key={key}
-              href={artist[key]}
-              target="_blank"
-              rel="noreferrer"
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-xs font-medium ${color}`}
-            >
-              <ExternalLink size={12} />
-              {label}
+          {STREAMING_LINKS.map(({ key, label, color, bg }) => artist[key] ? (
+            <a key={key} href={artist[key]} target="_blank" rel="noreferrer"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg ${bg} transition-colors text-xs font-medium ${color}`}>
+              <ExternalLink size={12} /> {label}
             </a>
           ) : null)}
           {STREAMING_LINKS.every(({ key }) => !artist[key]) && (
@@ -123,22 +119,18 @@ export default function ArtistProfileView({ artistId }) {
         </div>
       )}
 
+      {/* Playlist player (Spotify) */}
+      {releasesWithSpotify.length > 0 && (
+        <PlaylistPlayer releases={releases} artistName={artist.name} />
+      )}
+
       {/* Discographie */}
       {releases.length > 0 && (
         <div>
           <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-widest mb-3">Discographie ({releases.length})</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {releases.map(r => (
-              <div key={r.id} className="group">
-                <div className="aspect-square rounded-xl overflow-hidden bg-secondary mb-2">
-                  {r.cover_url
-                    ? <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    : <div className="w-full h-full flex items-center justify-center"><Disc size={24} className="text-primary/30" /></div>
-                  }
-                </div>
-                <p className="font-heading font-bold text-xs truncate">{r.title}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{r.release_type}</p>
-              </div>
+              <ReleaseCard key={r.id} release={r} allReleases={releases} />
             ))}
           </div>
         </div>
@@ -150,20 +142,7 @@ export default function ArtistProfileView({ artistId }) {
           <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-widest mb-3">Vidéos ({videos.length})</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {videos.map(v => (
-              <a key={v.id} href={v.youtube_url} target="_blank" rel="noreferrer"
-                className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 hover:border-primary/40 transition-colors group">
-                {v.thumbnail_url ? (
-                  <img src={v.thumbnail_url} alt={v.title} className="w-16 h-12 rounded-lg object-cover shrink-0" />
-                ) : (
-                  <div className="w-16 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Video size={16} className="text-primary" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-heading font-bold text-xs truncate group-hover:text-primary transition-colors">{v.title}</p>
-                  <p className="text-[11px] text-muted-foreground capitalize">{v.video_type?.replace('_', ' ')}</p>
-                </div>
-              </a>
+              <VideoCard key={v.id} video={v} />
             ))}
           </div>
         </div>

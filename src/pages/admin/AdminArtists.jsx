@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ArrowLeft, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, Star, Download } from 'lucide-react';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
+import ArtistImporter from '@/components/partner/ArtistImporter';
 
 const EMPTY = {
   name: '', genre: '', biography: '',
@@ -20,6 +21,7 @@ const EMPTY = {
 export default function AdminArtists() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [importing, setImporting] = useState(null); // artist being imported
   const queryClient = useQueryClient();
 
   const { data: artists = [], isLoading } = useQuery({
@@ -59,6 +61,21 @@ export default function AdminArtists() {
       await createMutation.mutateAsync(form);
     }
   };
+
+  // ── IMPORTER OVERLAY ──
+  if (importing !== null) {
+    return (
+      <div className="max-w-2xl space-y-4">
+        <div className="flex items-center gap-3 mb-2">
+          <button onClick={() => setImporting(null)} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft size={18} />
+          </button>
+          <h1 className="font-display text-xl font-extrabold">Import contenu — {importing.name}</h1>
+        </div>
+        <ArtistImporter artist={importing} onClose={() => setImporting(null)} />
+      </div>
+    );
+  }
 
   // ── FORM ──
   if (editing !== null) {
@@ -223,6 +240,7 @@ export default function AdminArtists() {
                   <p className="text-xs text-muted-foreground">{artist.genre || 'Genre non défini'}</p>
                 </div>
                 <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" title="Importer Spotify/YouTube" onClick={() => setImporting(artist)}><Download size={14} className="text-primary" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => openEdit(artist)}><Pencil size={14} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => {
                     if (confirm('Supprimer cet artiste ?')) deleteMutation.mutate(artist.id);

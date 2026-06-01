@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Music, Youtube, Upload, CheckCircle, AlertCircle,
-  Loader2, RefreshCw, Disc, Video, ExternalLink, X
+  Loader2, Disc, X, Info
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -19,6 +19,8 @@ export default function ArtistImporter({ artist, onClose }) {
   const [ytResult, setYtResult] = useState(null);
   const [error, setError] = useState('');
 
+  const artistName = artist?.name || '';
+
   const importSpotify = async () => {
     if (!spotifyUrl) return;
     setLoadingSpotify(true);
@@ -27,8 +29,8 @@ export default function ArtistImporter({ artist, onClose }) {
     const res = await base44.functions.invoke('importArtistContent', {
       action: 'import_spotify',
       spotify_url: spotifyUrl,
+      artist_name: artistName,
       artist_id: artist?.id,
-      artist_name: artist?.name,
     });
     setLoadingSpotify(false);
     if (res.data?.error) {
@@ -48,8 +50,8 @@ export default function ArtistImporter({ artist, onClose }) {
     const res = await base44.functions.invoke('importArtistContent', {
       action: 'import_youtube',
       youtube_url: youtubeUrl,
+      artist_name: artistName,
       artist_id: artist?.id,
-      artist_name: artist?.name,
     });
     setLoadingYT(false);
     if (res.data?.error) {
@@ -83,17 +85,18 @@ export default function ArtistImporter({ artist, onClose }) {
         </div>
       )}
 
-      {/* SPOTIFY */}
+      {/* SPOTIFY / MusicBrainz */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
             <Music size={14} className="text-green-400" />
           </div>
-          <Label className="font-heading font-bold">Importer depuis Spotify</Label>
+          <Label className="font-heading font-bold">Importer la discographie (Spotify)</Label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Collez le lien du profil artiste Spotify pour importer automatiquement toutes ses sorties (singles, albums, EPs).
-        </p>
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-secondary/50 text-xs text-muted-foreground">
+          <Info size={13} className="shrink-0 mt-0.5" />
+          <span>Collez le lien du profil Spotify de l'artiste. La discographie sera importée via MusicBrainz (open data) et les sorties seront liées à cet artiste sur la plateforme.</span>
+        </div>
         <div className="flex gap-2">
           <Input
             value={spotifyUrl}
@@ -112,25 +115,22 @@ export default function ArtistImporter({ artist, onClose }) {
         </div>
 
         {spotifyResult && (
-          <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 space-y-3">
+            <div className="flex items-center gap-2">
               <CheckCircle size={16} className="text-green-400" />
               <p className="text-sm font-bold text-green-400">
-                {spotifyResult.created} nouvelle{spotifyResult.created > 1 ? 's' : ''} sortie{spotifyResult.created > 1 ? 's' : ''} importée{spotifyResult.created > 1 ? 's' : ''}
-                {spotifyResult.skipped > 0 && ` (${spotifyResult.skipped} déjà présente${spotifyResult.skipped > 1 ? 's' : ''})`}
+                {spotifyResult.created} sortie{spotifyResult.created !== 1 ? 's' : ''} importée{spotifyResult.created !== 1 ? 's' : ''}
+                {spotifyResult.skipped > 0 && ` · ${spotifyResult.skipped} déjà présente${spotifyResult.skipped > 1 ? 's' : ''}`}
               </p>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto">
-              {spotifyResult.releases?.slice(0, 20).map((r, i) => (
-                <div key={i} className="group">
-                  <div className="aspect-square rounded-lg overflow-hidden bg-secondary mb-1">
-                    {r.cover_url
-                      ? <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center"><Disc size={14} className="text-muted-foreground/30" /></div>
-                    }
+              {spotifyResult.releases?.slice(0, 25).map((r, i) => (
+                <div key={i} className="text-center">
+                  <div className="aspect-square rounded-lg bg-secondary/80 flex items-center justify-center mb-1 overflow-hidden">
+                    <Disc size={18} className="text-muted-foreground/40" />
                   </div>
                   <p className="text-[10px] font-medium truncate">{r.title}</p>
-                  <p className="text-[9px] text-muted-foreground capitalize">{r.release_type}</p>
+                  <p className="text-[9px] text-muted-foreground capitalize">{r.release_type} {r.release_date?.slice(0,4)}</p>
                 </div>
               ))}
             </div>
@@ -146,11 +146,8 @@ export default function ArtistImporter({ artist, onClose }) {
           <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center">
             <Youtube size={14} className="text-red-400" />
           </div>
-          <Label className="font-heading font-bold">Importer depuis YouTube</Label>
+          <Label className="font-heading font-bold">Importer les vidéos (YouTube)</Label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Collez le lien de la chaîne YouTube pour importer toutes les vidéos (clips, teasers, interviews…).
-        </p>
         <div className="flex gap-2">
           <Input
             value={youtubeUrl}
@@ -168,24 +165,23 @@ export default function ArtistImporter({ artist, onClose }) {
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground/60">
-          Formats acceptés : youtube.com/@handle · youtube.com/channel/UCxxx · youtube.com/c/nom
+          Formats : youtube.com/@handle · youtube.com/channel/UCxxx · youtube.com/c/nom
         </p>
 
         {ytResult && (
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 space-y-3">
+            <div className="flex items-center gap-2">
               <CheckCircle size={16} className="text-red-400" />
               <p className="text-sm font-bold text-red-400">
-                {ytResult.created} nouvelle{ytResult.created > 1 ? 's' : ''} vidéo{ytResult.created > 1 ? 's' : ''} importée{ytResult.created > 1 ? 's' : ''}
-                {ytResult.skipped > 0 && ` (${ytResult.skipped} déjà présente${ytResult.skipped > 1 ? 's' : ''})`}
+                {ytResult.created} vidéo{ytResult.created !== 1 ? 's' : ''} importée{ytResult.created !== 1 ? 's' : ''}
+                {ytResult.skipped > 0 && ` · ${ytResult.skipped} déjà présente${ytResult.skipped > 1 ? 's' : ''}`}
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-              {ytResult.videos?.slice(0, 10).map((v, i) => (
+            <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto">
+              {ytResult.videos?.slice(0, 12).map((v, i) => (
                 <a key={i} href={v.youtube_url} target="_blank" rel="noreferrer"
                   className="flex items-center gap-2 rounded-lg overflow-hidden bg-secondary/50 hover:bg-secondary transition-colors p-1 pr-2">
-                  <img src={v.thumbnail_url} alt={v.title}
-                    className="w-16 h-11 rounded-md object-cover shrink-0" />
+                  <img src={v.thumbnail_url} alt={v.title} className="w-16 h-11 rounded-md object-cover shrink-0" />
                   <p className="text-[10px] font-medium line-clamp-2 leading-tight">{v.title}</p>
                 </a>
               ))}
