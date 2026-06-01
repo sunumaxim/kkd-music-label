@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Music, Video, Newspaper, CalendarDays, LayoutDashboard, ArrowLeft, Inbox, UserPlus, Building2 } from 'lucide-react';
+import { Users, Music, Video, Newspaper, CalendarDays, LayoutDashboard, ArrowLeft, Inbox, UserPlus, LogOut } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -19,6 +20,7 @@ const sidebarLinks = [
 
 export default function AdminLayout() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -55,10 +57,21 @@ export default function AdminLayout() {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border/30">
+        <div className="p-4 border-t border-border/30 space-y-2">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={14} /> Voir le site
           </Link>
+          {user && (
+            <div className="pt-2 border-t border-border/20">
+              <p className="text-xs text-muted-foreground truncate mb-1">{user.email}</p>
+              <button
+                onClick={() => logout()}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut size={13} /> Déconnexion
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -71,7 +84,7 @@ export default function AdminLayout() {
         
         {/* Mobile nav */}
         <div className="md:hidden flex overflow-x-auto border-b border-border/30 bg-card/30 px-2">
-          {sidebarLinks.map((link) => {
+          {sidebarLinks.filter(l => !l.divider).map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.path;
             return (

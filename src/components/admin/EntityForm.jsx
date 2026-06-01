@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,8 +9,13 @@ import { base44 } from '@/api/base44Client';
 import { X } from 'lucide-react';
 
 export default function EntityForm({ fields, initialData, onSave, onCancel, title }) {
-  const [data, setData] = useState(initialData || {});
+  const [data, setData] = useState(() => initialData || {});
   const [saving, setSaving] = useState(false);
+
+  // Reset form when initialData changes (switching between edit targets)
+  useEffect(() => {
+    setData(initialData || {});
+  }, [initialData]);
 
   const handleChange = (key, value) => {
     setData(prev => ({ ...prev, [key]: value }));

@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminRoute from '@/components/AdminRoute';
 
 // Auth pages
 import Login from '@/pages/Login';
@@ -87,8 +88,8 @@ const AuthenticatedApp = () => {
         <Route path="/mon-espace" element={<PartnerDashboard />} />
       </Route>
 
-      {/* Admin routes (protected) */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      {/* Admin routes (admin only) */}
+      <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Dashboard />} />
           <Route path="/admin/artistes" element={<AdminArtists />} />
