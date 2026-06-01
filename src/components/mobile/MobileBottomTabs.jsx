@@ -22,11 +22,13 @@ export default function MobileBottomTabs() {
   );
   if (isDeep) return null;
 
-  const handleTabClick = (tab) => {
+  const handleTabPress = (e, tab) => {
     if (location.pathname === tab.path) {
-      // Re-selecting active tab: reset to root
-      navigate(tab.path, { replace: true });
+      // Re-tap on active tab: scroll to top instead of navigating
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    // Otherwise let the Link navigate normally, preserving browser history
   };
 
   return (
@@ -37,12 +39,15 @@ export default function MobileBottomTabs() {
       <div className="flex items-stretch">
         {TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = location.pathname === tab.path;
+          // Highlight if current path starts with tab path (handles sub-routes)
+          const isActive = tab.path === '/'
+            ? location.pathname === '/'
+            : location.pathname.startsWith(tab.path);
           return (
             <Link
               key={tab.path}
               to={tab.path}
-              onClick={() => handleTabClick(tab)}
+              onClick={(e) => handleTabPress(e, tab)}
               className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 select-none transition-colors ${
                 isActive ? 'text-primary' : 'text-muted-foreground'
               }`}

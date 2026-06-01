@@ -40,14 +40,16 @@ export default function NotificationBell({ user }) {
 
   const markAllRead = async () => {
     const unreadNotifs = notifs.filter(n => !n.is_read);
+    // Optimistic: mark all as read immediately
+    setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
     await Promise.all(unreadNotifs.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
-    fetchNotifs();
   };
 
   const markRead = async (notif) => {
     if (!notif.is_read) {
+      // Optimistic: mark this one as read immediately
+      setNotifs(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
       await base44.entities.Notification.update(notif.id, { is_read: true });
-      fetchNotifs();
     }
   };
 

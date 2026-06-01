@@ -42,9 +42,11 @@ export default function Partnership() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    await base44.entities.ServiceRequest.create({ ...form, file_url: fileUrl });
+    // Optimistic: show success immediately, then persist
     setSubmitted(true);
-    setSubmitting(false);
+    base44.entities.ServiceRequest.create({ ...form, file_url: fileUrl }).finally(() => {
+      setSubmitting(false);
+    });
   };
 
   if (submitted) {
