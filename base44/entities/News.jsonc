@@ -4,15 +4,22 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "Titre de l'actualit\u00e9"
+      "description": "Titre de l'article"
     },
     "content": {
       "type": "string",
-      "description": "Contenu de l'article"
+      "description": "Contenu principal (markdown)"
     },
     "image_url": {
       "type": "string",
       "description": "Image de couverture"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Galerie de photos (URLs)"
     },
     "category": {
       "type": "string",
@@ -24,6 +31,13 @@
       ],
       "default": "nouveaute",
       "description": "Cat\u00e9gorie"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags / mots-cl\u00e9s"
     },
     "excerpt": {
       "type": "string",
@@ -38,6 +52,58 @@
       "type": "boolean",
       "default": true,
       "description": "Publi\u00e9"
+    },
+    "video_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs vid\u00e9os YouTube \u00e0 int\u00e9grer dans l'article"
+    },
+    "music_embeds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs Spotify / YouTube Music / SoundCloud \u00e0 int\u00e9grer"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Liens externes (label + URL)"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes"
+    },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Commentaires"
     }
   },
   "required": [
