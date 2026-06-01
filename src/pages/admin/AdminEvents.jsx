@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -105,6 +106,7 @@ export default function AdminEvents() {
                 <p className="text-xs text-muted-foreground">{event.event_type} • {event.location} {event.city}</p>
               </div>
               <div className="flex items-center gap-1">
+                <TikTokPublishButton item={event} type="event" />
                 <Button variant="ghost" size="icon" onClick={() => setEditing(event)}>
                   <Pencil size={14} />
                 </Button>

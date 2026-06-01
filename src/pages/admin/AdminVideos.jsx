@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2, ArrowLeft, Play } from 'lucide-react';
+import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
 
 const VIDEO_TYPES = [
@@ -219,6 +220,7 @@ export default function AdminVideos() {
                     <p className="text-xs text-muted-foreground">{video.artist_name} • {VIDEO_TYPES.find(t => t.value === video.video_type)?.label}</p>
                   </div>
                   <div className="flex gap-1 shrink-0">
+                    <TikTokPublishButton item={video} type="video" />
                     <Button variant="ghost" size="icon" onClick={() => openEdit(video)}><Pencil size={14} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => { if (confirm('Supprimer cette vidéo ?')) deleteMutation.mutate(video.id); }}>
                       <Trash2 size={14} className="text-destructive" />

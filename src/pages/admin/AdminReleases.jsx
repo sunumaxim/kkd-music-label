@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import EntityForm from '../../components/admin/EntityForm';
+import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 
 const FIELDS = [
   { key: 'title', label: 'Titre', type: 'text', required: true },
@@ -107,6 +108,7 @@ export default function AdminReleases() {
                 <p className="text-xs text-muted-foreground">{release.artist_name} • {release.release_type}</p>
               </div>
               <div className="flex items-center gap-1">
+                <TikTokPublishButton item={release} type="release" />
                 <Button variant="ghost" size="icon" onClick={() => setEditing(release)}>
                   <Pencil size={14} />
                 </Button>
