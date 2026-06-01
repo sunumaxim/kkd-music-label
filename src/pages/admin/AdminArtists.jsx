@@ -37,7 +37,14 @@ export default function AdminArtists() {
   });
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Artist.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-artists'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-artists'] });
+      const prev = queryClient.getQueryData(['admin-artists']);
+      queryClient.setQueryData(['admin-artists'], (old = []) => old.filter(a => a.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => queryClient.setQueryData(['admin-artists'], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-artists'] }),
   });
 
   const openNew = () => { setForm(EMPTY); setEditing('new'); };

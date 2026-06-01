@@ -50,7 +50,14 @@ export default function AdminVideos() {
   });
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Video.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-videos'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-videos'] });
+      const prev = queryClient.getQueryData(['admin-videos']);
+      queryClient.setQueryData(['admin-videos'], (old = []) => old.filter(v => v.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => queryClient.setQueryData(['admin-videos'], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-videos'] }),
   });
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));

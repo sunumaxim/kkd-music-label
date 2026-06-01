@@ -94,9 +94,16 @@
     padding-right: env(safe-area-inset-right);
   }
 
-  button, a, nav, [role="tab"] {
+  button, a, nav, [role="tab"], [role="button"],
+  label, header, footer, .select-none {
     -webkit-user-select: none;
     user-select: none;
+  }
+
+  /* Ensure content text remains selectable */
+  p, span, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, article, .prose {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 

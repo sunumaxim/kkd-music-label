@@ -57,7 +57,14 @@ export default function AdminNews() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.News.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-news'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-news'] });
+      const prev = queryClient.getQueryData(['admin-news']);
+      queryClient.setQueryData(['admin-news'], (old = []) => old.filter(n => n.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => queryClient.setQueryData(['admin-news'], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-news'] }),
   });
 
   const openNew = () => {

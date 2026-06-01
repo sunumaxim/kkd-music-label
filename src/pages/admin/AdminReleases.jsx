@@ -46,7 +46,14 @@ export default function AdminReleases() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Release.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-releases'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['admin-releases'] });
+      const prev = queryClient.getQueryData(['admin-releases']);
+      queryClient.setQueryData(['admin-releases'], (old = []) => old.filter(r => r.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => queryClient.setQueryData(['admin-releases'], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin-releases'] }),
   });
 
   const handleSave = async (data) => {
