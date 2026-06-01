@@ -44,6 +44,7 @@ import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminMailing from './pages/admin/AdminMailing';
+import AdminSocial from './pages/admin/AdminSocial';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/invitations" element={<AdminInvites />} />
           <Route path="/admin/publications" element={<AdminPublications />} />
           <Route path="/admin/mailing" element={<AdminMailing />} />
+          <Route path="/admin/social" element={<AdminSocial />} />
         </Route>
       </Route>
 
