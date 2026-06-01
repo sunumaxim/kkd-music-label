@@ -1,12 +1,19 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import usePullToRefresh from '@/hooks/usePullToRefresh';
+import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 
 export default function NewsPage() {
+  const queryClient = useQueryClient();
+  const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['news'] });
+  });
+
   const { data: news, isLoading } = useQuery({
     queryKey: ['news'],
     queryFn: () => base44.entities.News.list('-created_date', 100),
@@ -14,7 +21,12 @@ export default function NewsPage() {
   });
 
   return (
-    <div className="min-h-screen px-4 py-16 md:py-24">
+    <div ref={containerRef} className="min-h-screen px-4 py-16 md:py-24">
+      {(isRefreshing || pullY > 20) && (
+        <div className="md:hidden flex justify-center pb-2 -mt-12 text-primary">
+          <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} />
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         <div className="mb-12">
           <span className="text-xs font-mono text-primary tracking-widest uppercase">News</span>

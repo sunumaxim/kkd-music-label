@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import usePullToRefresh from '@/hooks/usePullToRefresh';
+import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StreamingLinks } from '../components/shared/StreamingEmbed';
 
@@ -14,6 +16,10 @@ const TYPES = [
 
 export default function Music() {
   const [activeType, setActiveType] = useState('all');
+  const queryClient = useQueryClient();
+  const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['releases'] });
+  });
 
   const { data: releases, isLoading } = useQuery({
     queryKey: ['releases'],
@@ -24,7 +30,12 @@ export default function Music() {
   const filtered = activeType === 'all' ? releases : releases.filter(r => r.release_type === activeType);
 
   return (
-    <div className="min-h-screen px-4 py-16 md:py-24">
+    <div ref={containerRef} className="min-h-screen px-4 py-16 md:py-24">
+      {(isRefreshing || pullY > 20) && (
+        <div className="md:hidden flex justify-center pb-2 -mt-12 text-primary">
+          <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} />
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         <div className="mb-12">
           <span className="text-xs font-mono text-primary tracking-widest uppercase">Catalogue</span>

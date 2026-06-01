@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
+import MobileHeader from '@/components/mobile/MobileHeader';
 
 export default function NewsDetail() {
   const newsId = window.location.pathname.split('/').pop();
@@ -36,9 +37,11 @@ export default function NewsDetail() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-16 md:py-24">
+    <div className="min-h-screen">
+      <MobileHeader title={item.title} backPath="/actualites" />
+      <div className="px-4 py-8 md:py-24">
       <div className="max-w-3xl mx-auto">
-        <Link to="/actualites" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
+        <Link to="/actualites" className="hidden md:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft size={14} /> Retour aux actualités
         </Link>
 
@@ -68,6 +71,7 @@ export default function NewsDetail() {
         <div className="prose prose-invert prose-sm max-w-none">
           <ReactMarkdown>{item.content}</ReactMarkdown>
         </div>
+      </div>
       </div>
     </div>
   );

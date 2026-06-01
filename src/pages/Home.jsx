@@ -1,13 +1,21 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import HeroBanner from '../components/home/HeroBanner';
 import FeaturedArtists from '../components/home/FeaturedArtists';
 import LatestVideos from '../components/home/LatestVideos';
 import LatestNews from '../components/home/LatestNews';
 import UpcomingEvents from '../components/home/UpcomingEvents';
+import usePullToRefresh from '@/hooks/usePullToRefresh';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
+  const queryClient = useQueryClient();
+
+  const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
+    await queryClient.invalidateQueries();
+  });
+
   const { data: releases } = useQuery({
     queryKey: ['releases-featured'],
     queryFn: () => base44.entities.Release.list('-created_date', 10),
@@ -41,7 +49,12 @@ export default function Home() {
   const featuredRelease = releases.find(r => r.is_featured) || releases[0];
 
   return (
-    <div>
+    <div ref={containerRef}>
+      {(isRefreshing || pullY > 20) && (
+        <div className="md:hidden flex justify-center py-3 text-primary">
+          <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} style={{ transform: `rotate(${(pullY / 80) * 180}deg)` }} />
+        </div>
+      )}
       <HeroBanner featuredRelease={featuredRelease} />
       <FeaturedArtists artists={artists} />
       <LatestVideos videos={videos} />

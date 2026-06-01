@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Youtube, Instagram, Facebook } from 'lucide-react';
 import { StreamingLinks, SpotifyPlayer } from '../components/shared/StreamingEmbed';
+import MobileHeader from '@/components/mobile/MobileHeader';
 
 export default function ArtistDetail() {
   const { id } = useParams();
@@ -45,6 +46,7 @@ export default function ArtistDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <MobileHeader title={artist.name} backPath="/artistes" />
       {/* Hero */}
       <div className="relative h-64 md:h-96 overflow-hidden">
         {artist.photo_url ? (
@@ -54,7 +56,7 @@ export default function ArtistDetail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-          <Link to="/artistes" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <Link to="/artistes" className="hidden md:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft size={16} /> Tous les artistes
           </Link>
           <h1 className="font-display text-3xl md:text-5xl font-extrabold">{artist.name}</h1>

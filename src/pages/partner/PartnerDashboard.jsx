@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FileText, Music, Video, Bell, Clock, CheckCircle, XCircle, ArrowRight, LogOut } from 'lucide-react';
+import { FileText, Music, Video, Bell, Clock, CheckCircle, XCircle, ArrowRight, LogOut, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -25,6 +30,13 @@ const REQUEST_LABELS = {
 };
 
 export default function PartnerDashboard() {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    await base44.auth.logout('/');
+  };
+
   const { data: user } = useQuery({
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
@@ -200,6 +212,39 @@ export default function PartnerDashboard() {
             </div>
           </div>
         )}
+        {/* Delete Account */}
+        <div className="border border-destructive/30 rounded-2xl p-5">
+          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">Zone dangereuse</p>
+          <h3 className="font-heading font-bold text-sm mb-1">Supprimer mon compte</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Cette action est irréversible. Toutes vos données seront supprimées définitivement.
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="gap-2">
+                <Trash2 size={14} /> Supprimer mon compte
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer votre compte ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. Votre profil et toutes vos données associées seront définitivement supprimés. Voulez-vous continuer ?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? 'Suppression…' : 'Oui, supprimer mon compte'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </main>
     </div>
   );
