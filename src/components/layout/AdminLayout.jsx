@@ -1,110 +1,222 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, Music, Video, Newspaper, CalendarDays, LayoutDashboard, ArrowLeft, Inbox, UserPlus, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Users, Music, Video, Newspaper, CalendarDays,
+  LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
+  Menu, X, ChevronRight
+} from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
-const sidebarLinks = [
-  { label: 'Tableau de bord', path: '/admin', icon: LayoutDashboard },
-  { divider: true, label: 'CONTENU' },
+const navGroups = [
+  {
+    label: null,
+    links: [
+      { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+    ]
+  },
+  {
+    label: 'Contenu',
+    links: [
+      { label: 'Artistes', path: '/admin/artistes', icon: Users },
+      { label: 'Sorties', path: '/admin/sorties', icon: Music },
+      { label: 'Vidéos', path: '/admin/videos', icon: Video },
+      { label: 'Actualités', path: '/admin/actualites', icon: Newspaper },
+      { label: 'Événements', path: '/admin/evenements', icon: CalendarDays },
+    ]
+  },
+  {
+    label: 'Partenaires',
+    links: [
+      { label: 'Demandes', path: '/admin/demandes', icon: Inbox },
+      { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
+    ]
+  },
+];
+
+// Bottom nav — 5 most important items for mobile
+const bottomNavItems = [
+  { label: 'Accueil', path: '/admin', icon: LayoutDashboard },
   { label: 'Artistes', path: '/admin/artistes', icon: Users },
-  { label: 'Sorties musicales', path: '/admin/sorties', icon: Music },
-  { label: 'Vidéos', path: '/admin/videos', icon: Video },
-  { label: 'Actualités', path: '/admin/actualites', icon: Newspaper },
-  { label: 'Événements', path: '/admin/evenements', icon: CalendarDays },
-  { divider: true, label: 'PARTENAIRES' },
+  { label: 'Sorties', path: '/admin/sorties', icon: Music },
   { label: 'Demandes', path: '/admin/demandes', icon: Inbox },
-  { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
+  { label: 'Plus', path: null, icon: Menu }, // triggers drawer
 ];
 
 export default function AdminLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const isActive = (path) => location.pathname === path;
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-border/30 bg-card/50">
-        <div className="p-6 border-b border-border/30">
-          <img src={LOGO_URL} alt="KKD Music" className="h-10 w-auto" />
-          <p className="text-xs text-muted-foreground mt-1 font-mono">Administration</p>
+
+      {/* ── Desktop Sidebar ── */}
+      <aside className="hidden md:flex flex-col w-60 border-r border-border/20 bg-card/40 backdrop-blur-sm shrink-0">
+        <div className="p-5 border-b border-border/20">
+          <img src={LOGO_URL} alt="KKD Music" className="h-9 w-auto" />
+          <span className="mt-1.5 inline-block text-[10px] font-mono text-muted-foreground/50 tracking-widest uppercase">Admin</span>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {sidebarLinks.map((link, i) => {
-            if (link.divider) {
-              return (
-                <div key={i} className="pt-4 pb-1 px-3">
-                  <p className="text-[10px] font-mono text-muted-foreground/50 tracking-widest uppercase">{link.label}</p>
-                </div>
-              );
-            }
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                }`}
-              >
-                <Icon size={18} />
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-4 overflow-y-auto">
+          {navGroups.map((group, gi) => (
+            <div key={gi} className="mb-2">
+              {group.label && (
+                <p className="px-5 py-1 text-[10px] font-mono text-muted-foreground/40 tracking-widest uppercase">{group.label}</p>
+              )}
+              {group.links.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.path);
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`flex items-center gap-3 mx-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      active
+                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
-        <div className="p-4 border-t border-border/30 space-y-2">
-          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft size={14} /> Voir le site
+        <div className="p-4 border-t border-border/20 space-y-3">
+          <Link to="/" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={13} /> Voir le site
           </Link>
           {user && (
-            <div className="pt-2 border-t border-border/20">
-              <p className="text-xs text-muted-foreground truncate mb-1">{user.email}</p>
-              <button
-                onClick={() => logout()}
-                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LogOut size={13} /> Déconnexion
+            <div className="flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-medium truncate">{user.full_name || user.email}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+              </div>
+              <button onClick={() => logout()} className="ml-2 p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                <LogOut size={14} />
               </button>
             </div>
           )}
         </div>
       </aside>
 
-      {/* Mobile header */}
-      <div className="flex-1 flex flex-col">
-        <header className="md:hidden flex items-center justify-between p-4 border-b border-border/30 bg-card/50">
-          <img src={LOGO_URL} alt="KKD Music" className="h-8 w-auto" />
-          <Link to="/" className="text-xs text-muted-foreground">Voir le site</Link>
+      {/* ── Mobile Drawer Overlay ── */}
+      {drawerOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+          <div className="relative ml-auto w-72 bg-background border-l border-border/20 flex flex-col h-full shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-border/20">
+              <img src={LOGO_URL} alt="KKD Music" className="h-8 w-auto" />
+              <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground">
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="flex-1 py-4 overflow-y-auto">
+              {navGroups.map((group, gi) => (
+                <div key={gi} className="mb-2">
+                  {group.label && (
+                    <p className="px-5 py-1 text-[10px] font-mono text-muted-foreground/40 tracking-widest uppercase">{group.label}</p>
+                  )}
+                  {group.links.map((link) => {
+                    const Icon = link.icon;
+                    const active = isActive(link.path);
+                    return (
+                      <Link
+                        key={link.path}
+                        to={link.path}
+                        onClick={() => setDrawerOpen(false)}
+                        className={`flex items-center gap-3 mx-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                          active
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span className="flex-1">{link.label}</span>
+                        {active && <ChevronRight size={14} />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </nav>
+            <div className="p-4 border-t border-border/20 space-y-3">
+              <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft size={14} /> Voir le site
+              </Link>
+              {user && (
+                <div className="flex items-center justify-between bg-secondary/50 rounded-xl p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{user.full_name || user.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <button onClick={() => logout()} className="ml-2 p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors">
+                    <LogOut size={15} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile top header */}
+        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border/20 bg-background/90 backdrop-blur-md">
+          <img src={LOGO_URL} alt="KKD Music" className="h-7 w-auto" />
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="p-2 rounded-xl bg-secondary text-foreground"
+          >
+            <Menu size={18} />
+          </button>
         </header>
-        
-        {/* Mobile nav */}
-        <div className="md:hidden flex overflow-x-auto border-b border-border/30 bg-card/30 px-2">
-          {sidebarLinks.filter(l => !l.divider).map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path;
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
+          <Outlet />
+        </main>
+
+        {/* ── Mobile Bottom Navigation ── */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border/20 flex items-stretch safe-area-inset-bottom">
+          {bottomNavItems.map((item) => {
+            const Icon = item.icon;
+            const active = item.path ? isActive(item.path) : false;
+            if (item.path === null) {
+              return (
+                <button
+                  key="more"
+                  onClick={() => setDrawerOpen(true)}
+                  className="flex-1 flex flex-col items-center justify-center py-2 gap-1 text-muted-foreground"
+                >
+                  <Icon size={22} />
+                  <span className="text-[10px] font-medium">{item.label}</span>
+                </button>
+              );
+            }
             return (
               <Link
-                key={link.path}
-                to={link.path}
-                className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors ${
-                  isActive ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'
+                key={item.path}
+                to={item.path}
+                className={`flex-1 flex flex-col items-center justify-center py-2 gap-1 transition-colors ${
+                  active ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <Icon size={14} />
-                {link.label}
+                {active && (
+                  <span className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                )}
+                <Icon size={22} />
+                <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
             );
           })}
-        </div>
-
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          <Outlet />
-        </main>
+        </nav>
       </div>
     </div>
   );
