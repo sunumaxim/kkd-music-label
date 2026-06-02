@@ -42,6 +42,10 @@
       "type": "string",
       "description": "Lien billetterie"
     },
+    "stream_url": {
+      "type": "string",
+      "description": "Lien live stream YouTube (pour regarder en direct depuis l'app)"
+    },
     "is_featured": {
       "type": "boolean",
       "default": false,

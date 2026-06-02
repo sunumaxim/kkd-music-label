@@ -23,6 +23,7 @@ const FIELDS = [
   { key: 'city', label: 'Ville', type: 'text', placeholder: 'Ex: Paris' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'ticket_url', label: 'Lien billetterie', type: 'url', placeholder: 'https://...' },
+  { key: 'stream_url', label: 'Lien Live Stream', type: 'url', placeholder: 'https://youtube.com/watch?v=...' },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];
 
