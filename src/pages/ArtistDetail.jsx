@@ -7,6 +7,7 @@ import { EmbeddedPlayer } from '../components/shared/UniversalPlayer';
 import { StreamingLinks } from '../components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
+import ArtistTopTracks from '@/components/artist/ArtistTopTracks';
 
 export default function ArtistDetail() {
   const { id } = useParams();
@@ -132,15 +133,8 @@ export default function ArtistDetail() {
           </div>
         </div>
 
-        {/* Spotify artist embed — affiche le profil complet avec populaires */}
-        {artist.spotify_url && (
-          <div>
-            <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
-              <Music size={18} className="text-primary" /> Profil Spotify
-            </h2>
-            <EmbeddedPlayer url={artist.spotify_url} />
-          </div>
-        )}
+        {/* Top tracks dynamiques */}
+        <ArtistTopTracks artist={artist} />
 
         {/* Releases */}
         {releases.length > 0 && (
