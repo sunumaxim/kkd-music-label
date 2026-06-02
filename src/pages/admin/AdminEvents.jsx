@@ -29,12 +29,12 @@ const FIELDS = [
 
 function EventFormWrapper({ editing, onSave, onCancel }) {
   const [isDirty, setIsDirty] = useState(false);
+
+  // Block sidebar navigation only when there are real unsaved changes
   useUnsavedGuard(isDirty);
 
   const handleCancel = () => {
-    if (isDirty) {
-      if (!window.confirm('Modifications non enregistrées. Quitter quand même ?')) return;
-    }
+    if (isDirty && !window.confirm('Modifications non enregistrées. Quitter quand même ?')) return;
     onCancel();
   };
 
@@ -43,7 +43,7 @@ function EventFormWrapper({ editing, onSave, onCancel }) {
       title={editing === 'new' ? 'Ajouter un événement' : "Modifier l'événement"}
       fields={FIELDS}
       initialData={editing === 'new' ? {} : editing}
-      onSave={onSave}
+      onSave={(data) => { setIsDirty(false); return onSave(data); }}
       onCancel={handleCancel}
       onDirtyChange={setIsDirty}
     />

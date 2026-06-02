@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Calendar, ExternalLink, Play, Pause } from 'lucide-react';
 import { format } from 'date-fns';
@@ -98,7 +99,9 @@ function EventCard({ event, index }) {
               {event.event_type}
             </span>
           )}
+          <Link to={`/evenements/${event.id}`} className="hover:text-primary transition-colors">
           <h3 className="font-heading font-bold text-lg">{event.title}</h3>
+          </Link>
           <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-muted-foreground">
             {event.location && (
               <span className="flex items-center gap-1">

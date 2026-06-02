@@ -7,7 +7,7 @@ import { useBlocker } from 'react-router-dom';
  */
 export function useUnsavedGuard(isDirty) {
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    isDirty && currentLocation.pathname !== nextLocation.pathname
+    !!isDirty && currentLocation.pathname !== nextLocation.pathname
   );
 
   // Also handle browser back / tab close

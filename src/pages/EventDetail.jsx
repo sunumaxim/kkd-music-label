@@ -1,0 +1,206 @@
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Share2, Check, Play, Pause } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { motion, AnimatePresence } from 'framer-motion';
+import MobileHeader from '@/components/mobile/MobileHeader';
+import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
+
+const EVENT_TYPE_LABELS = {
+  concert: 'Concert',
+  showcase: 'Showcase',
+  festival: 'Festival',
+  rencontre: 'Rencontre artistique',
+};
+
+export default function EventDetail() {
+  const { id } = useParams();
+  const [copied, setCopied] = useState(false);
+  const [showStream, setShowStream] = useState(false);
+
+  const { data: event, isLoading } = useQuery({
+    queryKey: ['event-detail', id],
+    queryFn: async () => {
+      const all = await base44.entities.Event.list();
+      return all.find(e => e.id === id);
+    },
+  });
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: event?.title, url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Événement introuvable.</p>
+        <Link to="/evenements" className="text-primary text-sm">← Retour aux événements</Link>
+      </div>
+    );
+  }
+
+  const isPast = event.event_date && new Date(event.event_date) < new Date();
+
+  return (
+    <div className="min-h-screen pb-24 bg-background">
+      <MobileHeader title={event.title} backPath="/evenements" />
+
+      {/* Hero image */}
+      {event.image_url && (
+        <div className="relative w-full aspect-[16/7] md:aspect-[21/9] overflow-hidden">
+          <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          {isPast && (
+            <div className="absolute top-4 right-4 bg-black/60 text-white/70 text-xs font-mono uppercase tracking-wider px-3 py-1.5 rounded-full backdrop-blur-sm">
+              Passé
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="max-w-3xl mx-auto px-4">
+        {/* Back — desktop */}
+        <Link
+          to="/evenements"
+          className="hidden md:inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-8 mb-4 transition-colors group"
+        >
+          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          Retour aux événements
+        </Link>
+
+        {/* Type badge */}
+        <div className={`flex items-center gap-3 flex-wrap ${event.image_url ? '-mt-8 relative z-10' : 'mt-8 md:mt-12'} mb-4`}>
+          {event.event_type && (
+            <span className="inline-flex items-center text-xs font-mono uppercase tracking-wider text-white bg-primary px-3 py-1.5 rounded-full">
+              {EVENT_TYPE_LABELS[event.event_type] || event.event_type}
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h1 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-6">
+          {event.title}
+        </h1>
+
+        {/* Info grid */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+          {event.event_date && (
+            <div className="flex items-start gap-3 bg-card border border-border/50 rounded-xl p-4">
+              <Calendar size={18} className="text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Date</p>
+                <p className="font-heading font-bold">
+                  {format(new Date(event.event_date), 'EEEE dd MMMM yyyy', { locale: fr })}
+                </p>
+              </div>
+            </div>
+          )}
+          {event.event_date && (
+            <div className="flex items-start gap-3 bg-card border border-border/50 rounded-xl p-4">
+              <Clock size={18} className="text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Heure</p>
+                <p className="font-heading font-bold">
+                  {format(new Date(event.event_date), 'HH:mm')}
+                </p>
+              </div>
+            </div>
+          )}
+          {(event.location || event.city) && (
+            <div className="flex items-start gap-3 bg-card border border-border/50 rounded-xl p-4 sm:col-span-2">
+              <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Lieu</p>
+                <p className="font-heading font-bold">
+                  {[event.location, event.city].filter(Boolean).join(' — ')}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Description */}
+        {event.description && (
+          <div className="mb-8">
+            <div className="h-px bg-border mb-6" />
+            <p className="text-foreground/90 leading-relaxed whitespace-pre-line text-base">
+              {event.description}
+            </p>
+          </div>
+        )}
+
+        {/* Live stream */}
+        {event.stream_url && (
+          <div className="mb-8">
+            <button
+              onClick={() => setShowStream(v => !v)}
+              className={`flex items-center gap-2 text-sm font-medium px-5 py-3 rounded-full transition-colors w-full justify-center mb-3 ${
+                showStream
+                  ? 'bg-primary/20 text-primary border border-primary/40'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              {showStream ? <Pause size={15} /> : <Play size={15} fill="currentColor" />}
+              {showStream ? 'Masquer le live' : '🔴 Regarder en direct'}
+            </button>
+            <AnimatePresence>
+              {showStream && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden rounded-xl"
+                >
+                  <EmbeddedPlayer url={event.stream_url} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap gap-3 mb-10">
+          {event.ticket_url && (
+            <a
+              href={event.ticket_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-primary text-primary-foreground font-medium px-6 py-3 rounded-full hover:bg-primary/80 transition-colors"
+            >
+              🎟️ Acheter des billets <ExternalLink size={14} />
+            </a>
+          )}
+          <button
+            onClick={handleShare}
+            className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium border transition-all ${
+              copied
+                ? 'bg-green-500/10 border-green-500/40 text-green-400'
+                : 'bg-card border-border hover:border-primary/50 hover:text-primary'
+            }`}
+          >
+            {copied ? <Check size={14} /> : <Share2 size={14} />}
+            {copied ? 'Lien copié !' : 'Partager'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

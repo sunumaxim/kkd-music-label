@@ -30,6 +30,7 @@ import VideoDetail from './pages/VideoDetail';
 import NewsPage from './pages/NewsPage';
 import NewsDetail from './pages/NewsDetail';
 import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
 import Partnership from './pages/Partnership';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
         <Route path="/actualites" element={<NewsPage />} />
         <Route path="/actualites/:id" element={<NewsDetail />} />
         <Route path="/evenements" element={<Events />} />
+        <Route path="/evenements/:id" element={<EventDetail />} />
         <Route path="/partenaires" element={<Partnership />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
