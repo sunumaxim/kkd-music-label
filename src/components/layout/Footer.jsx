@@ -60,9 +60,13 @@ export default function Footer() {
           <p className="text-xs text-muted-foreground font-mono">
             © {new Date().getFullYear()} KKD Music. Tous droits réservés.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Une filiale de <span className="text-foreground font-medium">SunuMaxim GROUP</span>
-          </p>
+          <div className="flex items-center gap-4">
+            <Link to="/a-propos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">À propos</Link>
+            <Link to="/confidentialite" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Politique de confidentialité</Link>
+            <p className="text-xs text-muted-foreground">
+              Une filiale de <span className="text-foreground font-medium">SunuMaxim GROUP</span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>);

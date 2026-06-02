@@ -31,6 +31,8 @@ import NewsPage from './pages/NewsPage';
 import NewsDetail from './pages/NewsDetail';
 import Events from './pages/Events';
 import Partnership from './pages/Partnership';
+import About from './pages/About';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -86,6 +88,8 @@ const AuthenticatedApp = () => {
         <Route path="/actualites/:id" element={<NewsDetail />} />
         <Route path="/evenements" element={<Events />} />
         <Route path="/partenaires" element={<Partnership />} />
+        <Route path="/a-propos" element={<About />} />
+        <Route path="/confidentialite" element={<PrivacyPolicy />} />
       </Route>
 
       {/* Partner dashboard (protected) */}

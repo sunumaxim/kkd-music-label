@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
+import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -24,6 +25,29 @@ const FIELDS = [
   { key: 'ticket_url', label: 'Lien billetterie', type: 'url', placeholder: 'https://...' },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];
+
+function EventFormWrapper({ editing, onSave, onCancel }) {
+  const [isDirty, setIsDirty] = useState(false);
+  useUnsavedGuard(isDirty);
+
+  const handleCancel = () => {
+    if (isDirty) {
+      if (!window.confirm('Modifications non enregistrées. Quitter quand même ?')) return;
+    }
+    onCancel();
+  };
+
+  return (
+    <EntityForm
+      title={editing === 'new' ? 'Ajouter un événement' : "Modifier l'événement"}
+      fields={FIELDS}
+      initialData={editing === 'new' ? {} : editing}
+      onSave={onSave}
+      onCancel={handleCancel}
+      onDirtyChange={setIsDirty}
+    />
+  );
+}
 
 export default function AdminEvents() {
   const [editing, setEditing] = useState(null);
@@ -59,15 +83,7 @@ export default function AdminEvents() {
   };
 
   if (editing) {
-    return (
-      <EntityForm
-        title={editing === 'new' ? 'Ajouter un événement' : 'Modifier l\'événement'}
-        fields={FIELDS}
-        initialData={editing === 'new' ? {} : editing}
-        onSave={handleSave}
-        onCancel={() => setEditing(null)}
-      />
-    );
+    return <EventFormWrapper editing={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
   }
 
   return (

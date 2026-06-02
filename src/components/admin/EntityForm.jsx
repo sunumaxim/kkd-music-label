@@ -8,17 +8,23 @@ import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
 import { X } from 'lucide-react';
 
-export default function EntityForm({ fields, initialData, onSave, onCancel, title }) {
+export default function EntityForm({ fields, initialData, onSave, onCancel, title, onDirtyChange }) {
   const [data, setData] = useState(() => initialData || {});
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Reset form when initialData changes (switching between edit targets)
   useEffect(() => {
     setData(initialData || {});
+    setIsDirty(false);
   }, [initialData]);
 
   const handleChange = (key, value) => {
     setData(prev => ({ ...prev, [key]: value }));
+    if (!isDirty) {
+      setIsDirty(true);
+      onDirtyChange?.(true);
+    }
   };
 
   const handleFileUpload = async (key, file) => {
@@ -30,6 +36,8 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
     e.preventDefault();
     setSaving(true);
     await onSave(data);
+    setIsDirty(false);
+    onDirtyChange?.(false);
     setSaving(false);
   };
 

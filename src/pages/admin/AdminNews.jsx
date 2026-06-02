@@ -12,6 +12,7 @@ import {
   Link2, Check, ExternalLink, Image, Video, Music2, Tag,
   Upload, Globe, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 
 const CATEGORIES = [
   { value: 'communique', label: 'Communiqué' },
@@ -63,7 +64,9 @@ export default function AdminNews() {
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
   const queryClient = useQueryClient();
+  useUnsavedGuard(editing !== null && isDirty);
 
   const { data: artists = [] } = useQuery({
     queryKey: ['artists-for-news'],
@@ -102,8 +105,13 @@ export default function AdminNews() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const openNew = () => { setForm(EMPTY_FORM); setEditing('new'); setAiContext(''); setShowAiPanel(false); setTagInput(''); };
-  const openEdit = (item) => { setForm({ ...EMPTY_FORM, ...item }); setEditing(item); setAiContext(''); setShowAiPanel(false); setTagInput(''); };
+  const openNew = () => { setForm(EMPTY_FORM); setEditing('new'); setAiContext(''); setShowAiPanel(false); setTagInput(''); setIsDirty(false); };
+  const openEdit = (item) => { setForm({ ...EMPTY_FORM, ...item }); setEditing(item); setAiContext(''); setShowAiPanel(false); setTagInput(''); setIsDirty(false); };
+
+  const setFormDirty = (updater) => {
+    setForm(updater);
+    setIsDirty(true);
+  };
 
   const handleSave = async () => {
     const data = { ...form };
@@ -112,6 +120,7 @@ export default function AdminNews() {
     } else {
       await createMutation.mutateAsync(data);
     }
+    setIsDirty(false);
   };
 
   const handleCoverUpload = async (e) => {

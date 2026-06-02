@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -18,6 +18,7 @@ const CATEGORY_LABELS = {
 export default function NewsPage() {
   const queryClient = useQueryClient();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
     await queryClient.invalidateQueries({ queryKey: ['news'] });
   });
@@ -28,7 +29,18 @@ export default function NewsPage() {
   });
 
   const categories = ['all', ...Object.keys(CATEGORY_LABELS).filter(k => news.some(n => n.category === k))];
-  const filtered = activeCategory === 'all' ? news : news.filter(n => n.category === activeCategory);
+
+  const filtered = news.filter(n => {
+    const matchCat = activeCategory === 'all' || n.category === activeCategory;
+    const q = searchQuery.toLowerCase().trim();
+    const matchSearch = !q ||
+      n.title?.toLowerCase().includes(q) ||
+      n.excerpt?.toLowerCase().includes(q) ||
+      n.content?.toLowerCase().includes(q) ||
+      n.tags?.some(t => t.toLowerCase().includes(q));
+    return matchCat && matchSearch;
+  });
+
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
@@ -46,6 +58,23 @@ export default function NewsPage() {
         <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight mt-2 mb-8">
           Actualités
         </h1>
+
+        {/* Search bar */}
+        <div className="relative mb-5 max-w-lg">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Rechercher par titre, artiste, tag..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-9 py-2.5 text-sm bg-card border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 placeholder:text-muted-foreground transition-colors"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          )}
+        </div>
 
         {/* Category filter */}
         <div className="flex gap-2 flex-wrap">
@@ -73,7 +102,7 @@ export default function NewsPage() {
           </div>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground text-center py-20">Aucune actualité pour le moment.</p>
+        <p className="text-muted-foreground text-center py-20">{searchQuery ? `Aucun résultat pour "${searchQuery}".` : 'Aucune actualité pour le moment.'}</p>
       ) : (
         <div className="px-4 max-w-7xl mx-auto space-y-8">
 

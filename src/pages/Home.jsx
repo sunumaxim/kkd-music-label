@@ -47,6 +47,7 @@ export default function Home() {
   });
 
   const featuredRelease = releases.find(r => r.is_featured) || releases[0];
+  const latestVideo = videos[0];
 
   return (
     <div ref={containerRef}>
@@ -55,7 +56,7 @@ export default function Home() {
           <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} style={{ transform: `rotate(${(pullY / 80) * 180}deg)` }} />
         </div>
       )}
-      <HeroBanner featuredRelease={featuredRelease} />
+      <HeroBanner featuredRelease={featuredRelease} latestVideo={latestVideo} />
       <FeaturedArtists artists={artists} />
       <LatestVideos videos={videos} />
       <LatestNews news={news} />
