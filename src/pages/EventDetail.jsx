@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Share2, Check, Play, Pause } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
+import CommentsSection from '@/components/shared/CommentsSection';
+import PageMeta from '@/components/shared/PageMeta';
+import ShareBar from '@/components/shared/ShareBar';
+import { buildShareUrl } from '@/lib/slugify';
+import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
   concert: 'Concert',
@@ -18,8 +23,8 @@ const EVENT_TYPE_LABELS = {
 
 export default function EventDetail() {
   const { id } = useParams();
-  const [copied, setCopied] = useState(false);
   const [showStream, setShowStream] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event-detail', id],
@@ -29,16 +34,7 @@ export default function EventDetail() {
     },
   });
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: event?.title, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  const shareUrl = event ? buildShareUrl('/evenements', event.title, event.id) : '';
 
   if (isLoading) {
     return (
@@ -61,6 +57,13 @@ export default function EventDetail() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      <PageMeta
+        title={event.title}
+        description={event.description?.slice(0, 160) || `${event.event_type} — ${event.city || event.location || ''} sur KKD Music.`}
+        image={event.image_url}
+        url={shareUrl}
+        type="event"
+      />
       <MobileHeader title={event.title} backPath="/evenements" />
 
       {/* Hero image */}
@@ -177,7 +180,7 @@ export default function EventDetail() {
         )}
 
         {/* CTA buttons */}
-        <div className="flex flex-wrap gap-3 mb-10">
+        <div className="flex flex-wrap gap-3 mb-8">
           {event.ticket_url && (
             <a
               href={event.ticket_url}
@@ -188,18 +191,20 @@ export default function EventDetail() {
               🎟️ Acheter des billets <ExternalLink size={14} />
             </a>
           )}
-          <button
-            onClick={handleShare}
-            className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium border transition-all ${
-              copied
-                ? 'bg-green-500/10 border-green-500/40 text-green-400'
-                : 'bg-card border-border hover:border-primary/50 hover:text-primary'
-            }`}
-          >
-            {copied ? <Check size={14} /> : <Share2 size={14} />}
-            {copied ? 'Lien copié !' : 'Partager'}
-          </button>
         </div>
+
+        {/* Share */}
+        <div className="mb-8 pb-6 border-b border-border">
+          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Partager cet événement</p>
+          <ShareBar title={event.title} url={shareUrl} />
+        </div>
+
+        {/* Comments */}
+        <CommentsSection
+          entityType="event"
+          entity={event}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['event-detail', id] })}
+        />
       </div>
     </div>
   );

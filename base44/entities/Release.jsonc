@@ -54,6 +54,32 @@
       "type": "boolean",
       "default": false,
       "description": "Mise en avant sur la page d'accueil"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes"
+    },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "user_email": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Commentaires des fans"
     }
   },
   "required": [

@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Share2, User, Copy, Check, ExternalLink, Instagram } from 'lucide-react';
+import { ArrowLeft, User, ExternalLink, Instagram } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
+import PageMeta from '@/components/shared/PageMeta';
+import ShareBar from '@/components/shared/ShareBar';
+import { buildShareUrl } from '@/lib/slugify';
 import { motion } from 'framer-motion';
 
 function getYouTubeId(url) {
@@ -23,7 +26,6 @@ const VIDEO_TYPE_LABELS = {
 
 export default function VideoDetail() {
   const { id } = useParams();
-  const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: video, isLoading } = useQuery({
@@ -44,6 +46,8 @@ export default function VideoDetail() {
     enabled: !!video?.artist_name,
   });
 
+  const shareUrl = video ? buildShareUrl('/videos', video.title, video.id) : '';
+
   const { data: relatedVideos = [] } = useQuery({
     queryKey: ['related-videos', video?.artist_name, id],
     queryFn: async () => {
@@ -53,16 +57,7 @@ export default function VideoDetail() {
     enabled: !!video?.artist_name,
   });
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: video?.title, url });
-    } else {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+
 
   if (isLoading) {
     return (
@@ -85,6 +80,13 @@ export default function VideoDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title={video.title}
+        description={video.description || `Regardez ${video.title} de ${video.artist_name} sur KKD Music.`}
+        image={video.thumbnail_url || (getYouTubeId(video.youtube_url) ? `https://img.youtube.com/vi/${getYouTubeId(video.youtube_url)}/maxresdefault.jpg` : null)}
+        url={shareUrl}
+        type="video.other"
+      />
       <MobileHeader title={video.title} backPath="/videos" />
 
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-12">
@@ -127,15 +129,6 @@ export default function VideoDetail() {
               </p>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-            className="shrink-0 gap-2"
-          >
-            {copied ? <Check size={14} className="text-green-400" /> : <Share2 size={14} />}
-            {copied ? 'Lien copié !' : 'Partager'}
-          </Button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -148,43 +141,13 @@ export default function VideoDetail() {
             {/* Share block */}
             <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
               <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Partager cette vidéo</p>
-              <div className="flex flex-wrap gap-2">
-                <ShareButton
-                  label="Copier le lien"
-                  icon={<Copy size={13} />}
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  active={copied}
-                />
-                <ShareButton
-                  label="WhatsApp"
-                  onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(video.title + ' — ' + window.location.href)}`, '_blank')}
-                  color="bg-green-500/10 text-green-400 border-green-500/20"
-                />
-                <ShareButton
-                  label="Twitter / X"
-                  onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(video.title)}&url=${encodeURIComponent(window.location.href)}`, '_blank')}
-                  color="bg-sky-500/10 text-sky-400 border-sky-500/20"
-                />
-                <ShareButton
-                  label="Facebook"
-                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}
-                  color="bg-blue-600/10 text-blue-400 border-blue-600/20"
-                />
-                {video.youtube_url && (
-                  <a
-                    href={video.youtube_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 transition-colors"
-                  >
-                    <ExternalLink size={12} /> Voir sur YouTube
-                  </a>
-                )}
-              </div>
+              <ShareBar title={video.title} url={shareUrl} />
+              {video.youtube_url && (
+                <a href={video.youtube_url} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 transition-colors mt-1">
+                  <ExternalLink size={12} /> Voir sur YouTube
+                </a>
+              )}
             </div>
 
             {/* Related videos */}
@@ -301,21 +264,5 @@ export default function VideoDetail() {
         />
       </div>
     </div>
-  );
-}
-
-function ShareButton({ label, icon, onClick, color, active }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-        active
-          ? 'bg-green-500/10 text-green-400 border-green-500/20'
-          : color || 'bg-secondary text-muted-foreground border-border/50 hover:bg-secondary/80'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }

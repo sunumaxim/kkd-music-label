@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Share2, Check, Calendar, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } from '@/components/news/ArticleMediaBlocks';
 import CommentsSection from '@/components/shared/CommentsSection';
+import PageMeta from '@/components/shared/PageMeta';
+import ShareBar from '@/components/shared/ShareBar';
+import { slugify, buildShareUrl } from '@/lib/slugify';
 
 const CATEGORY_LABELS = {
   communique: 'Communiqué',
@@ -18,7 +21,9 @@ const CATEGORY_LABELS = {
 };
 
 export default function NewsDetail() {
-  const newsId = window.location.pathname.split('/').pop();
+  const pathParts = window.location.pathname.split('/');
+  const rawParam = pathParts[pathParts.length - 1];
+  const newsId = rawParam.includes('--') ? rawParam.split('--').pop() : rawParam;
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
@@ -40,6 +45,8 @@ export default function NewsDetail() {
     queryClient.invalidateQueries({ queryKey: ['news-detail', newsId] });
   };
 
+  const shareUrl = item ? buildShareUrl('/actualites', item.title, item.id) : '';
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -59,6 +66,13 @@ export default function NewsDetail() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      <PageMeta
+        title={item.title}
+        description={item.excerpt || item.content?.slice(0, 160)}
+        image={item.image_url}
+        url={shareUrl}
+        type="article"
+      />
       <MobileHeader title={item.title} backPath="/actualites" />
 
       {/* Hero image */}
@@ -135,19 +149,9 @@ export default function NewsDetail() {
         <ExternalLinks links={item.links} />
 
         {/* Share bar */}
-        <div className="mt-10 pt-6 border-t border-border flex items-center justify-between flex-wrap gap-4">
-          <span className="text-sm text-muted-foreground font-mono">Partager cet article</span>
-          <button
-            onClick={handleShare}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium border transition-all ${
-              copied
-                ? 'bg-green-500/10 border-green-500/40 text-green-400'
-                : 'bg-card border-border hover:border-primary/50 hover:text-primary'
-            }`}
-          >
-            {copied ? <Check size={14} /> : <Share2 size={14} />}
-            {copied ? 'Lien copié !' : 'Copier le lien'}
-          </button>
+        <div className="mt-10 pt-6 border-t border-border">
+          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Partager cet article</p>
+          <ShareBar title={item.title} url={shareUrl} />
         </div>
 
         {/* Comments & likes */}

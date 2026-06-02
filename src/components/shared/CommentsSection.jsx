@@ -51,6 +51,10 @@ export default function CommentsSection({ entityType, entity, onUpdate }) {
     try { localStorage.setItem(`liked_${entity.id}`, '1'); } catch {}
     if (entityType === 'news') {
       await base44.entities.News.update(entity.id, { likes_count: newCount });
+    } else if (entityType === 'release') {
+      await base44.entities.Release.update(entity.id, { likes_count: newCount });
+    } else if (entityType === 'video') {
+      await base44.entities.Video.update(entity.id, { likes_count: newCount });
     }
     onUpdate?.();
   };
@@ -71,6 +75,10 @@ export default function CommentsSection({ entityType, entity, onUpdate }) {
       await base44.entities.News.update(entity.id, { comments: updated });
     } else if (entityType === 'video') {
       await base44.entities.Video.update(entity.id, { comments: updated });
+    } else if (entityType === 'release') {
+      await base44.entities.Release.update(entity.id, { comments: updated });
+    } else if (entityType === 'event') {
+      await base44.entities.Event.update(entity.id, { comments: updated });
     }
     setText('');
     setSubmitting(false);
@@ -83,7 +91,7 @@ export default function CommentsSection({ entityType, entity, onUpdate }) {
   return (
     <div className="mt-12">
       {/* Likes (news only) */}
-      {entityType === 'news' && (
+      {(entityType === 'news' || entityType === 'release' || entityType === 'video' || entityType === 'event') && (
         <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border">
           <button
             onClick={handleLike}
