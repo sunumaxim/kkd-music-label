@@ -15,6 +15,7 @@ const navLinks = [
   { label: 'Vidéos', path: '/videos' },
   { label: 'Actualités', path: '/actualites' },
   { label: 'Événements', path: '/evenements' },
+  { label: 'Fans', path: '/fans', highlight: false },
   { label: 'Partenaires', path: '/partenaires', highlight: true },
 ];
 

@@ -1,0 +1,65 @@
+{
+  "name": "FanPost",
+  "type": "object",
+  "properties": {
+    "author_name": {
+      "type": "string",
+      "description": "Nom du fan"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email du fan (non affich\u00e9 publiquement)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titre du t\u00e9moignage"
+    },
+    "content": {
+      "type": "string",
+      "description": "T\u00e9moignage / message du fan"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo du concert upload\u00e9e par le fan"
+    },
+    "event_name": {
+      "type": "string",
+      "description": "Nom du concert / \u00e9v\u00e9nement"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Artiste concern\u00e9"
+    },
+    "concert_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date du concert"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de mod\u00e9ration"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes"
+    },
+    "consent_given": {
+      "type": "boolean",
+      "default": false,
+      "description": "Consentement RGPD donn\u00e9"
+    }
+  },
+  "required": [
+    "author_name",
+    "author_email",
+    "content",
+    "consent_given"
+  ]
+}

@@ -40,8 +40,8 @@ export default function PrivacyPolicy() {
           <ul>
             <li><strong>Données d'inscription</strong> : adresse e-mail, nom complet, rôle (artiste / label / fan).</li>
             <li><strong>Données de navigation</strong> : pages visitées, clics, temps passé (analytics anonymes).</li>
-            <li><strong>Contenu soumis</strong> : demandes de services, publications musicales, commentaires.</li>
-            <li><strong>Fichiers uploadés</strong> : photos de couverture, EPK, fichiers audio/vidéo.</li>
+            <li><strong>Contenu soumis</strong> : demandes de services, publications musicales, commentaires, témoignages fans.</li>
+            <li><strong>Fichiers uploadés</strong> : photos de couverture, EPK, fichiers audio/vidéo, photos de concerts partagées par les fans.</li>
           </ul>
 
           <h2>3. Finalités du traitement</h2>
@@ -90,7 +90,23 @@ export default function PrivacyPolicy() {
             Vos données sont stockées sur des serveurs sécurisés (chiffrement HTTPS, accès restreint). Nous appliquons des mesures techniques et organisationnelles pour prévenir tout accès non autorisé.
           </p>
 
-          <h2>10. Contact</h2>
+          <h2>10. Espace Fans — Droits sur les photos et témoignages</h2>
+          <p>
+            Lorsque vous publiez un témoignage ou une photo dans l'Espace Fans, vous acceptez expressément que :
+          </p>
+          <ul>
+            <li>Votre prénom/pseudonyme et votre témoignage soient affichés publiquement sur le site KKD Music.</li>
+            <li>La photo que vous partagez soit publiée sur le site, en votre qualité d'auteur déclaré de cette photo.</li>
+            <li>KKD Music puisse utiliser ce contenu à des fins de promotion de ses artistes et événements.</li>
+          </ul>
+          <p>
+            Vous pouvez demander à tout moment la suppression de votre témoignage ou de votre photo en nous contactant à <strong>contact@kkdmusic.com</strong> avec votre nom et le contenu concerné. La suppression sera effectuée sous 72 heures.
+          </p>
+          <p>
+            Votre adresse e-mail collectée lors de la soumission n'est utilisée qu'à des fins de modération interne et ne sera jamais affichée publiquement ni partagée avec des tiers.
+          </p>
+
+          <h2>11. Contact</h2>
           <p>
             Pour toute question relative à la confidentialité de vos données :<br />
             <strong>KKD Music</strong> — contact@kkdmusic.com

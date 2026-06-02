@@ -34,6 +34,7 @@ import EventDetail from './pages/EventDetail';
 import Partnership from './pages/Partnership';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import FanSpace from './pages/FanSpace';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -48,6 +49,7 @@ import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
+import AdminFanPosts from './pages/admin/AdminFanPosts';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -92,6 +94,7 @@ const AuthenticatedApp = () => {
         <Route path="/partenaires" element={<Partnership />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
+        <Route path="/fans" element={<FanSpace />} />
       </Route>
 
       {/* Partner dashboard (protected) */}
@@ -113,6 +116,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/publications" element={<AdminPublications />} />
           <Route path="/admin/mailing" element={<AdminMailing />} />
           <Route path="/admin/social" element={<AdminSocial />} />
+          <Route path="/admin/fans" element={<AdminFanPosts />} />
         </Route>
       </Route>
 
