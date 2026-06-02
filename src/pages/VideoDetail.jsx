@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Share2, User, Copy, Check, ExternalLink, Instagram } from 'lucide-react';
+import CommentsSection from '@/components/shared/CommentsSection';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
@@ -23,6 +24,7 @@ const VIDEO_TYPE_LABELS = {
 export default function VideoDetail() {
   const { id } = useParams();
   const [copied, setCopied] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: video, isLoading } = useQuery({
     queryKey: ['video', id],
@@ -30,6 +32,7 @@ export default function VideoDetail() {
       const results = await base44.entities.Video.filter({ id });
       return results[0] || null;
     },
+    staleTime: 0,
   });
 
   const { data: artist } = useQuery({
@@ -289,6 +292,13 @@ export default function VideoDetail() {
             )}
           </div>
         </div>
+
+        {/* Comments */}
+        <CommentsSection
+          entityType="video"
+          entity={video}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['video', id] })}
+        />
       </div>
     </div>
   );

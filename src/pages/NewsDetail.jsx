@@ -8,7 +8,7 @@ import { fr } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } from '@/components/news/ArticleMediaBlocks';
-import ArticleComments from '@/components/news/ArticleComments';
+import CommentsSection from '@/components/shared/CommentsSection';
 
 const CATEGORY_LABELS = {
   communique: 'Communiqué',
@@ -151,7 +151,7 @@ export default function NewsDetail() {
         </div>
 
         {/* Comments & likes */}
-        <ArticleComments article={item} onUpdate={refreshArticle} />
+        <CommentsSection entityType="news" entity={item} onUpdate={refreshArticle} />
       </div>
     </div>
   );
