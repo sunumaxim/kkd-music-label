@@ -11,7 +11,7 @@ import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { buildShareUrl } from '@/lib/slugify';
+import { buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
@@ -22,7 +22,8 @@ const EVENT_TYPE_LABELS = {
 };
 
 export default function EventDetail() {
-  const { id } = useParams();
+  const { id: slugParam } = useParams();
+  const id = extractIdFromSlug(slugParam);
   const [showStream, setShowStream] = useState(false);
   const queryClient = useQueryClient();
 

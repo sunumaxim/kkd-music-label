@@ -7,6 +7,7 @@ import { MapPin, Calendar, ExternalLink, Play, Pause } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
+import { slugify } from '@/lib/slugify';
 
 export default function Events() {
   const { data: events, isLoading } = useQuery({
@@ -99,7 +100,7 @@ function EventCard({ event, index }) {
               {event.event_type}
             </span>
           )}
-          <Link to={`/evenements/${event.id}`} className="hover:text-primary transition-colors">
+          <Link to={`/evenements/${slugify(event.title)}--${event.id}`} className="hover:text-primary transition-colors">
           <h3 className="font-heading font-bold text-lg">{event.title}</h3>
           </Link>
           <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-muted-foreground">
