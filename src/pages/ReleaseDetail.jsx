@@ -10,7 +10,7 @@ import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
-import { extractIdFromSlug, buildShareUrl } from '@/lib/slugify';
+import { extractIdFromSlug, buildShareUrl, slugify } from '@/lib/slugify';
 
 const TYPE_LABELS = {
   single: 'Single',
@@ -155,7 +155,7 @@ export default function ReleaseDetail() {
             <h2 className="font-display font-bold text-lg mb-4">Autres sorties de {release.artist_name}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {otherReleases.map(r => {
-                const slug = `${r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}--${r.id}`;
+                const slug = `${slugify(r.title)}--${r.id}`;
                 return (
                   <Link key={r.id} to={`/musique/${slug}`} className="group">
                     <div className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 mb-2">

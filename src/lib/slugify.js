@@ -34,6 +34,11 @@ export function buildShareUrl(basePath, title, id) {
  */
 export function extractIdFromSlug(slugParam) {
   if (!slugParam) return slugParam;
-  const parts = slugParam.split('--');
-  return parts.length > 1 ? parts[parts.length - 1] : slugParam;
+  // Find last '--' separator and extract everything after it
+  const idx = slugParam.lastIndexOf('--');
+  if (idx !== -1) {
+    const id = slugParam.slice(idx + 2).replace(/^-+/, ''); // trim leading dashes
+    if (id) return id;
+  }
+  return slugParam;
 }
