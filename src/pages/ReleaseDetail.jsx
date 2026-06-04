@@ -49,7 +49,7 @@ export default function ReleaseDetail() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['release', id] });
 
-  const streamUrl = release ? (release.spotify_url || release.apple_music_url || release.audiomack_url || release.youtube_url) : null;
+  const streamUrl = release ? (release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url) : null;
   const shareUrl = release ? buildShareUrl('/musique', release.title, release.id) : '';
 
   if (isLoading) {
@@ -140,6 +140,7 @@ export default function ReleaseDetail() {
           youtube={release.youtube_url}
           apple_music={release.apple_music_url}
           audiomack={release.audiomack_url}
+          deezer={release.deezer_url}
         />
 
         {/* Description */}

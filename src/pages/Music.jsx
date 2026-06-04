@@ -34,7 +34,7 @@ const TYPE_LABELS = {
 // ── Carte individuelle ──
 function ReleaseCard({ release }) {
   const [playerOpen, setPlayerOpen] = useState(false);
-  const streamUrl = release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url;
+  const streamUrl = release.spotify_url || release.deezer_url || release.audiomack_url || release.apple_music_url || release.youtube_url;
   const slug = `${slugify(release.title)}--${release.id}`;
 
   return (
