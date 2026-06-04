@@ -25,6 +25,49 @@
       "type": "string",
       "description": "Genre musical"
     },
+    "label": {
+      "type": "string",
+      "description": "Label de l'artiste"
+    },
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de naissance"
+    },
+    "birth_place": {
+      "type": "string",
+      "description": "Lieu de naissance"
+    },
+    "nationality": {
+      "type": "string",
+      "description": "Nationalit\u00e9"
+    },
+    "active_since": {
+      "type": "string",
+      "description": "Ann\u00e9e de d\u00e9but d'activit\u00e9"
+    },
+    "group_members": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Membres du groupe"
+    },
+    "associated_acts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Artistes associ\u00e9s"
+    },
+    "wikipedia_url": {
+      "type": "string",
+      "description": "Lien Wikipedia"
+    },
+    "website_url": {
+      "type": "string",
+      "description": "Site officiel"
+    },
     "spotify_url": {
       "type": "string",
       "description": "Lien Spotify"

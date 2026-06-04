@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Music, Youtube, Instagram, Facebook, Share2, Copy, Check } from 'lucide-react';
-import { EmbeddedPlayer } from '../components/shared/UniversalPlayer';
+import { ArrowLeft, Music, Youtube, Instagram, Facebook, Share2, Check } from 'lucide-react';
 import { StreamingLinks } from '../components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
 import ArtistTopTracks from '@/components/artist/ArtistTopTracks';
+import ArtistGallery from '@/components/artist/ArtistGallery';
+import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
+import ArtistReleasesCarousel from '@/components/artist/ArtistReleasesCarousel';
 
 export default function ArtistDetail() {
   const { id } = useParams();
@@ -34,12 +36,23 @@ export default function ArtistDetail() {
     queryKey: ['artist-releases', artist?.name],
     queryFn: () => base44.entities.Release.filter({ artist_name: artist?.name }),
     enabled: !!artist?.name,
+    select: data => [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
   });
 
   const { data: videos = [] } = useQuery({
     queryKey: ['artist-videos', artist?.name],
     queryFn: () => base44.entities.Video.filter({ artist_name: artist?.name }),
     enabled: !!artist?.name,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ['artist-events', artist?.name],
+    queryFn: () => base44.entities.Event.list('-event_date'),
+    enabled: !!artist?.name,
+    select: data => data.filter(e =>
+      e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
+      e.description?.toLowerCase().includes(artist?.name?.toLowerCase())
+    ).slice(0, 4),
   });
 
   if (isLoading) {
@@ -62,14 +75,15 @@ export default function ArtistDetail() {
   return (
     <div className="min-h-screen bg-background">
       <MobileHeader title={artist.name} backPath="/artistes" />
+
       {/* Hero */}
-      <div className="relative h-64 md:h-96 overflow-hidden">
+      <div className="relative h-72 md:h-[420px] overflow-hidden">
         {artist.photo_url ? (
           <img src={artist.photo_url} alt={artist.name} className="w-full h-full object-cover object-top" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-card to-muted" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
           <Link to="/artistes" className="hidden md:inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft size={16} /> Tous les artistes
@@ -77,7 +91,11 @@ export default function ArtistDetail() {
           <div className="flex items-end gap-4">
             <div>
               <h1 className="font-display text-3xl md:text-5xl font-extrabold">{artist.name}</h1>
-              {artist.genre && <p className="text-primary text-sm font-medium mt-1">{artist.genre}</p>}
+              <div className="flex items-center flex-wrap gap-2 mt-1.5">
+                {artist.genre && <span className="text-primary text-sm font-medium">{artist.genre}</span>}
+                {artist.label && <span className="text-muted-foreground text-sm">· {artist.label}</span>}
+                {artist.active_since && <span className="text-muted-foreground text-sm">· Depuis {artist.active_since}</span>}
+              </div>
             </div>
             <button
               onClick={handleShare}
@@ -90,24 +108,103 @@ export default function ArtistDetail() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-10 space-y-12">
-        {/* Bio + Links */}
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 py-10">
+        <div className="grid md:grid-cols-3 gap-10">
+          {/* Main content */}
+          <div className="md:col-span-2 space-y-12">
+            {/* Bio */}
             {artist.biography && (
               <div>
                 <h2 className="font-heading font-bold text-lg mb-3">Biographie</h2>
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{artist.biography}</p>
               </div>
             )}
+
+            {/* Releases carousel */}
+            <ArtistReleasesCarousel releases={releases} />
+
+            {/* Top tracks */}
+            <ArtistTopTracks artist={artist} />
+
+            {/* Videos */}
+            {videos.length > 0 && (
+              <div>
+                <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
+                  <Youtube size={18} className="text-primary" /> Vidéos ({videos.length})
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {videos.map((v) => {
+                    const match = v.youtube_url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
+                    const videoId = match ? match[1] : null;
+                    const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
+                    return (
+                      <Link key={v.id} to={`/videos/${v.id}`}
+                        className="bg-card border border-border/50 rounded-xl overflow-hidden group hover:border-primary/40 transition-all block">
+                        <div className="relative aspect-video overflow-hidden">
+                          {thumb && (
+                            <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          )}
+                          <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                              <span className="text-white text-base ml-0.5">▶</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors">{v.title}</p>
+                          {v.video_type && <p className="text-xs text-muted-foreground capitalize mt-0.5">{v.video_type.replace('_', ' ')}</p>}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming events */}
+            {events.length > 0 && (
+              <div>
+                <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
+                  <Music size={18} className="text-primary" /> Concerts & Événements
+                </h2>
+                <div className="space-y-3">
+                  {events.map(e => (
+                    <Link key={e.id} to={`/evenements/${e.id}`}
+                      className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 hover:border-primary/40 transition-all group">
+                      {e.event_date && (
+                        <div className="text-center bg-primary/10 rounded-xl p-3 shrink-0 min-w-[56px]">
+                          <p className="text-[10px] font-mono text-primary/70 uppercase">{new Date(e.event_date).toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                          <p className="text-xl font-display font-extrabold text-primary">{new Date(e.event_date).getDate()}</p>
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors">{e.title}</p>
+                        {e.city && <p className="text-xs text-muted-foreground mt-0.5">{e.city}{e.location ? ` · ${e.location}` : ''}</p>}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gallery */}
+            <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
+
+            {/* Social sync */}
+            <ArtistSocialSync artist={artist} />
           </div>
-          <div className="space-y-4">
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Streaming links */}
             <StreamingLinks
               spotify={artist.spotify_url}
               youtube={artist.youtube_url}
               apple_music={artist.apple_music_url}
               audiomack={artist.audiomack_url}
             />
+
+            {/* Social icons */}
             <div className="flex gap-3 flex-wrap">
               {artist.instagram_url && (
                 <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-pink-400 transition-colors">
@@ -130,91 +227,32 @@ export default function ArtistDetail() {
                 </a>
               )}
             </div>
+
+            {/* Info card */}
+            <ArtistInfoCard artist={artist} />
+
+            {/* Stats */}
+            {(releases.length > 0 || videos.length > 0) && (
+              <div className="bg-card border border-border/50 rounded-2xl p-5">
+                <h3 className="font-heading font-bold text-sm text-muted-foreground uppercase tracking-wider mb-3">Statistiques</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {releases.length > 0 && (
+                    <div className="text-center bg-secondary/50 rounded-xl p-3">
+                      <p className="text-2xl font-display font-extrabold text-primary">{releases.length}</p>
+                      <p className="text-[11px] text-muted-foreground">Sortie{releases.length > 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+                  {videos.length > 0 && (
+                    <div className="text-center bg-secondary/50 rounded-xl p-3">
+                      <p className="text-2xl font-display font-extrabold text-primary">{videos.length}</p>
+                      <p className="text-[11px] text-muted-foreground">Vidéo{videos.length > 1 ? 's' : ''}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Top tracks dynamiques */}
-        <ArtistTopTracks artist={artist} />
-
-        {/* Releases */}
-        {releases.length > 0 && (
-          <div>
-            <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
-              <Music size={18} className="text-primary" /> Discographie
-            </h2>
-            <div className="space-y-4">
-              {releases.map((r) => {
-                const streamUrl = r.spotify_url || r.apple_music_url || r.audiomack_url || r.youtube_url;
-                return (
-                  <div key={r.id} className="bg-card border border-border/50 rounded-xl overflow-hidden">
-                    <div className="flex items-center gap-3 p-3">
-                      {r.cover_url ? (
-                        <img src={r.cover_url} alt={r.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Music size={20} className="text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-heading font-bold text-sm truncate">{r.title}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{r.release_type?.replace('_', ' ')} {r.release_date ? `· ${r.release_date.slice(0,4)}` : ''}</p>
-                      </div>
-                    </div>
-                    {streamUrl && <EmbeddedPlayer url={streamUrl} />}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Videos */}
-        {videos.length > 0 && (
-          <div>
-            <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
-              <Youtube size={18} className="text-primary" /> Vidéos
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {videos.map((v) => {
-                const match = v.youtube_url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
-                const videoId = match ? match[1] : null;
-                const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
-                return (
-                  <Link key={v.id} to={`/videos/${v.id}`} className="bg-card border border-border/50 rounded-xl overflow-hidden group hover:border-primary/40 transition-all block">
-                    <div className="relative aspect-video overflow-hidden">
-                      {thumb ? (
-                        <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : videoId ? (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-                          title={v.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="absolute inset-0 w-full h-full"
-                        />
-                      ) : null}
-                      <div className="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                          <span className="text-white text-base ml-0.5">▶</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors">{v.title}</p>
-                        {v.video_type && <p className="text-xs text-muted-foreground capitalize mt-0.5">{v.video_type.replace('_', ' ')}</p>}
-                      </div>
-                      <Share2 size={13} className="text-muted-foreground shrink-0" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Social media sync */}
-        <ArtistSocialSync artist={artist} />
       </div>
     </div>
   );

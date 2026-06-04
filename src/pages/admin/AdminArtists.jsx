@@ -13,6 +13,9 @@ import ArtistImporter from '@/components/partner/ArtistImporter';
 const EMPTY = {
   name: '', genre: '', biography: '',
   photo_url: '', gallery: [],
+  label: '', birth_date: '', birth_place: '', nationality: '',
+  active_since: '', group_members: [], associated_acts: [],
+  wikipedia_url: '', website_url: '',
   spotify_url: '', youtube_url: '', apple_music_url: '',
   audiomack_url: '', instagram_url: '', facebook_url: '', tiktok_url: '',
   is_featured: false, order: 0,
@@ -106,6 +109,57 @@ export default function AdminArtists() {
           <div>
             <Label className="mb-1.5 block">Biographie</Label>
             <Textarea value={form.biography} onChange={e => set('biography', e.target.value)} rows={4} placeholder="Biographie de l'artiste..." />
+          </div>
+
+          {/* Informations détaillées */}
+          <div>
+            <p className="text-sm font-medium mb-3">Informations biographiques</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1 block">Label</Label>
+                <Input value={form.label || ''} onChange={e => set('label', e.target.value)} placeholder="Nom du label" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Actif depuis (année)</Label>
+                <Input value={form.active_since || ''} onChange={e => set('active_since', e.target.value)} placeholder="Ex: 2018" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Date de naissance</Label>
+                <Input type="date" value={form.birth_date || ''} onChange={e => set('birth_date', e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Lieu de naissance</Label>
+                <Input value={form.birth_place || ''} onChange={e => set('birth_place', e.target.value)} placeholder="Ville, Pays" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Nationalité</Label>
+                <Input value={form.nationality || ''} onChange={e => set('nationality', e.target.value)} placeholder="Ex: Ivoirien" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Site officiel</Label>
+                <Input type="url" value={form.website_url || ''} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs mb-1 block">Wikipedia</Label>
+                <Input type="url" value={form.wikipedia_url || ''} onChange={e => set('wikipedia_url', e.target.value)} placeholder="https://fr.wikipedia.org/wiki/..." className="text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs mb-1 block">Membres du groupe (séparés par des virgules)</Label>
+                <Input
+                  value={(form.group_members || []).join(', ')}
+                  onChange={e => set('group_members', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                  placeholder="Membre 1, Membre 2..." className="text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs mb-1 block">Artistes associés (séparés par des virgules)</Label>
+                <Input
+                  value={(form.associated_acts || []).join(', ')}
+                  onChange={e => set('associated_acts', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                  placeholder="Artiste A, Artiste B..." className="text-sm"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Photo principale avec watermark */}
