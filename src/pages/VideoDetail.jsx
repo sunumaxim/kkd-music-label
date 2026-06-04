@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, User, ExternalLink, Instagram } from 'lucide-react';
+import { ArrowLeft, User, ExternalLink, Instagram, Eye } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -47,6 +47,15 @@ export default function VideoDetail() {
   });
 
   const shareUrl = video ? buildShareUrl('/videos', video.title, video.id) : '';
+
+  // Increment views once per session
+  useEffect(() => {
+    if (!video) return;
+    const key = `viewed_video_${video.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    base44.entities.Video.update(video.id, { views_count: (video.views_count || 0) + 1 });
+  }, [video?.id]);
 
   const { data: relatedVideos = [] } = useQuery({
     queryKey: ['related-videos', video?.artist_name, id],
@@ -123,11 +132,19 @@ export default function VideoDetail() {
               </span>
             )}
             <h1 className="font-display text-2xl md:text-3xl font-extrabold leading-tight">{video.title}</h1>
-            {video.publish_date && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {new Date(video.publish_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            )}
+            <div className="flex items-center gap-4 mt-1 flex-wrap">
+              {video.publish_date && (
+                <p className="text-sm text-muted-foreground">
+                  {new Date(video.publish_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+              {video.views_count > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Eye size={14} className="text-primary" />
+                  {video.views_count.toLocaleString('fr-FR')} vue{video.views_count > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

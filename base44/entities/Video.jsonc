@@ -43,6 +43,11 @@
       "default": false,
       "description": "Mise en avant"
     },
+    "views_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de vues"
+    },
     "comments": {
       "type": "array",
       "items": {

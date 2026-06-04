@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Share2 } from 'lucide-react';
+import { Share2, Eye } from 'lucide-react';
 import { YouTubePlayer } from '../components/shared/StreamingEmbed';
 
 const VIDEO_TYPES = [
@@ -131,7 +131,14 @@ export default function Videos() {
                       >
                         {video.title}
                       </h3>
-                      {video.artist_name && <p className="text-xs text-muted-foreground mt-0.5">{video.artist_name}</p>}
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        {video.artist_name && <p className="text-xs text-muted-foreground">{video.artist_name}</p>}
+                        {video.views_count > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60 font-mono">
+                            <Eye size={10} /> {video.views_count.toLocaleString('fr-FR')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Link
