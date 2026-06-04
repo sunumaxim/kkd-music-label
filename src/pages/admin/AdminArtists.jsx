@@ -11,20 +11,53 @@ import WatermarkUploader from '../../components/admin/WatermarkUploader';
 import ArtistImporter from '@/components/partner/ArtistImporter';
 
 const EMPTY = {
-  name: '', genre: '', biography: '',
-  photo_url: '', gallery: [],
-  label: '', birth_date: '', birth_place: '', nationality: '',
-  active_since: '', group_members: [], associated_acts: [],
+  name: '', genre: '', biography: '', label: '',
+  birth_date: '', birth_place: '', nationality: '', active_since: '',
+  group_members: [], associated_acts: [],
   wikipedia_url: '', website_url: '',
+  photo_url: '', gallery: [],
   spotify_url: '', youtube_url: '', apple_music_url: '',
-  audiomack_url: '', instagram_url: '', facebook_url: '', tiktok_url: '',
+  audiomack_url: '', deezer_url: '', soundcloud_url: '',
+  instagram_url: '', instagram_username: '',
+  tiktok_url: '', tiktok_username: '',
+  facebook_url: '',
   is_featured: false, order: 0,
 };
+
+function TagInput({ value = [], onChange, placeholder }) {
+  const [input, setInput] = useState('');
+  const add = () => {
+    const v = input.trim();
+    if (v && !value.includes(v)) onChange([...value, v]);
+    setInput('');
+  };
+  const remove = (i) => onChange(value.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          placeholder={placeholder} className="text-sm flex-1" />
+        <Button type="button" variant="outline" size="sm" onClick={add}>Ajouter</Button>
+      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((v, i) => (
+            <span key={i} className="flex items-center gap-1 text-xs bg-secondary rounded-full px-2.5 py-1">
+              {v}
+              <button onClick={() => remove(i)} className="text-muted-foreground hover:text-foreground ml-0.5">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminArtists() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
-  const [importing, setImporting] = useState(null); // artist being imported
+  const [importing, setImporting] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: artists = [], isLoading } = useQuery({
@@ -54,7 +87,6 @@ export default function AdminArtists() {
 
   const openNew = () => { setForm(EMPTY); setEditing('new'); };
   const openEdit = (a) => { setForm({ ...EMPTY, ...a }); setEditing(a); };
-
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const handleSave = async () => {
@@ -83,7 +115,7 @@ export default function AdminArtists() {
   // ── FORM ──
   if (editing !== null) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-2xl space-y-6 pb-10">
         <div className="flex items-center gap-3">
           <button onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft size={18} />
@@ -93,94 +125,78 @@ export default function AdminArtists() {
           </h1>
         </div>
 
-        <div className="space-y-5">
-          {/* Infos de base */}
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
+          {/* ── Identité ── */}
+          <div className="space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Identité</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="mb-1.5 block">Nom *</Label>
+                <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nom de l'artiste" />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Genre musical</Label>
+                <Input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="Afrobeat, Hip-Hop..." />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Label</Label>
+                <Input value={form.label || ''} onChange={e => set('label', e.target.value)} placeholder="Nom du label" />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Actif depuis</Label>
+                <Input value={form.active_since || ''} onChange={e => set('active_since', e.target.value)} placeholder="2018" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Naissance ── */}
+          <div className="space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Informations personnelles</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="mb-1.5 block">Date de naissance</Label>
+                <Input type="date" value={form.birth_date || ''} onChange={e => set('birth_date', e.target.value)} />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Lieu de naissance</Label>
+                <Input value={form.birth_place || ''} onChange={e => set('birth_place', e.target.value)} placeholder="Abidjan, Côte d'Ivoire" />
+              </div>
+              <div>
+                <Label className="mb-1.5 block">Nationalité</Label>
+                <Input value={form.nationality || ''} onChange={e => set('nationality', e.target.value)} placeholder="Ivoirien(ne)" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Groupe ── */}
+          <div className="space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Groupe & Collaborations</p>
             <div>
-              <Label className="mb-1.5 block">Nom *</Label>
-              <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nom de l'artiste" />
+              <Label className="mb-1.5 block">Membres du groupe</Label>
+              <TagInput value={form.group_members || []} onChange={v => set('group_members', v)} placeholder="Ajouter un membre..." />
             </div>
             <div>
-              <Label className="mb-1.5 block">Genre musical</Label>
-              <Input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="Afrobeat, Hip-Hop..." />
+              <Label className="mb-1.5 block">Artistes associés</Label>
+              <TagInput value={form.associated_acts || []} onChange={v => set('associated_acts', v)} placeholder="Ajouter un artiste associé..." />
             </div>
           </div>
 
+          {/* ── Biographie ── */}
           <div>
-            <Label className="mb-1.5 block">Biographie</Label>
-            <Textarea value={form.biography} onChange={e => set('biography', e.target.value)} rows={4} placeholder="Biographie de l'artiste..." />
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Biographie</p>
+            <Textarea value={form.biography} onChange={e => set('biography', e.target.value)} rows={5} placeholder="Biographie de l'artiste..." />
           </div>
 
-          {/* Informations détaillées */}
-          <div>
-            <p className="text-sm font-medium mb-3">Informations biographiques</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs mb-1 block">Label</Label>
-                <Input value={form.label || ''} onChange={e => set('label', e.target.value)} placeholder="Nom du label" className="text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Actif depuis (année)</Label>
-                <Input value={form.active_since || ''} onChange={e => set('active_since', e.target.value)} placeholder="Ex: 2018" className="text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Date de naissance</Label>
-                <Input type="date" value={form.birth_date || ''} onChange={e => set('birth_date', e.target.value)} className="text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Lieu de naissance</Label>
-                <Input value={form.birth_place || ''} onChange={e => set('birth_place', e.target.value)} placeholder="Ville, Pays" className="text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Nationalité</Label>
-                <Input value={form.nationality || ''} onChange={e => set('nationality', e.target.value)} placeholder="Ex: Ivoirien" className="text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs mb-1 block">Site officiel</Label>
-                <Input type="url" value={form.website_url || ''} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <Label className="text-xs mb-1 block">Wikipedia</Label>
-                <Input type="url" value={form.wikipedia_url || ''} onChange={e => set('wikipedia_url', e.target.value)} placeholder="https://fr.wikipedia.org/wiki/..." className="text-sm" />
-              </div>
-              <div className="sm:col-span-2">
-                <Label className="text-xs mb-1 block">Membres du groupe (séparés par des virgules)</Label>
-                <Input
-                  value={(form.group_members || []).join(', ')}
-                  onChange={e => set('group_members', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                  placeholder="Membre 1, Membre 2..." className="text-sm"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <Label className="text-xs mb-1 block">Artistes associés (séparés par des virgules)</Label>
-                <Input
-                  value={(form.associated_acts || []).join(', ')}
-                  onChange={e => set('associated_acts', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                  placeholder="Artiste A, Artiste B..." className="text-sm"
-                />
-              </div>
-            </div>
+          {/* ── Photos ── */}
+          <div className="space-y-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Photos</p>
+            <WatermarkUploader label="Photo principale" value={form.photo_url} onChange={(url) => set('photo_url', url)} multiple={false} />
+            <WatermarkUploader label="Galerie de photos" value={form.gallery} onChange={(urls) => set('gallery', urls)} multiple={true} />
           </div>
 
-          {/* Photo principale avec watermark */}
-          <WatermarkUploader
-            label="Photo principale"
-            value={form.photo_url}
-            onChange={(url) => set('photo_url', url)}
-            multiple={false}
-          />
-
-          {/* Galerie multi-photos avec watermark */}
-          <WatermarkUploader
-            label="Galerie de photos"
-            value={form.gallery}
-            onChange={(urls) => set('gallery', urls)}
-            multiple={true}
-          />
-
-          {/* Liens streaming */}
+          {/* ── Liens streaming ── */}
           <div>
-            <p className="text-sm font-medium mb-3">Liens streaming</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Liens streaming</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { key: 'spotify_url', label: 'Spotify' },
@@ -189,7 +205,6 @@ export default function AdminArtists() {
                 { key: 'audiomack_url', label: 'Audiomack' },
                 { key: 'deezer_url', label: 'Deezer' },
                 { key: 'soundcloud_url', label: 'SoundCloud' },
-                { key: 'facebook_url', label: 'Facebook' },
               ].map(({ key, label }) => (
                 <div key={key}>
                   <Label className="text-xs mb-1 block">{label}</Label>
@@ -199,29 +214,49 @@ export default function AdminArtists() {
             </div>
           </div>
 
-          {/* Réseaux sociaux */}
+          {/* ── Réseaux sociaux ── */}
           <div>
-            <p className="text-sm font-medium mb-3">Réseaux sociaux (Instagram & TikTok)</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Réseaux sociaux</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs mb-1 block">Instagram — URL du profil</Label>
+                <Label className="text-xs mb-1 block">Instagram — URL</Label>
                 <Input type="url" value={form.instagram_url || ''} onChange={e => set('instagram_url', e.target.value)} placeholder="https://instagram.com/..." className="text-sm" />
               </div>
               <div>
-                <Label className="text-xs mb-1 block">Instagram — Nom d'utilisateur</Label>
-                <Input value={form.instagram_username || ''} onChange={e => set('instagram_username', e.target.value)} placeholder="nomdutilisateur (sans @)" className="text-sm" />
+                <Label className="text-xs mb-1 block">Instagram — @username</Label>
+                <Input value={form.instagram_username || ''} onChange={e => set('instagram_username', e.target.value)} placeholder="username (sans @)" className="text-sm" />
               </div>
               <div>
-                <Label className="text-xs mb-1 block">TikTok — URL du profil</Label>
+                <Label className="text-xs mb-1 block">TikTok — URL</Label>
                 <Input type="url" value={form.tiktok_url || ''} onChange={e => set('tiktok_url', e.target.value)} placeholder="https://tiktok.com/@..." className="text-sm" />
               </div>
               <div>
-                <Label className="text-xs mb-1 block">TikTok — Nom d'utilisateur</Label>
-                <Input value={form.tiktok_username || ''} onChange={e => set('tiktok_username', e.target.value)} placeholder="nomdutilisateur (sans @)" className="text-sm" />
+                <Label className="text-xs mb-1 block">TikTok — @username</Label>
+                <Input value={form.tiktok_username || ''} onChange={e => set('tiktok_username', e.target.value)} placeholder="username (sans @)" className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Facebook</Label>
+                <Input type="url" value={form.facebook_url || ''} onChange={e => set('facebook_url', e.target.value)} placeholder="https://facebook.com/..." className="text-sm" />
               </div>
             </div>
           </div>
 
+          {/* ── Liens web ── */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Liens web</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1 block">Wikipedia</Label>
+                <Input type="url" value={form.wikipedia_url || ''} onChange={e => set('wikipedia_url', e.target.value)} placeholder="https://fr.wikipedia.org/wiki/..." className="text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Site officiel</Label>
+                <Input type="url" value={form.website_url || ''} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="text-sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Paramètres ── */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block text-sm">Ordre d'affichage</Label>
@@ -240,7 +275,7 @@ export default function AdminArtists() {
             disabled={!form.name || createMutation.isPending || updateMutation.isPending}
             className="bg-primary hover:bg-primary/80"
           >
-            {createMutation.isPending || updateMutation.isPending ? 'Enregistrement...' : editing === 'new' ? 'Ajouter l\'artiste' : 'Enregistrer'}
+            {createMutation.isPending || updateMutation.isPending ? 'Enregistrement...' : editing === 'new' ? "Ajouter l'artiste" : 'Enregistrer'}
           </Button>
           <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
         </div>
@@ -266,7 +301,6 @@ export default function AdminArtists() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {artists.map((artist) => (
             <div key={artist.id} className="bg-card border border-border/50 rounded-xl overflow-hidden group">
-              {/* Cover */}
               <div className="aspect-video relative bg-secondary overflow-hidden">
                 {artist.photo_url ? (
                   <img src={artist.photo_url} alt={artist.name} className="w-full h-full object-cover" />
@@ -280,21 +314,24 @@ export default function AdminArtists() {
                     <Star size={9} /> Vedette
                   </span>
                 )}
-                {/* Galerie count badge */}
                 {artist.gallery?.length > 0 && (
                   <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">
                     +{artist.gallery.length} photo{artist.gallery.length > 1 ? 's' : ''}
                   </span>
                 )}
               </div>
-              {/* Info */}
               <div className="p-3 flex items-center justify-between">
                 <div>
                   <p className="font-heading font-bold text-sm">{artist.name}</p>
-                  <p className="text-xs text-muted-foreground">{artist.genre || 'Genre non défini'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {artist.genre || 'Genre non défini'}
+                    {artist.label ? ` · ${artist.label}` : ''}
+                  </p>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" title="Importer Spotify/YouTube" onClick={() => setImporting(artist)}><Download size={14} className="text-primary" /></Button>
+                  <Button variant="ghost" size="icon" title="Importer Spotify/YouTube/Wikipedia" onClick={() => setImporting(artist)}>
+                    <Download size={14} className="text-primary" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => openEdit(artist)}><Pencil size={14} /></Button>
                   <Button variant="ghost" size="icon" onClick={() => {
                     if (confirm('Supprimer cet artiste ?')) deleteMutation.mutate(artist.id);
