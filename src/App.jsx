@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -51,6 +52,7 @@ import AdminPublications from './pages/admin/AdminPublications';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
 import AdminFanPosts from './pages/admin/AdminFanPosts';
+import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -128,9 +130,12 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
+  const [splashDone, setSplashDone] = React.useState(false);
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
+        <SplashScreen onDone={() => setSplashDone(true)} />
         <Router>
           <AuthenticatedApp />
         </Router>

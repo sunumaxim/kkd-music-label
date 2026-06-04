@@ -3,20 +3,27 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, ExternalLink } from 'lucide-react';
 
+const HERO_VIDEO = "https://media.base44.com/videos/public/6a1cbc29f199c6e829efde07/7f81fc39d_video2.mp4";
+
 export default function HeroBanner({ featuredRelease, latestVideo }) {
   const bg = featuredRelease?.cover_url || latestVideo?.thumbnail_url;
 
   return (
     <section className="relative min-h-[92vh] md:min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background">
-      {/* Background image blur */}
-      {bg && (
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-105"
-          style={{ backgroundImage: `url(${bg})`, filter: 'blur(60px)', opacity: 0.15 }}
-        />
-      )}
+      {/* Background VIDEO */}
+      <video
+        src={HERO_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover opacity-20"
+        style={{ pointerEvents: 'none' }}
+      />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/90" />
       {/* Grid overlay */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{
+      <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)',
         backgroundSize: '60px 60px'
       }} />

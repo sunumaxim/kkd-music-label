@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/components/shared/NotificationBell';
-
-const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+import VideoLogo from '@/components/shared/VideoLogo';
 
 const navLinks = [
   { label: 'Accueil', path: '/' },
@@ -43,7 +42,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20 py-2">
           <Link to="/" className="flex items-center gap-2">
-            <img src={LOGO_URL} alt="KKD Music" className="h-14 md:h-16 w-auto" />
+            <VideoLogo className="h-12 md:h-14 w-auto rounded-lg" />
           </Link>
 
           {/* Desktop Nav */}
