@@ -23,9 +23,10 @@ export function detectPlatform(url) {
   const am = url.match(/audiomack\.com\/([^/]+)\/(song|album|playlist)\/([^/?#]+)/);
   if (am) return { platform: 'audiomack', type: am[2], artist: am[1], slug: am[3] };
 
-  // Deezer
-  const dz = url.match(/deezer\.com\/(?:[a-z]+\/)?(track|album|playlist)\/([0-9]+)/);
-  if (dz) return { platform: 'deezer', type: dz[1], id: dz[2] };
+  // Deezer — album, track, playlist (avec ou sans langue, avec ou sans www)
+  const dz = url.match(/deezer\.com\/(?:[a-z]{2}\/)?(?:album|track|playlist|artist)\/([0-9]+)/);
+  const dzType = url.match(/deezer\.com\/(?:[a-z]{2}\/)?(album|track|playlist|artist)\//);
+  if (dz) return { platform: 'deezer', type: dzType ? dzType[1] : 'album', id: dz[1] };
 
   // SoundCloud
   if (url.includes('soundcloud.com')) return { platform: 'soundcloud', type: 'track', id: url };
@@ -61,8 +62,11 @@ function buildEmbedUrl(info) {
     case 'audiomack':
       return `https://audiomack.com/embed/${info.type}/${info.artist}/${info.slug}?background=1&color=%23e50000`;
 
-    case 'deezer':
-      return `https://widget.deezer.com/widget/dark/${info.type}/${info.id}`;
+    case 'deezer': {
+      const dzTypeMap = { album: 'album', track: 'track', playlist: 'playlist', artist: 'artist' };
+      const deezerType = dzTypeMap[info.type] || 'album';
+      return `https://widget.deezer.com/widget/dark/${deezerType}/${info.id}`;
+    }
 
     case 'soundcloud':
       return `https://w.soundcloud.com/player/?url=${encodeURIComponent(info.id)}&color=%23e50000&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=true`;

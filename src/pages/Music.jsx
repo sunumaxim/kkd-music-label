@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
-import { Loader2, Music as MusicIcon, Play, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, Music as MusicIcon, Play, ChevronRight, X, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { EmbeddedPlayer } from '../components/shared/UniversalPlayer';
 import PageMeta from '@/components/shared/PageMeta';
@@ -24,71 +24,114 @@ const TYPE_COLORS = {
   projet_special: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
 };
 
-function ReleaseCard({ release, index }) {
-  const streamUrl = release.spotify_url || release.apple_music_url || release.audiomack_url || release.youtube_url;
+const TYPE_LABELS = {
+  single: 'Single',
+  album: 'Album',
+  ep: 'EP',
+  projet_special: 'Projet',
+};
+
+// ── Carte individuelle ──
+function ReleaseCard({ release }) {
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const streamUrl = release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url;
   const slug = `${slugify(release.title)}--${release.id}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.04 }}
-      className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 transition-all group"
-    >
-      {/* Cover + info header */}
-      <div className="flex items-center gap-3 p-4">
-        <div className="relative flex-shrink-0">
-          {release.cover_url ? (
-            <img src={release.cover_url} alt={release.title} className="w-16 h-16 rounded-xl object-cover shadow-md" />
-          ) : (
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-secondary flex items-center justify-center">
-              <MusicIcon size={24} className="text-primary/40" />
+    <div className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 transition-all group flex flex-col">
+      {/* Cover */}
+      <div className="relative aspect-square overflow-hidden bg-secondary">
+        {release.cover_url ? (
+          <img
+            src={release.cover_url}
+            alt={release.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary">
+            <MusicIcon size={48} className="text-primary/20" />
+          </div>
+        )}
+        {/* Play overlay */}
+        {streamUrl && (
+          <button
+            onClick={() => setPlayerOpen(v => !v)}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-xl">
+              {playerOpen
+                ? <X size={20} className="text-white" />
+                : <Play size={20} className="text-white ml-1" fill="white" />
+              }
             </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${TYPE_COLORS[release.release_type] || 'text-muted-foreground bg-secondary border-border/40'}`}>
-            {release.release_type?.replace('_', ' ') || 'single'}
+          </button>
+        )}
+        {/* Type badge */}
+        {release.release_type && (
+          <span className={`absolute top-2 left-2 text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${TYPE_COLORS[release.release_type] || 'text-muted-foreground bg-secondary/80 border-border/40'}`}>
+            {TYPE_LABELS[release.release_type] || release.release_type}
           </span>
-          <h3 className="font-heading font-bold text-sm mt-1 truncate group-hover:text-primary transition-colors">{release.title}</h3>
-          <p className="text-xs text-muted-foreground truncate">{release.artist_name}{release.release_date ? ` · ${release.release_date.slice(0, 4)}` : ''}</p>
-        </div>
-        <Link
-          to={`/musique/${slug}`}
-          className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary hover:bg-primary hover:text-white flex items-center justify-center transition-all"
-          title="Voir le détail"
-        >
-          <ChevronRight size={14} />
-        </Link>
+        )}
+        {release.is_featured && (
+          <span className="absolute top-2 right-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full">⭐</span>
+        )}
       </div>
 
-      {/* Embedded player */}
-      {streamUrl && <EmbeddedPlayer url={streamUrl} />}
-
-      {/* Footer: likes + detail link */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {(release.likes_count || 0) > 0 && (
-            <span className="flex items-center gap-1">❤️ {release.likes_count}</span>
-          )}
-          {(release.comments?.length || 0) > 0 && (
-            <span className="flex items-center gap-1">💬 {release.comments.length}</span>
-          )}
+      {/* Infos */}
+      <div className="p-4 flex-1 flex flex-col gap-2">
+        <div>
+          <h3 className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{release.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            {release.artist_name}{release.release_date ? ` · ${release.release_date.slice(0, 4)}` : ''}
+          </p>
         </div>
-        <Link
-          to={`/musique/${slug}`}
-          className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
-        >
-          <Play size={11} fill="currentColor" /> Écouter & commenter
-        </Link>
+
+        {/* Embedded player (toggle) */}
+        <AnimatePresence>
+          {playerOpen && streamUrl && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden rounded-xl"
+            >
+              <EmbeddedPlayer url={streamUrl} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Footer actions */}
+        <div className="flex items-center gap-2 mt-auto pt-1">
+          {streamUrl && (
+            <button
+              onClick={() => setPlayerOpen(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                playerOpen
+                  ? 'bg-secondary text-muted-foreground border-border/50'
+                  : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
+              }`}
+            >
+              {playerOpen ? <X size={11} /> : <Play size={11} fill="currentColor" />}
+              {playerOpen ? 'Fermer' : 'Écouter'}
+            </button>
+          )}
+          <Link
+            to={`/musique/${slug}`}
+            className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            Détails <ChevronRight size={12} />
+          </Link>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
+// ── Page principale ──
 export default function Music() {
   const [activeType, setActiveType] = useState('all');
+  const [artistFilter, setArtistFilter] = useState('all');
   const queryClient = useQueryClient();
   const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
     await queryClient.invalidateQueries({ queryKey: ['releases'] });
@@ -96,12 +139,17 @@ export default function Music() {
 
   const { data: releases = [], isLoading } = useQuery({
     queryKey: ['releases'],
-    queryFn: () => base44.entities.Release.list('-release_date', 100),
+    queryFn: () => base44.entities.Release.list('-release_date', 200),
   });
 
-  const filtered = activeType === 'all' ? releases : releases.filter(r => r.release_type === activeType);
+  // Artistes disponibles
+  const artists = ['all', ...new Set(releases.map(r => r.artist_name).filter(Boolean))];
 
-  // Group featured first
+  // Filtrage
+  let filtered = releases;
+  if (activeType !== 'all') filtered = filtered.filter(r => r.release_type === activeType);
+  if (artistFilter !== 'all') filtered = filtered.filter(r => r.artist_name === artistFilter);
+
   const featured = filtered.filter(r => r.is_featured);
   const rest = filtered.filter(r => !r.is_featured);
   const ordered = [...featured, ...rest];
@@ -115,19 +163,21 @@ export default function Music() {
           <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} />
         </div>
       )}
+
       <div className="max-w-7xl mx-auto">
-        <div className="mb-10">
+        {/* Header */}
+        <div className="mb-8">
           <span className="text-xs font-mono text-primary tracking-widest uppercase">Catalogue</span>
           <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight mt-2">Musique</h1>
           {!isLoading && (
             <p className="text-muted-foreground mt-2 text-sm">
-              <span className="text-foreground font-medium">{filtered.length}</span> sortie{filtered.length > 1 ? 's' : ''}
+              <span className="text-foreground font-medium">{ordered.length}</span> sortie{ordered.length !== 1 ? 's' : ''}
             </p>
           )}
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex flex-wrap gap-2 mb-10">
+        {/* Filtres par type */}
+        <div className="flex flex-wrap gap-2 mb-4">
           {TYPES.map((type) => (
             <button
               key={type.value}
@@ -148,19 +198,35 @@ export default function Music() {
           ))}
         </div>
 
+        {/* Filtre par artiste */}
+        {artists.length > 2 && (
+          <div className="flex flex-wrap gap-2 mb-8">
+            {artists.map(a => (
+              <button
+                key={a}
+                onClick={() => setArtistFilter(a)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  artistFilter === a
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'border-border/50 text-muted-foreground hover:border-border'
+                }`}
+              >
+                {a === 'all' ? 'Tous les artistes' : a}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grille */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array(6).fill(0).map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array(8).fill(0).map((_, i) => (
               <div key={i} className="bg-card rounded-2xl overflow-hidden animate-pulse">
-                <div className="flex items-center gap-3 p-4">
-                  <div className="w-16 h-16 rounded-xl bg-secondary" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-secondary rounded w-1/3" />
-                    <div className="h-4 bg-secondary rounded w-3/4" />
-                    <div className="h-3 bg-secondary rounded w-1/2" />
-                  </div>
+                <div className="aspect-square bg-secondary" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-secondary rounded w-3/4" />
+                  <div className="h-3 bg-secondary rounded w-1/2" />
                 </div>
-                <div className="h-24 bg-secondary/50 m-4 rounded-xl" />
               </div>
             ))}
           </div>
@@ -170,18 +236,11 @@ export default function Music() {
             <p className="text-muted-foreground">Aucune sortie disponible.</p>
           </div>
         ) : (
-          <>
-            {featured.length > 0 && activeType === 'all' && (
-              <div className="mb-3">
-                <p className="text-[10px] font-mono text-primary/70 uppercase tracking-widest mb-4">⭐ Mis en avant</p>
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {ordered.map((release, i) => (
-                <ReleaseCard key={release.id} release={release} index={i} />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {ordered.map((release) => (
+              <ReleaseCard key={release.id} release={release} />
+            ))}
+          </div>
         )}
       </div>
     </div>
