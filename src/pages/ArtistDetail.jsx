@@ -13,6 +13,7 @@ import ArtistTopTracks from '@/components/artist/ArtistTopTracks';
 import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import ArtistReleasesCarousel from '@/components/artist/ArtistReleasesCarousel';
+import { buildEntitySlug } from '@/lib/slugify';
 
 const VIDEO_TYPE_LABELS = {
   clip_officiel: 'Clip officiel',
@@ -361,7 +362,7 @@ export default function ArtistDetail() {
                 {events.map(e => (
                   <Link
                     key={e.id}
-                    to={`/evenements/${e.id}`}
+                    to={`/evenements/${buildEntitySlug(e.title, e.id)}`}
                     className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 hover:border-primary/40 transition-all group"
                   >
                     {e.event_date && (
@@ -410,6 +411,8 @@ export default function ArtistDetail() {
               youtube={artist.youtube_url}
               apple_music={artist.apple_music_url}
               audiomack={artist.audiomack_url}
+              deezer={artist.deezer_url}
+              soundcloud={artist.soundcloud_url}
             />
 
             {/* Info card */}

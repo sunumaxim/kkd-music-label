@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import UniversalPlayer from '@/components/shared/UniversalPlayer';
+import { buildEntitySlug } from '@/lib/slugify';
 
 const TYPE_LABELS = {
   single: 'Single',
@@ -72,7 +73,7 @@ export default function ArtistReleasesCarousel({ releases = [] }) {
         style={{ scrollSnapType: 'x mandatory' }}
       >
         {filtered.map(r => {
-          const streamUrl = r.spotify_url || r.apple_music_url || r.audiomack_url || r.youtube_url;
+          const streamUrl = r.spotify_url || r.deezer_url || r.audiomack_url || r.apple_music_url || r.youtube_url;
           return (
             <div
               key={r.id}
@@ -94,7 +95,7 @@ export default function ArtistReleasesCarousel({ releases = [] }) {
                 )}
               </div>
               <div className="p-3">
-                <Link to={`/musique/${r.id}`}>
+                <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`}>
                   <p className="font-heading font-bold text-sm truncate hover:text-primary transition-colors">{r.title}</p>
                 </Link>
                 <p className="text-xs text-muted-foreground mt-0.5">{r.release_date?.slice(0, 4) || '—'}</p>
