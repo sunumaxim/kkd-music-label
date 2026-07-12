@@ -1,11 +1,14 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import HeroBanner from '../components/home/HeroBanner';
-import FeaturedArtists from '../components/home/FeaturedArtists';
-import LatestVideos from '../components/home/LatestVideos';
-import LatestNews from '../components/home/LatestNews';
-import UpcomingEvents from '../components/home/UpcomingEvents';
+import HeroSlider from '@/components/home/HeroSlider';
+import LatestReleases from '@/components/home/LatestReleases';
+import TrendingArtists from '@/components/home/TrendingArtists';
+import NewArtists from '@/components/home/NewArtists';
+import LatestVideos from '@/components/home/LatestVideos';
+import UpcomingEvents from '@/components/home/UpcomingEvents';
+import LatestNews from '@/components/home/LatestNews';
+import PartnersCTA from '@/components/home/PartnersCTA';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 import { Loader2 } from 'lucide-react';
 
@@ -16,38 +19,30 @@ export default function Home() {
     await queryClient.invalidateQueries();
   });
 
-  const { data: releases } = useQuery({
+  const { data: releases = [] } = useQuery({
     queryKey: ['releases-featured'],
-    queryFn: () => base44.entities.Release.list('-created_date', 10),
-    initialData: [],
+    queryFn: () => base44.entities.Release.list('-created_date', 20),
   });
 
-  const { data: artists } = useQuery({
+  const { data: artists = [] } = useQuery({
     queryKey: ['artists'],
-    queryFn: () => base44.entities.Artist.list('order', 20),
-    initialData: [],
+    queryFn: () => base44.entities.Artist.list('order', 30),
   });
 
-  const { data: videos } = useQuery({
-    queryKey: ['videos'],
-    queryFn: () => base44.entities.Video.list('-created_date', 6),
-    initialData: [],
+  const { data: videos = [] } = useQuery({
+    queryKey: ['videos-home'],
+    queryFn: () => base44.entities.Video.list('-created_date', 12),
   });
 
-  const { data: news } = useQuery({
-    queryKey: ['news'],
-    queryFn: () => base44.entities.News.list('-created_date', 3),
-    initialData: [],
+  const { data: news = [] } = useQuery({
+    queryKey: ['news-home'],
+    queryFn: () => base44.entities.News.list('-created_date', 4),
   });
 
-  const { data: events } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => base44.entities.Event.list('event_date', 5),
-    initialData: [],
+  const { data: events = [] } = useQuery({
+    queryKey: ['events-home'],
+    queryFn: () => base44.entities.Event.list('event_date', 6),
   });
-
-  const featuredRelease = releases.find(r => r.is_featured) || releases[0];
-  const latestVideo = videos[0];
 
   return (
     <div ref={containerRef}>
@@ -56,11 +51,16 @@ export default function Home() {
           <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} style={{ transform: `rotate(${(pullY / 80) * 180}deg)` }} />
         </div>
       )}
-      <HeroBanner featuredRelease={featuredRelease} latestVideo={latestVideo} />
-      <FeaturedArtists artists={artists} />
+
+      <HeroSlider releases={releases} videos={videos} events={events} news={news} />
+
+      <LatestReleases releases={releases} />
       <LatestVideos videos={videos} />
-      <LatestNews news={news} />
+      <TrendingArtists artists={artists} />
+      <NewArtists artists={artists} />
       <UpcomingEvents events={events} />
+      <LatestNews news={news} />
+      <PartnersCTA />
     </div>
   );
 }
