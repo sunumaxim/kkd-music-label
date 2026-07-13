@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -11,7 +11,7 @@ import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } fr
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { slugify, buildShareUrl } from '@/lib/slugify';
+import { slugify, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
 const CATEGORY_LABELS = {
   communique: 'Communiqué',
@@ -21,17 +21,16 @@ const CATEGORY_LABELS = {
 };
 
 export default function NewsDetail() {
-  const pathParts = window.location.pathname.split('/');
-  const rawParam = pathParts[pathParts.length - 1];
-  const newsId = rawParam.includes('--') ? rawParam.split('--').pop() : rawParam;
+  const { id: slugParam } = useParams();
+  const newsId = extractIdFromSlug(slugParam);
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['news-detail', newsId],
     queryFn: async () => {
-      const all = await base44.entities.News.list();
-      return all.find(n => n.id === newsId);
+      const results = await base44.entities.News.filter({ id: newsId });
+      return results[0] || null;
     },
   });
 

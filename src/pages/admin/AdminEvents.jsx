@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
+import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -84,7 +85,16 @@ export default function AdminEvents() {
   };
 
   if (editing) {
-    return <EventFormWrapper editing={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
+    return (
+      <div>
+        <EventFormWrapper editing={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+        {editing !== 'new' && editing.id && (
+          <div className="mt-6">
+            <EventReleaseLinker eventId={editing.id} linkedIds={editing.linked_release_ids || []} />
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (

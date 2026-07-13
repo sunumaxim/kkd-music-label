@@ -76,6 +76,14 @@
         }
       },
       "description": "Commentaires des fans"
+    },
+    "linked_release_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs des sorties li\u00e9es \u00e0 afficher sur la page \u00e9v\u00e9nement (\u00e9coute int\u00e9gr\u00e9e)"
     }
   },
   "required": [

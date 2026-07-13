@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileHeader from '@/components/mobile/MobileHeader';
-import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
+import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
+import { buildShareUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
@@ -30,9 +30,21 @@ export default function EventDetail() {
   const { data: event, isLoading } = useQuery({
     queryKey: ['event-detail', id],
     queryFn: async () => {
-      const all = await base44.entities.Event.list();
-      return all.find(e => e.id === id);
+      const results = await base44.entities.Event.filter({ id });
+      return results[0] || null;
     },
+  });
+
+  const { data: linkedReleases = [] } = useQuery({
+    queryKey: ['event-linked-releases', event?.id, event?.linked_release_ids?.join(',') || ''],
+    queryFn: async () => {
+      const ids = event?.linked_release_ids || [];
+      if (!ids.length) return [];
+      const results = await base44.entities.Release.filter({ id: { $in: ids } });
+      const map = new Map(results.map(r => [r.id, r]));
+      return ids.map(id => map.get(id)).filter(Boolean);
+    },
+    enabled: !!event?.linked_release_ids?.length,
   });
 
   const shareUrl = event ? buildShareUrl('/evenements', event.title, event.id) : '';
@@ -199,6 +211,42 @@ export default function EventDetail() {
           <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Partager cet événement</p>
           <ShareBar title={event.title} url={shareUrl} />
         </div>
+
+        {/* Linked releases */}
+        {linkedReleases.length > 0 && (
+          <div className="mb-8">
+            <div className="h-px bg-border mb-6" />
+            <h2 className="font-heading font-bold text-xl mb-1">À écouter</h2>
+            <p className="text-xs text-muted-foreground mb-4">Les sorties associées à cet événement.</p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {linkedReleases.map(r => {
+                const streamUrl = r.spotify_url || r.deezer_url || r.audiomack_url || r.apple_music_url || r.youtube_url;
+                return (
+                  <div key={r.id} className="bg-card border border-border/50 rounded-xl p-3 flex gap-3">
+                    <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="shrink-0">
+                      <div className="w-16 h-16 rounded overflow-hidden bg-secondary">
+                        {r.cover_url ? (
+                          <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Music size={16} className="text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`}>
+                        <p className="font-heading font-bold text-sm truncate hover:text-primary transition-colors">{r.title}</p>
+                      </Link>
+                      <p className="text-xs text-muted-foreground truncate mb-2">{r.artist_name}</p>
+                      {streamUrl && <UniversalPlayer url={streamUrl} label={r.title} className="w-full" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Comments */}
         <CommentsSection
