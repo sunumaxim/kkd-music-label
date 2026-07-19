@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, Radio, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,12 @@ import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import { buildShareUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { useQueryClient } from '@tanstack/react-query';
+
+function getYouTubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
+  return m ? m[1] : null;
+}
 
 const EVENT_TYPE_LABELS = {
   concert: 'Concert',
@@ -45,6 +51,16 @@ export default function EventDetail() {
       return ids.map(id => map.get(id)).filter(Boolean);
     },
     enabled: !!event?.linked_release_ids?.length,
+  });
+
+  const { data: linkedBroadcast } = useQuery({
+    queryKey: ['event-broadcast', event?.id],
+    queryFn: async () => {
+      const results = await base44.entities.Broadcast.filter({ linked_event_id: event.id });
+      const live = results.find(b => b.status === 'en_direct') || results[0];
+      return live || null;
+    },
+    enabled: !!event?.id,
   });
 
   const shareUrl = event ? buildShareUrl('/evenements', event.title, event.id) : '';
@@ -191,6 +207,48 @@ export default function EventDetail() {
             </AnimatePresence>
           </div>
         )}
+
+        {/* Diffusion liée */}
+        {linkedBroadcast && (() => {
+          const bYt = getYouTubeId(linkedBroadcast.stream_url);
+          const bLive = linkedBroadcast.status === 'en_direct';
+          return (
+            <div className="mb-8">
+              <div className="h-px bg-border mb-6" />
+              <h2 className="font-heading font-bold text-xl mb-1">Diffusion</h2>
+              <p className="text-xs text-muted-foreground mb-4">Le direct / replay associé à cet événement.</p>
+              <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+                <div className="relative aspect-video bg-black">
+                  {bYt ? (
+                    <iframe src={`https://www.youtube.com/embed/${bYt}?autoplay=0&rel=0&modestbranding=1`} className="w-full h-full" allow="autoplay; fullscreen" allowFullScreen />
+                  ) : linkedBroadcast.source_video_url ? (
+                    <video src={linkedBroadcast.source_video_url} controls className="w-full h-full object-contain bg-black" />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white/40"><Radio size={28} /></div>
+                  )}
+                  {bLive && (
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> EN DIRECT
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="font-heading font-bold text-sm">{linkedBroadcast.title}</p>
+                  <div className="flex gap-2">
+                    {linkedBroadcast.source_video_url && (
+                      <a href={linkedBroadcast.source_video_url} download className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-xs font-medium hover:bg-secondary/70">
+                        <Download size={13} /> Télécharger
+                      </a>
+                    )}
+                    <Link to={`/direct/${linkedBroadcast.id}`} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20">
+                      Page du live
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* CTA buttons */}
         <div className="flex flex-wrap gap-3 mb-8">

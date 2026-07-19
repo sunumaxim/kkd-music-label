@@ -23,7 +23,7 @@ export default function LiveNowBanner() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-4">
-      <Link to={live.linked_event_id ? `/evenements/${live.linked_event_id}` : '/videos'} className="block group">
+      <Link to={`/direct/${live.id}`} className="block group">
         <div className="relative rounded-2xl overflow-hidden border border-red-500/40 bg-black shadow-lg shadow-red-500/10">
           <div className="aspect-video md:aspect-[21/9]">
             {ytId ? (

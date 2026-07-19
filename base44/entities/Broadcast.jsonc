@@ -150,6 +150,32 @@
       },
       "default": [],
       "description": "Emails des partenaires autoris\u00e9s \u00e0 piloter ce direct"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de likes"
+    },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "user_email": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Commentaires des fans"
     }
   },
   "required": [
