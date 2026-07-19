@@ -151,6 +151,11 @@
       "default": [],
       "description": "Emails des partenaires autoris\u00e9s \u00e0 piloter ce direct"
     },
+    "views_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre de vues"
+    },
     "likes_count": {
       "type": "number",
       "default": 0,

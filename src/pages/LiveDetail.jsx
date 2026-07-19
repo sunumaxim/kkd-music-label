@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Radio, Download, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Radio, Download, Calendar, MapPin, Eye, Heart, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -36,6 +36,24 @@ export default function LiveDetail() {
     },
     enabled: !!broadcast?.linked_event_id,
   });
+
+  useEffect(() => {
+    if (!broadcast?.id) return;
+    const key = `viewed_broadcast_${broadcast.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {}
+    base44.entities.Broadcast.update(broadcast.id, {
+      views_count: (broadcast.views_count || 0) + 1,
+    }).then(() => qc.invalidateQueries({ queryKey: ['live-detail', broadcast.id] }));
+  }, [broadcast?.id]);
+
+  const stats = {
+    views: broadcast?.views_count || 0,
+    likes: broadcast?.likes_count || 0,
+    comments: (broadcast?.comments || []).length,
+  };
 
   if (isLoading) {
     return (
@@ -113,6 +131,30 @@ export default function LiveDetail() {
             >
               <Download size={14} /> Télécharger
             </a>
+          )}
+        </div>
+
+        {/* Stats d'engagement */}
+        <div className="mt-4 flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-1.5 text-sm">
+            <Eye size={15} className="text-muted-foreground" />
+            <span className="font-heading font-bold">{stats.views.toLocaleString('fr-FR')}</span>
+            <span className="text-muted-foreground text-xs">vues</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <Heart size={15} className="text-primary" />
+            <span className="font-heading font-bold">{stats.likes.toLocaleString('fr-FR')}</span>
+            <span className="text-muted-foreground text-xs">j'aime</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <MessageCircle size={15} className="text-muted-foreground" />
+            <span className="font-heading font-bold">{stats.comments.toLocaleString('fr-FR')}</span>
+            <span className="text-muted-foreground text-xs">commentaires</span>
+          </div>
+          {isLive && (
+            <span className="ml-auto flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-red-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> En cours
+            </span>
           )}
         </div>
 

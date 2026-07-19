@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, Radio, Download } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, Radio, Download, Eye, Heart, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -233,7 +233,14 @@ export default function EventDetail() {
                   )}
                 </div>
                 <div className="p-4 flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-heading font-bold text-sm">{linkedBroadcast.title}</p>
+                  <div>
+                    <p className="font-heading font-bold text-sm">{linkedBroadcast.title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Eye size={11} /> {(linkedBroadcast.views_count || 0).toLocaleString('fr-FR')}</span>
+                      <span className="flex items-center gap-1"><Heart size={11} /> {linkedBroadcast.likes_count || 0}</span>
+                      <span className="flex items-center gap-1"><MessageCircle size={11} /> {(linkedBroadcast.comments || []).length}</span>
+                    </div>
+                  </div>
                   <div className="flex gap-2">
                     {linkedBroadcast.source_video_url && (
                       <a href={linkedBroadcast.source_video_url} download className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-xs font-medium hover:bg-secondary/70">
