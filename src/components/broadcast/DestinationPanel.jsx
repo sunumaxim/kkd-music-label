@@ -17,9 +17,11 @@ function TikTokIcon({ size = 14 }) {
   );
 }
 
-export default function DestinationPanel({ broadcast, linkedEvent, onChange }) {
+export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, onChange }) {
   const [igStatus, setIgStatus] = useState(null);
   const [igMsg, setIgMsg] = useState('');
+  const [fbStatus, setFbStatus] = useState(null);
+  const [fbMsg, setFbMsg] = useState('');
   const [tiktokCopied, setTiktokCopied] = useState(false);
 
   const dests = broadcast.destinations || [];
@@ -59,6 +61,30 @@ export default function DestinationPanel({ broadcast, linkedEvent, onChange }) {
     }
   };
 
+  const publishFacebook = async () => {
+    if (!broadcastId) {
+      setFbStatus('error');
+      setFbMsg('Enregistre le direct avant de publier sur Facebook.');
+      return;
+    }
+    setFbStatus('loading');
+    setFbMsg('');
+    try {
+      const res = await base44.functions.invoke('publishBroadcastToFacebook', { broadcast_id: broadcastId });
+      const d = res.data;
+      if (d?.success) {
+        setFbStatus('success');
+        setFbMsg(`Publié sur Facebook (${d.kind === 'video' ? 'vidéo' : 'post'}) !`);
+      } else {
+        setFbStatus('error');
+        setFbMsg(d?.error || 'Erreur lors de la publication.');
+      }
+    } catch (e) {
+      setFbStatus('error');
+      setFbMsg(e.message);
+    }
+  };
+
   const tiktokCaption = `🔴 LIVE — ${broadcast.title}\n\n${broadcast.description || ''}\n\n▶️ Regarder le direct : ${broadcast.stream_url || (linkedEvent ? 'sur KKD Music' : '')}\n\n#kkdmusic #live #concert #${(broadcast.title || 'live').replace(/\s+/g, '').toLowerCase()}`;
 
   const copyTikTok = () => {
@@ -72,6 +98,13 @@ export default function DestinationPanel({ broadcast, linkedEvent, onChange }) {
       <h3 className="font-heading font-bold text-sm flex items-center gap-2">
         <Send size={16} className="text-primary" /> Destinations de diffusion
       </h3>
+
+      {/* Connection status */}
+      <div className="flex flex-wrap gap-2 text-[10px] font-mono">
+        <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> Instagram</span>
+        <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> Facebook</span>
+        <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> TikTok <span className="opacity-60">(lecture seule)</span></span>
+      </div>
 
       <div className="space-y-2">
         {PLATFORMS.map(p => {
@@ -127,7 +160,7 @@ export default function DestinationPanel({ broadcast, linkedEvent, onChange }) {
 
       {dests.includes('tiktok') && (
         <div className="border-t border-border/50 pt-3 space-y-2">
-          <p className="text-xs text-muted-foreground">TikTok ne permet pas la publication auto. Copie la légende :</p>
+          <p className="text-xs text-muted-foreground">TikTok (API lecture seule) — copie la légende pour publier manuellement :</p>
           <textarea readOnly value={tiktokCaption} rows={4} className="w-full bg-background border border-border rounded-lg p-2.5 text-xs font-mono resize-none" />
           <button onClick={copyTikTok} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-black text-white text-sm font-medium">
             {tiktokCopied ? <><Check size={14} /> Copié !</> : <><Copy size={14} /> Copier la légende</>}
@@ -136,14 +169,25 @@ export default function DestinationPanel({ broadcast, linkedEvent, onChange }) {
       )}
 
       {dests.includes('facebook') && (
-        <div className="border-t border-border/50 pt-3 text-xs text-muted-foreground space-y-1">
-          <p className="font-semibold text-foreground">Facebook</p>
-          <p>1. Ouvre ta Page Facebook → « Créer un direct »</p>
-          {broadcast.stream_url && (
-            <>
-              <p>2. Colle le lien du flux :</p>
-              <code className="block bg-secondary rounded p-2 text-[10px] break-all">{broadcast.stream_url}</code>
-            </>
+        <div className="border-t border-border/50 pt-3 space-y-2">
+          <button
+            onClick={publishFacebook}
+            disabled={fbStatus === 'loading'}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
+          >
+            {fbStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Facebook size={14} />}
+            {fbStatus === 'loading' ? 'Publication…' : 'Publier sur Facebook'}
+          </button>
+          {broadcast?.source_video_url && (
+            <p className="text-[11px] text-muted-foreground">La vidéo source sera téléversée sur la Page.</p>
+          )}
+          {fbStatus && fbStatus !== 'loading' && (
+            <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
+              fbStatus === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive'
+            }`}>
+              {fbStatus === 'success' ? <CheckCircle2 size={13} className="shrink-0 mt-0.5" /> : <AlertCircle size={13} className="shrink-0 mt-0.5" />}
+              {fbMsg}
+            </div>
           )}
         </div>
       )}

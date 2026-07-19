@@ -266,7 +266,7 @@ export default function BroadcastStudio() {
         </div>
 
         {/* Destinations column */}
-        <DestinationPanel broadcast={draft} linkedEvent={linkedEvent} onChange={update} />
+        <DestinationPanel broadcast={draft} broadcastId={editingId} linkedEvent={linkedEvent} onChange={update} />
       </div>
     </div>
   );
