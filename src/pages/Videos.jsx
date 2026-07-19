@@ -8,6 +8,7 @@ import PageMeta from '@/components/shared/PageMeta';
 
 const VIDEO_TYPES = [
   { value: 'all', label: 'Tout' },
+  { value: 'replay_live', label: 'Replays' },
   { value: 'clip_officiel', label: 'Clips' },
   { value: 'teaser', label: 'Teasers' },
   { value: 'interview', label: 'Interviews' },
@@ -19,6 +20,7 @@ const TYPE_COLORS = {
   teaser: 'bg-blue-500/80 text-white',
   interview: 'bg-purple-500/80 text-white',
   making_of: 'bg-orange-500/80 text-white',
+  replay_live: 'bg-red-600/80 text-white',
 };
 
 const TYPE_LABELS = {
@@ -26,6 +28,7 @@ const TYPE_LABELS = {
   teaser: 'Teaser',
   interview: 'Interview',
   making_of: 'Making-of',
+  replay_live: 'Replay',
 };
 
 function getYouTubeId(url) {
@@ -60,6 +63,17 @@ function VideoCard({ video, index }) {
               className="w-full h-full"
               allow="autoplay; fullscreen"
               allowFullScreen
+            />
+          ) : playing && video.video_file_url ? (
+            <motion.video
+              key="file"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              src={video.video_file_url}
+              controls
+              autoPlay
+              className="w-full h-full object-contain bg-black"
             />
           ) : (
             <motion.div

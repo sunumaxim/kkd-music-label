@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Lien YouTube"
     },
+    "video_file_url": {
+      "type": "string",
+      "description": "Fichier vid\u00e9o direct (replay cam\u00e9ra / t\u00e9l\u00e9phone / upload) si pas de lien YouTube"
+    },
     "thumbnail_url": {
       "type": "string",
       "description": "Miniature"
@@ -24,10 +28,15 @@
         "clip_officiel",
         "teaser",
         "interview",
-        "making_of"
+        "making_of",
+        "replay_live"
       ],
       "default": "clip_officiel",
       "description": "Type de vid\u00e9o"
+    },
+    "broadcast_id": {
+      "type": "string",
+      "description": "ID du direct archiv\u00e9 (replay)"
     },
     "description": {
       "type": "string",

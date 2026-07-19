@@ -22,6 +22,7 @@ const VIDEO_TYPE_LABELS = {
   teaser: 'Teaser',
   interview: 'Interview',
   making_of: 'Making-of',
+  replay_live: 'Replay live',
 };
 
 export default function VideoDetail() {
@@ -119,6 +120,17 @@ export default function VideoDetail() {
                 allowFullScreen
                 className="absolute inset-0 w-full h-full"
               />
+            </div>
+          </motion.div>
+        )}
+        {!videoId && video.video_file_url && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl overflow-hidden bg-black shadow-2xl mb-6"
+          >
+            <div className="relative aspect-video">
+              <video src={video.video_file_url} controls autoPlay className="absolute inset-0 w-full h-full bg-black" />
             </div>
           </motion.div>
         )}
