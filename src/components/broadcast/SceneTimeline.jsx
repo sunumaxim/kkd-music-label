@@ -6,6 +6,7 @@ import { Film, Image as ImageIcon, Music, Upload, X, ChevronUp, ChevronDown, Loa
 export default function SceneTimeline({ source_video_ids = [], background_image_url, audio_playlist = [], onChange }) {
   const [uploadingImg, setUploadingImg] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [audioLink, setAudioLink] = useState('');
 
   const { data: videos = [] } = useQuery({
     queryKey: ['timeline-videos'],
@@ -101,8 +102,27 @@ export default function SceneTimeline({ source_video_ids = [], background_image_
             </div>
           ))}
         </div>
+        <div className="flex gap-2 mb-2">
+          <input
+            value={audioLink}
+            onChange={e => setAudioLink(e.target.value)}
+            placeholder="Coller un lien (Spotify, YouTube, SoundCloud…)"
+            className="flex-1 bg-background border border-border rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+          <button
+            onClick={() => {
+              if (audioLink.trim()) {
+                onChange({ audio_playlist: [...audio_playlist, audioLink.trim()] });
+                setAudioLink('');
+              }
+            }}
+            className="px-3 py-2 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+          >
+            Ajouter
+          </button>
+        </div>
         <label className="flex items-center justify-center gap-2 cursor-pointer border border-dashed border-border/60 rounded-lg py-3 text-xs text-muted-foreground hover:border-primary/50">
-          {uploadingAudio ? <><Loader2 size={14} className="animate-spin" /> Upload…</> : <><Plus size={14} /> Ajouter un son</>}
+          {uploadingAudio ? <><Loader2 size={14} className="animate-spin" /> Upload…</> : <><Plus size={14} /> Ajouter un son (fichier)</>}
           <input type="file" accept="audio/*" className="hidden" onChange={e => uploadAudio(e.target.files?.[0])} disabled={uploadingAudio} />
         </label>
       </div>

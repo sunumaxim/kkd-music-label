@@ -9,6 +9,7 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
+import StudioProgramPlayer from '@/components/broadcast/StudioProgramPlayer';
 
 function getYouTubeId(url) {
   if (!url) return null;
@@ -35,6 +36,16 @@ export default function LiveDetail() {
       return r[0] || null;
     },
     enabled: !!broadcast?.linked_event_id,
+  });
+
+  const { data: sceneVideos = [] } = useQuery({
+    queryKey: ['live-scenes', broadcast?.source_video_ids?.join(',') || ''],
+    queryFn: async () => {
+      const ids = broadcast?.source_video_ids || [];
+      if (!ids.length) return [];
+      return await base44.entities.Video.filter({ id: { $in: ids } });
+    },
+    enabled: !!broadcast?.source_video_ids?.length,
   });
 
   useEffect(() => {
@@ -92,28 +103,8 @@ export default function LiveDetail() {
           <ArrowLeft size={14} /> Retour à l'accueil
         </Link>
 
-        {/* Player */}
-        <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl">
-          {ytId ? (
-            <iframe
-              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
-              className="w-full h-full"
-              allow="autoplay; fullscreen"
-              allowFullScreen
-            />
-          ) : broadcast.source_video_url ? (
-            <video src={broadcast.source_video_url} controls autoPlay className="w-full h-full object-contain bg-black" />
-          ) : (
-            <div className="flex items-center justify-center h-full text-white/40">
-              <Radio size={32} />
-            </div>
-          )}
-          {isLive && (
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> EN DIRECT
-            </div>
-          )}
-        </div>
+        {/* Lecteur / Programme (live, studio, radio) */}
+        <StudioProgramPlayer broadcast={broadcast} videos={sceneVideos} />
 
         {/* Title + download */}
         <div className="mt-4 flex items-start justify-between gap-3 flex-wrap">
