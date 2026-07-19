@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('facebook_pages');
 
-    // List managed Pages and pick the first
+    // Lister les Pages gérées et prendre la première
     const pagesRes = await fetch(
       `https://graph.facebook.com/v25.0/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
     );
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     const caption = `🔴 ${b.title}\n\n${b.description || ''}\n\n${b.stream_url ? `▶️ Regarder : ${b.stream_url}` : ''}\n\n#KKDmusic #live #concert`.trim();
 
-    // Video upload if a source video is available
+    // Téléversement vidéo si une source est disponible (replay / capture)
     if (b.source_video_url) {
       const videoRes = await fetch(`https://graph.facebook.com/v25.0/${page.id}/videos`, {
         method: 'POST',
@@ -41,16 +41,15 @@ Deno.serve(async (req) => {
       });
       const videoData = await videoRes.json();
       if (videoData.id) return Response.json({ success: true, post_id: videoData.id, kind: 'video' });
-      // fall back to a feed post on video error
+      // sinon, on retombe sur un post texte
     }
 
-    // Feed link post
+    // Post de feed (message uniquement — le paramètre `link` est bloquant sur l'API récente)
     const feedRes = await fetch(`https://graph.facebook.com/v25.0/${page.id}/feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: caption,
-        link: b.stream_url || '',
         access_token: page.access_token,
       }),
     });

@@ -1,10 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-// Instagram requires publicly accessible image URLs.
-// This helper checks if the URL is a base44 private file and creates a signed URL.
+// Instagram exige des URLs d'images publiquement accessibles.
 async function getPublicImageUrl(base44, imageUrl) {
   if (!imageUrl) return null;
-  // base44 private files contain /private/ or /user_/ in the path
   if (imageUrl.includes('/private/') || (imageUrl.includes('media.base44.com') && imageUrl.includes('/user_'))) {
     try {
       const result = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
@@ -26,40 +24,32 @@ Deno.serve(async (req) => {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('instagram');
 
-    // Get Instagram Business Account ID via Graph API
+    // IMPORTANT : l'API Instagram utilise graph.instagram.com (PAS graph.facebook.com).
+    // Le token Instagram ne fonctionne qu'avec les endpoints Instagram.
     const meRes = await fetch(
-      `https://graph.facebook.com/v19.0/me/accounts?fields=instagram_business_account&access_token=${accessToken}`
+      `https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`
     );
     const meData = await meRes.json();
-
-    // Try to get ig business account from pages
-    let igUserId = null;
-    if (meData.data && meData.data.length > 0) {
-      for (const page of meData.data) {
-        if (page.instagram_business_account?.id) {
-          igUserId = page.instagram_business_account.id;
-          break;
-        }
-      }
-    }
-
-    // Fallback: try direct /me endpoint (Instagram Basic Display)
-    if (!igUserId) {
-      const directRes = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`);
-      const directData = await directRes.json();
-      igUserId = directData.id;
-    }
-
+    const igUserId = meData.id;
     if (!igUserId) {
       return Response.json({
-        error: 'Impossible de récupérer le compte Instagram Business. Vérifiez que votre compte Instagram est bien un compte Business/Creator lié à une Page Facebook.',
-        details: meData
+        error: `Compte Instagram Business introuvable : ${meData.error?.message || JSON.stringify(meData)}. Vérifiez que le compte est Business/Creator et lié à une Page.`,
       }, { status: 500 });
     }
 
     let imageUrl, caption;
 
-    if (content_type === 'release') {
+    if (content_type === 'broadcast') {
+      const bs = await base44.asServiceRole.entities.Broadcast.filter({ id: entity_id });
+      const b = bs[0];
+      if (!b) return Response.json({ error: 'Direct introuvable' }, { status: 404 });
+      imageUrl = await getPublicImageUrl(base44, b.background_image_url);
+      if (!imageUrl && b.linked_event_id) {
+        const evs = await base44.asServiceRole.entities.Event.filter({ id: b.linked_event_id });
+        if (evs[0]) imageUrl = await getPublicImageUrl(base44, evs[0].image_url);
+      }
+      caption = `🔴 ${b.title}\n\n${b.description || ''}\n\n${b.stream_url ? `▶️ Regarder le direct : ${b.stream_url}\n\n` : ''}#KKDmusic #live #concert`;
+    } else if (content_type === 'release') {
       const releases = await base44.asServiceRole.entities.Release.filter({ id: entity_id });
       const r = releases[0];
       if (!r) return Response.json({ error: 'Release not found' }, { status: 404 });
@@ -68,8 +58,7 @@ Deno.serve(async (req) => {
       caption = `🎵 Nouvelle sortie : ${r.title} par ${r.artist_name}\n\n` +
         (r.description ? `${r.description}\n\n` : '') +
         (streamLink ? `🎧 Écouter : ${streamLink}\n\n` : '') +
-        `#KKDmusic #NouveautéMusicale #${r.artist_name?.replace(/\s+/g, '')} #${r.release_type || 'Music'}`;
-
+        `#KKDmusic #NouveautéMusicale #${(r.artist_name || 'Music').replace(/\s+/g, '')} #${r.release_type || 'Music'}`;
     } else if (content_type === 'event') {
       const events = await base44.asServiceRole.entities.Event.filter({ id: entity_id });
       const e = events[0];
@@ -81,17 +70,15 @@ Deno.serve(async (req) => {
         (e.location ? `📍 ${e.location}${e.city ? `, ${e.city}` : ''}\n` : '') +
         (e.description ? `\n${e.description}\n` : '') +
         (e.ticket_url ? `\n🎟️ Billets : ${e.ticket_url}\n` : '') +
-        `\n#KKDmusic #Concert #${e.city?.replace(/\s+/g, '') || 'Événement'}`;
-
+        `\n#KKDmusic #Concert #${(e.city || 'Événement').replace(/\s+/g, '')}`;
     } else if (content_type === 'news') {
       const newsList = await base44.asServiceRole.entities.News.filter({ id: entity_id });
       const n = newsList[0];
       if (!n) return Response.json({ error: 'News not found' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, n.image_url);
       caption = `📰 ${n.title}\n\n` +
-        (n.excerpt || n.content?.slice(0, 200) || '') +
+        (n.excerpt || (n.content && n.content.slice(0, 200)) || '') +
         `\n\n#KKDmusic #Actualité #Music`;
-
     } else if (content_type === 'video') {
       const videos = await base44.asServiceRole.entities.Video.filter({ id: entity_id });
       const v = videos[0];
@@ -104,19 +91,19 @@ Deno.serve(async (req) => {
       caption = `🎬 ${v.title}${v.artist_name ? ` par ${v.artist_name}` : ''}\n\n` +
         (v.description ? `${v.description}\n\n` : '') +
         (v.youtube_url ? `▶️ Voir : ${v.youtube_url}\n\n` : '') +
-        `#KKDmusic #ClipOfficiel ${v.artist_name ? `#${v.artist_name?.replace(/\s+/g, '')}` : ''}`;
+        `#KKDmusic ${v.artist_name ? `#${v.artist_name.replace(/\s+/g, '')}` : ''}`;
     } else {
       return Response.json({ error: 'Unknown content_type' }, { status: 400 });
     }
 
     if (!imageUrl) {
       return Response.json({
-        error: 'Aucune image disponible pour ce contenu. Ajoutez une image/pochette pour publier sur Instagram.',
-        skipped: true
+        error: 'Aucune image disponible. Ajoutez une image (fond du direct, événement ou pochette) pour publier sur Instagram.',
+        skipped: true,
       }, { status: 200 });
     }
 
-    // Step 1: Create media container
+    // Étape 1 : créer le conteneur média
     const createRes = await fetch(`https://graph.instagram.com/v19.0/${igUserId}/media`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,23 +112,22 @@ Deno.serve(async (req) => {
     const created = await createRes.json();
     if (!created.id) {
       return Response.json({
-        error: `Échec de la création du post Instagram : ${created.error?.message || JSON.stringify(created)}`,
-        details: created
+        error: `Création du post Instagram échouée : ${created.error?.message || JSON.stringify(created)}`,
+        details: created,
       }, { status: 500 });
     }
 
-    // Step 2: Publish
+    // Étape 2 : publier
     const publishRes = await fetch(`https://graph.instagram.com/v19.0/${igUserId}/media_publish`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ creation_id: created.id, access_token: accessToken }),
     });
     const published = await publishRes.json();
-
     if (!published.id) {
       return Response.json({
-        error: `Échec de la publication : ${published.error?.message || JSON.stringify(published)}`,
-        details: published
+        error: `Publication Instagram échouée : ${published.error?.message || JSON.stringify(published)}`,
+        details: published,
       }, { status: 500 });
     }
 

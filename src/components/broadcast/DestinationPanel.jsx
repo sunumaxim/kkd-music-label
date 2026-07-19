@@ -34,25 +34,25 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
   };
 
   const publishInstagram = async () => {
-    if (!linkedEvent) {
+    if (!broadcastId) {
       setIgStatus('error');
-      setIgMsg('Lie un événement avec une image pour publier sur Instagram.');
+      setIgMsg('Enregistre le direct avant de publier sur Instagram.');
       return;
     }
     setIgStatus('loading');
     setIgMsg('');
     try {
       const res = await base44.functions.invoke('publishToInstagram', {
-        content_type: 'event',
-        entity_id: linkedEvent.id,
+        content_type: 'broadcast',
+        entity_id: broadcastId,
       });
       const d = res.data;
       if (d?.success) {
         setIgStatus('success');
-        setIgMsg(`Publié ! Post ID : ${d.post_id}`);
+        setIgMsg(`Publié sur Instagram ! Post ID : ${d.post_id}`);
       } else if (d?.skipped) {
         setIgStatus('error');
-        setIgMsg("L'événement lié n'a pas d'image.");
+        setIgMsg('Aucune image : ajoutez un fond au direct ou liez un événement avec image.');
       } else {
         setIgStatus('error');
         setIgMsg(d?.error || 'Erreur lors de la publication.');
