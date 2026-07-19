@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FanGalleryGrid from '@/components/fans/FanGalleryGrid';
 import FanGalleryFilters from '@/components/fans/FanGalleryFilters';
 import FanGalleryLightbox from '@/components/fans/FanGalleryLightbox';
+import TopFansSection from '@/components/fans/TopFansSection';
 
 const EMPTY_FORM = {
   author_name: '', author_email: '', title: '', content: '',
@@ -131,6 +132,8 @@ export default function FanSpace() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
+        <TopFansSection />
+
         {/* Success */}
         <AnimatePresence>
           {submitted && (
