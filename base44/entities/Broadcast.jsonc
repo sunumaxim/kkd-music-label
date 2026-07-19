@@ -14,7 +14,9 @@
       "type": "string",
       "enum": [
         "live_stream",
-        "video_replay"
+        "video_replay",
+        "camera",
+        "file_upload"
       ],
       "default": "live_stream",
       "description": "Type de source"
@@ -22,6 +24,10 @@
     "stream_url": {
       "type": "string",
       "description": "Lien du flux live (YouTube)"
+    },
+    "source_video_url": {
+      "type": "string",
+      "description": "Vid\u00e9o enregistr\u00e9e (cam\u00e9ra) ou t\u00e9l\u00e9vers\u00e9e depuis l'appareil"
     },
     "source_video_ids": {
       "type": "array",
@@ -59,6 +65,16 @@
     "overlay_text": {
       "type": "string",
       "description": "Texte incrust\u00e9 (bandeau bas)"
+    },
+    "transition_type": {
+      "type": "string",
+      "enum": [
+        "none",
+        "fade",
+        "slide"
+      ],
+      "default": "none",
+      "description": "Transition entre sc\u00e8nes"
     },
     "destinations": {
       "type": "array",

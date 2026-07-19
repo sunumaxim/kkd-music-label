@@ -10,7 +10,7 @@ const POSITIONS = [
   { value: 'bottom-right', label: '↘' },
 ];
 
-export default function WatermarkConfig({ watermark_logo_url, watermark_position, watermark_opacity, overlay_text, onChange }) {
+export default function WatermarkConfig({ watermark_logo_url, watermark_position, watermark_opacity, overlay_text, transition_type, onChange }) {
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file) => {
@@ -105,6 +105,28 @@ export default function WatermarkConfig({ watermark_logo_url, watermark_position
           placeholder="Ex: 🔴 LIVE — KKD Music"
           className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
+      </div>
+
+      {/* Transitions */}
+      <div>
+        <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1.5 block">Transition entre scènes</label>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { value: 'none', label: 'Aucune' },
+            { value: 'fade', label: 'Fondu' },
+            { value: 'slide', label: 'Glissé' },
+          ].map(t => (
+            <button
+              key={t.value}
+              onClick={() => onChange({ transition_type: t.value })}
+              className={`px-2 py-2 rounded-lg border text-xs font-medium transition-all ${
+                transition_type === t.value ? 'bg-primary/15 border-primary/50 text-primary' : 'border-border text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

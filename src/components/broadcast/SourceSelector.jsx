@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Radio, Film, Link2, Search, Check, Video as VideoIcon } from 'lucide-react';
+import { Radio, Film, Link2, Search, Check, Video as VideoIcon, Camera, Upload } from 'lucide-react';
+import CameraSource from './CameraSource';
+import FileSource from './FileSource';
 
-export default function SourceSelector({ source_type, stream_url, source_video_ids = [], onChange }) {
+export default function SourceSelector({ source_type, stream_url, source_video_ids = [], source_video_url, onChange }) {
   const [search, setSearch] = useState('');
   const { data: videos = [] } = useQuery({
     queryKey: ['broadcast-videos'],
@@ -20,32 +22,38 @@ export default function SourceSelector({ source_type, stream_url, source_video_i
     onChange({ source_video_ids: next });
   };
 
+  const TYPES = [
+    { value: 'live_stream', label: 'Flux live', icon: Link2 },
+    { value: 'video_replay', label: 'Catalogue', icon: Film },
+    { value: 'camera', label: 'Caméra', icon: Camera },
+    { value: 'file_upload', label: 'Fichier', icon: Upload },
+  ];
+
   return (
     <div className="bg-card border border-border/50 rounded-xl p-5 space-y-4">
       <h3 className="font-heading font-bold text-sm flex items-center gap-2">
         <Radio size={16} className="text-primary" /> Source du direct
       </h3>
 
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => onChange({ source_type: 'live_stream' })}
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-            source_type === 'live_stream' ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Link2 size={14} /> Flux live
-        </button>
-        <button
-          onClick={() => onChange({ source_type: 'video_replay' })}
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-            source_type === 'video_replay' ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Film size={14} /> Catalogue vidéo
-        </button>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {TYPES.map(t => {
+          const Icon = t.icon;
+          const active = source_type === t.value;
+          return (
+            <button
+              key={t.value}
+              onClick={() => onChange({ source_type: t.value })}
+              className={`flex flex-col items-center gap-1 px-2 py-3 rounded-lg border text-xs font-medium transition-all ${
+                active ? 'bg-primary/10 border-primary/40 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon size={16} /> {t.label}
+            </button>
+          );
+        })}
       </div>
 
-      {source_type === 'live_stream' ? (
+      {source_type === 'live_stream' && (
         <div>
           <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1.5 block">
             Lien du flux (YouTube Live)
@@ -57,7 +65,9 @@ export default function SourceSelector({ source_type, stream_url, source_video_i
             className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
         </div>
-      ) : (
+      )}
+
+      {source_type === 'video_replay' && (
         <div>
           <div className="relative mb-2">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -69,9 +79,7 @@ export default function SourceSelector({ source_type, stream_url, source_video_i
             />
           </div>
           <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
-            {filtered.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Aucune vidéo.</p>
-            )}
+            {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Aucune vidéo.</p>}
             {filtered.map(v => {
               const isSel = selected.has(v.id);
               return (
@@ -104,6 +112,12 @@ export default function SourceSelector({ source_type, stream_url, source_video_i
             </p>
           )}
         </div>
+      )}
+
+      {source_type === 'camera' && <CameraSource onChange={onChange} />}
+
+      {source_type === 'file_upload' && (
+        <FileSource source_video_url={source_video_url} onChange={onChange} />
       )}
     </div>
   );

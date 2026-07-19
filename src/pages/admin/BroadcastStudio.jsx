@@ -22,9 +22,9 @@ const STATUS_LABELS = {
 
 const EMPTY = {
   title: '', description: '', source_type: 'live_stream', stream_url: '',
-  source_video_ids: [], linked_event_id: '', watermark_logo_url: '',
+  source_video_url: '', source_video_ids: [], linked_event_id: '', watermark_logo_url: '',
   watermark_position: 'top-right', watermark_opacity: 0.85, overlay_text: '',
-  destinations: ['plateforme'], status: 'brouillon',
+  transition_type: 'none', destinations: ['plateforme'], status: 'brouillon',
 };
 
 export default function BroadcastStudio() {
@@ -190,6 +190,7 @@ export default function BroadcastStudio() {
             source_type={draft.source_type}
             stream_url={draft.stream_url}
             source_video_ids={draft.source_video_ids}
+            source_video_url={draft.source_video_url}
             onChange={update}
           />
           <WatermarkConfig
@@ -197,6 +198,7 @@ export default function BroadcastStudio() {
             watermark_position={draft.watermark_position}
             watermark_opacity={draft.watermark_opacity}
             overlay_text={draft.overlay_text}
+            transition_type={draft.transition_type}
             onChange={update}
           />
 

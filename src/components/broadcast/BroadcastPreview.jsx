@@ -1,5 +1,6 @@
 import React from 'react';
 import { Play, Radio } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function getYouTubeId(url) {
   if (!url) return null;
@@ -15,19 +16,39 @@ const POS_CLASSES = {
   'center': 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
 };
 
+const TRANSITIONS = {
+  none: { initial: { opacity: 1 }, animate: { opacity: 1 }, exit: { opacity: 1 } },
+  fade: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+  slide: { initial: { x: 40, opacity: 0 }, animate: { x: 0, opacity: 1 }, exit: { x: -40, opacity: 0 } },
+};
+
 export default function BroadcastPreview({ broadcast, videos = [] }) {
-  let embedUrl = null;
+  let content = null;
+  let key = broadcast.source_type;
+
   if (broadcast.source_type === 'live_stream') {
     const id = getYouTubeId(broadcast.stream_url);
-    if (id) embedUrl = `https://www.youtube.com/embed/${id}`;
-  } else {
+    if (id) {
+      content = <iframe src={`https://www.youtube.com/embed/${id}`} title="preview" className="absolute inset-0 w-full h-full" allow="autoplay; encrypted-media; fullscreen" allowFullScreen />;
+      key = 'yt-' + id;
+    }
+  } else if (broadcast.source_type === 'video_replay') {
     const firstId = (broadcast.source_video_ids || [])[0];
     const vid = videos.find(v => v.id === firstId);
     const id = getYouTubeId(vid?.youtube_url);
-    if (id) embedUrl = `https://www.youtube.com/embed/${id}`;
+    if (id) {
+      content = <iframe src={`https://www.youtube.com/embed/${id}`} title="preview" className="absolute inset-0 w-full h-full" allow="autoplay; encrypted-media; fullscreen" allowFullScreen />;
+      key = 'ytr-' + id;
+    }
+  } else if (broadcast.source_type === 'camera' || broadcast.source_type === 'file_upload') {
+    if (broadcast.source_video_url) {
+      content = <video src={broadcast.source_video_url} controls autoPlay loop playsInline className="absolute inset-0 w-full h-full object-contain bg-black" />;
+      key = 'vid-' + broadcast.source_video_url;
+    }
   }
 
   const isLive = broadcast.status === 'en_direct';
+  const tr = TRANSITIONS[broadcast.transition_type] || TRANSITIONS.none;
 
   return (
     <div className="bg-card border border-border/50 rounded-xl p-5">
@@ -43,22 +64,24 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
       </div>
 
       <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-        {embedUrl ? (
-          <iframe
-            src={embedUrl}
-            title="preview"
-            className="absolute inset-0 w-full h-full"
-            allow="autoplay; encrypted-media; fullscreen"
-            allowFullScreen
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/40 gap-2">
-            <Play size={32} />
-            <span className="text-xs">Aucune source configurée</span>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={key}
+            initial={tr.initial}
+            animate={tr.animate}
+            exit={tr.exit}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0"
+          >
+            {content || (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/40 gap-2">
+                <Play size={32} />
+                <span className="text-xs">Aucune source configurée</span>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-        {/* Watermark logo overlay */}
         {broadcast.watermark_logo_url && (
           <img
             src={broadcast.watermark_logo_url}
@@ -68,7 +91,6 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
           />
         )}
 
-        {/* Overlay text banner */}
         {broadcast.overlay_text && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pointer-events-none z-10">
             <p className="text-white text-xs font-mono font-semibold tracking-wide">{broadcast.overlay_text}</p>
@@ -76,9 +98,7 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground mt-2">
-        Aperçu avec incrustations. La diffusion réelle dépend de chaque plateforme.
-      </p>
+      <p className="text-xs text-muted-foreground mt-2">Aperçu avec incrustations et transitions. La diffusion réelle dépend de chaque plateforme.</p>
     </div>
   );
 }
