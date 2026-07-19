@@ -40,6 +40,7 @@ const navGroups = [
     label: 'Diffusion',
     links: [
       { label: 'Studio Live', path: '/admin/studio', icon: Radio },
+      { label: 'Correspondants', path: '/admin/correspondants', icon: UserPlus },
     ]
   },
   {

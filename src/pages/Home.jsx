@@ -9,6 +9,7 @@ import LatestVideos from '@/components/home/LatestVideos';
 import UpcomingEvents from '@/components/home/UpcomingEvents';
 import LatestNews from '@/components/home/LatestNews';
 import PartnersCTA from '@/components/home/PartnersCTA';
+import LiveNowBanner from '@/components/home/LiveNowBanner';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 import { Loader2 } from 'lucide-react';
 
@@ -52,6 +53,7 @@ export default function Home() {
         </div>
       )}
 
+      <LiveNowBanner />
       <HeroSlider releases={releases} videos={videos} events={events} news={news} />
 
       <LatestReleases releases={releases} />
