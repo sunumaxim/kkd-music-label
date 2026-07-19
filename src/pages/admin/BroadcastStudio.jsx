@@ -8,6 +8,9 @@ import SourceSelector from '@/components/broadcast/SourceSelector';
 import WatermarkConfig from '@/components/broadcast/WatermarkConfig';
 import BroadcastPreview from '@/components/broadcast/BroadcastPreview';
 import DestinationPanel from '@/components/broadcast/DestinationPanel';
+import SceneTimeline from '@/components/broadcast/SceneTimeline';
+import ScheduleControls from '@/components/broadcast/ScheduleControls';
+import PhoneLinkQR from '@/components/broadcast/PhoneLinkQR';
 
 const STATUS_STYLES = {
   brouillon: 'bg-secondary text-muted-foreground',
@@ -22,9 +25,10 @@ const STATUS_LABELS = {
 
 const EMPTY = {
   title: '', description: '', source_type: 'live_stream', stream_url: '',
-  source_video_url: '', source_video_ids: [], linked_event_id: '', watermark_logo_url: '',
+  source_video_url: '', source_video_ids: [], background_image_url: '', audio_playlist: [],
+  linked_event_id: '', watermark_logo_url: '',
   watermark_position: 'top-right', watermark_opacity: 0.85, overlay_text: '',
-  transition_type: 'none', destinations: ['plateforme'], status: 'brouillon',
+  transition_type: 'none', phone_token: '', destinations: ['plateforme'], status: 'brouillon',
 };
 
 export default function BroadcastStudio() {
@@ -33,6 +37,7 @@ export default function BroadcastStudio() {
   const [draft, setDraft] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [grantEmail, setGrantEmail] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const { data: broadcasts = [] } = useQuery({
     queryKey: ['broadcasts'],
@@ -108,6 +113,31 @@ export default function BroadcastStudio() {
     if (!grantEmail) return;
     update({ granted_emails: [...(draft.granted_emails || []), grantEmail] });
     setGrantEmail('');
+  };
+
+  const handleSchedule = async () => {
+    if (!draft.scheduled_date) return;
+    setSaving(true);
+    try {
+      await persist({ status: 'programme' });
+      update({ status: 'programme' });
+    } finally { setSaving(false); }
+  };
+
+  const generatePhoneToken = async () => {
+    const token = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    update({ phone_token: token });
+    await persist({ phone_token: token });
+  };
+
+  const refreshPhoneSource = async () => {
+    if (!editingId) return;
+    setRefreshing(true);
+    try {
+      const b = await base44.entities.Broadcast.get(editingId);
+      if (b) setDraft(d => ({ ...d, source_video_url: b.source_video_url, source_type: b.source_type }));
+      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
+    } finally { setRefreshing(false); }
   };
 
   const isLive = draft.status === 'en_direct';
@@ -193,6 +223,12 @@ export default function BroadcastStudio() {
             source_video_url={draft.source_video_url}
             onChange={update}
           />
+          <SceneTimeline
+            source_video_ids={draft.source_video_ids}
+            background_image_url={draft.background_image_url}
+            audio_playlist={draft.audio_playlist}
+            onChange={update}
+          />
           <WatermarkConfig
             watermark_logo_url={draft.watermark_logo_url}
             watermark_position={draft.watermark_position}
@@ -200,6 +236,12 @@ export default function BroadcastStudio() {
             overlay_text={draft.overlay_text}
             transition_type={draft.transition_type}
             onChange={update}
+          />
+          <ScheduleControls
+            scheduled_date={draft.scheduled_date}
+            status={draft.status}
+            onChange={update}
+            onSchedule={handleSchedule}
           />
 
           {/* Access grants */}
@@ -266,7 +308,15 @@ export default function BroadcastStudio() {
         </div>
 
         {/* Destinations column */}
-        <DestinationPanel broadcast={draft} broadcastId={editingId} linkedEvent={linkedEvent} onChange={update} />
+        <div className="space-y-4">
+          <DestinationPanel broadcast={draft} broadcastId={editingId} linkedEvent={linkedEvent} onChange={update} />
+          <PhoneLinkQR
+            phone_token={draft.phone_token}
+            onGenerate={generatePhoneToken}
+            onRefresh={refreshPhoneSource}
+            refreshing={refreshing}
+          />
+        </div>
       </div>
     </div>
   );

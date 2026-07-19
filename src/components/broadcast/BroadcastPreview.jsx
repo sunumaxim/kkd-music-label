@@ -64,6 +64,9 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
       </div>
 
       <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
+        {broadcast.background_image_url && (
+          <img src={broadcast.background_image_url} alt="fond" className="absolute inset-0 w-full h-full object-cover opacity-60 z-0" />
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={key}
@@ -71,7 +74,7 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
             animate={tr.animate}
             exit={tr.exit}
             transition={{ duration: 0.4 }}
-            className="absolute inset-0"
+            className="absolute inset-0 z-20"
           >
             {content || (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/40 gap-2">
@@ -87,16 +90,24 @@ export default function BroadcastPreview({ broadcast, videos = [] }) {
             src={broadcast.watermark_logo_url}
             alt="watermark"
             style={{ opacity: broadcast.watermark_opacity ?? 0.85 }}
-            className={`absolute w-20 h-auto object-contain drop-shadow-lg pointer-events-none z-10 ${POS_CLASSES[broadcast.watermark_position] || POS_CLASSES['top-right']}`}
+            className={`absolute w-20 h-auto object-contain drop-shadow-lg pointer-events-none z-30 ${POS_CLASSES[broadcast.watermark_position] || POS_CLASSES['top-right']}`}
           />
         )}
 
         {broadcast.overlay_text && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pointer-events-none z-10">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 pointer-events-none z-30">
             <p className="text-white text-xs font-mono font-semibold tracking-wide">{broadcast.overlay_text}</p>
           </div>
         )}
       </div>
+
+      {(broadcast.audio_playlist || []).length > 0 && (
+        <div className="mt-2 space-y-1">
+          {(broadcast.audio_playlist || []).map((url, i) => (
+            <audio key={i} controls src={url} className="w-full h-8" />
+          ))}
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground mt-2">Aperçu avec incrustations et transitions. La diffusion réelle dépend de chaque plateforme.</p>
     </div>

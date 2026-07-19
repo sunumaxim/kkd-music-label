@@ -20,6 +20,7 @@ import PublicLayout from './components/layout/PublicLayout';
 
 // Partner
 import PartnerDashboard from './pages/partner/PartnerDashboard.jsx';
+import StudioPhone from './pages/StudioPhone';
 
 // Public pages
 import Home from './pages/Home';
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
       {/* Partner dashboard (protected) */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/mon-espace" element={<PartnerDashboard />} />
+        <Route path="/studio/phone/:token" element={<StudioPhone />} />
       </Route>
 
       {/* Admin routes (admin only) */}

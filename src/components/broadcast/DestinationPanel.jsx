@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Instagram, Send, Loader2, CheckCircle2, AlertCircle, Copy, Check, Radio, Facebook } from 'lucide-react';
+import { Instagram, Send, Loader2, CheckCircle2, AlertCircle, Copy, Check, Radio, Facebook, Youtube } from 'lucide-react';
 
 const PLATFORMS = [
   { key: 'plateforme', label: 'Plateforme KKD', icon: Radio, color: 'text-primary' },
   { key: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-pink-500' },
   { key: 'tiktok', label: 'TikTok', icon: null, color: 'text-foreground' },
   { key: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-500' },
+  { key: 'youtube', label: 'YouTube', icon: Youtube, color: 'text-red-500' },
 ];
 
 function TikTokIcon({ size = 14 }) {
@@ -23,6 +24,7 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
   const [fbStatus, setFbStatus] = useState(null);
   const [fbMsg, setFbMsg] = useState('');
   const [tiktokCopied, setTiktokCopied] = useState(false);
+  const [ytCopied, setYtCopied] = useState(false);
 
   const dests = broadcast.destinations || [];
 
@@ -85,12 +87,12 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
     }
   };
 
-  const tiktokCaption = `🔴 LIVE — ${broadcast.title}\n\n${broadcast.description || ''}\n\n▶️ Regarder le direct : ${broadcast.stream_url || (linkedEvent ? 'sur KKD Music' : '')}\n\n#kkdmusic #live #concert #${(broadcast.title || 'live').replace(/\s+/g, '').toLowerCase()}`;
+  const liveCaption = `🔴 ${broadcast.title}\n\n${broadcast.description || ''}\n\n▶️ Regarder le direct : ${broadcast.stream_url || (linkedEvent ? 'sur KKD Music' : '')}\n\n#kkdmusic #live #concert`;
 
-  const copyTikTok = () => {
-    navigator.clipboard.writeText(tiktokCaption);
-    setTiktokCopied(true);
-    setTimeout(() => setTiktokCopied(false), 2000);
+  const copy = (text, setter) => {
+    navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
   };
 
   return (
@@ -104,6 +106,7 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
         <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> Instagram</span>
         <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> Facebook</span>
         <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400"><CheckCircle2 size={10} /> TikTok <span className="opacity-60">(lecture seule)</span></span>
+        <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-400"><CheckCircle2 size={10} /> YouTube <span className="opacity-60">(manuel)</span></span>
       </div>
 
       <div className="space-y-2">
@@ -148,9 +151,7 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
             {igStatus === 'loading' ? 'Publication…' : 'Publier sur Instagram'}
           </button>
           {igStatus && igStatus !== 'loading' && (
-            <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
-              igStatus === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive'
-            }`}>
+            <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${igStatus === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive'}`}>
               {igStatus === 'success' ? <CheckCircle2 size={13} className="shrink-0 mt-0.5" /> : <AlertCircle size={13} className="shrink-0 mt-0.5" />}
               {igMsg}
             </div>
@@ -161,9 +162,19 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
       {dests.includes('tiktok') && (
         <div className="border-t border-border/50 pt-3 space-y-2">
           <p className="text-xs text-muted-foreground">TikTok (API lecture seule) — copie la légende pour publier manuellement :</p>
-          <textarea readOnly value={tiktokCaption} rows={4} className="w-full bg-background border border-border rounded-lg p-2.5 text-xs font-mono resize-none" />
-          <button onClick={copyTikTok} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-black text-white text-sm font-medium">
+          <textarea readOnly value={liveCaption} rows={4} className="w-full bg-background border border-border rounded-lg p-2.5 text-xs font-mono resize-none" />
+          <button onClick={() => copy(liveCaption, setTiktokCopied)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-black text-white text-sm font-medium">
             {tiktokCopied ? <><Check size={14} /> Copié !</> : <><Copy size={14} /> Copier la légende</>}
+          </button>
+        </div>
+      )}
+
+      {dests.includes('youtube') && (
+        <div className="border-t border-border/50 pt-3 space-y-2">
+          <p className="text-xs text-muted-foreground">YouTube Live — crée le direct dans YouTube Studio, récupère la clé de stream, puis copie la description :</p>
+          <textarea readOnly value={liveCaption} rows={4} className="w-full bg-background border border-border rounded-lg p-2.5 text-xs font-mono resize-none" />
+          <button onClick={() => copy(liveCaption, setYtCopied)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-red-600 text-white text-sm font-medium">
+            {ytCopied ? <><Check size={14} /> Copié !</> : <><Copy size={14} /> Copier la description</>}
           </button>
         </div>
       )}
@@ -182,9 +193,7 @@ export default function DestinationPanel({ broadcast, broadcastId, linkedEvent, 
             <p className="text-[11px] text-muted-foreground">La vidéo source sera téléversée sur la Page.</p>
           )}
           {fbStatus && fbStatus !== 'loading' && (
-            <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
-              fbStatus === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive'
-            }`}>
+            <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${fbStatus === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-destructive/10 text-destructive'}`}>
               {fbStatus === 'success' ? <CheckCircle2 size={13} className="shrink-0 mt-0.5" /> : <AlertCircle size={13} className="shrink-0 mt-0.5" />}
               {fbMsg}
             </div>
