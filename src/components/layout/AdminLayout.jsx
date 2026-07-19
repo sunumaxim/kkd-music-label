@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Users, Music, Video, Newspaper, CalendarDays,
+  Users, Music, Video, Newspaper, CalendarDays, Radio,
   LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
   Menu, X, ChevronRight, UploadCloud, Mail, Share2, Heart
 } from 'lucide-react';
@@ -34,6 +34,12 @@ const navGroups = [
       { label: 'Mailing', path: '/admin/mailing', icon: Mail },
       { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
       { label: 'Réseaux Sociaux', path: '/admin/social', icon: Share2 },
+    ]
+  },
+  {
+    label: 'Diffusion',
+    links: [
+      { label: 'Studio Live', path: '/admin/studio', icon: Radio },
     ]
   },
   {

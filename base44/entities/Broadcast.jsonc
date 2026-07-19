@@ -1,0 +1,126 @@
+{
+  "name": "Broadcast",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre du direct"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "live_stream",
+        "video_replay"
+      ],
+      "default": "live_stream",
+      "description": "Type de source"
+    },
+    "stream_url": {
+      "type": "string",
+      "description": "Lien du flux live (YouTube)"
+    },
+    "source_video_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Vid\u00e9os s\u00e9lectionn\u00e9es pour le replay (lecture en file)"
+    },
+    "linked_event_id": {
+      "type": "string",
+      "description": "\u00c9v\u00e9nement li\u00e9 (page o\u00f9 le direct s'affiche)"
+    },
+    "watermark_logo_url": {
+      "type": "string",
+      "description": "Logo \u00e0 incruster sur le direct"
+    },
+    "watermark_position": {
+      "type": "string",
+      "enum": [
+        "top-left",
+        "top-right",
+        "bottom-left",
+        "bottom-right",
+        "center"
+      ],
+      "default": "top-right",
+      "description": "Position du logo"
+    },
+    "watermark_opacity": {
+      "type": "number",
+      "default": 0.85,
+      "description": "Opacit\u00e9 du logo"
+    },
+    "overlay_text": {
+      "type": "string",
+      "description": "Texte incrust\u00e9 (bandeau bas)"
+    },
+    "destinations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Plateformes de diffusion activ\u00e9es (plateforme, instagram, tiktok, facebook)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "brouillon",
+        "programme",
+        "en_direct",
+        "termine",
+        "erreur"
+      ],
+      "default": "brouillon",
+      "description": "Statut du direct"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "started_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "broadcast_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Journal d'\u00e9v\u00e9nements du direct"
+    },
+    "granted_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Emails des partenaires autoris\u00e9s \u00e0 piloter ce direct"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
