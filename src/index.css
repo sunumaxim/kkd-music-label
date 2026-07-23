@@ -108,6 +108,23 @@
   p, span, h1, h2, h3, h4, h5, h6, li, td, th, blockquote, article, .prose {
     -webkit-user-select: text;
     user-select: text;
+    overflow-wrap: break-word;
+  }
+
+  /* Empêcher les médias de dépasser de l'écran sur mobile */
+  img, video, iframe, embed, object {
+    max-width: 100%;
+  }
+
+  /* Images markdown contraintes */
+  .prose img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Filet de sécurité contre le débordement horizontal */
+  body {
+    overflow-x: clip;
   }
 }
 

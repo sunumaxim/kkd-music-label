@@ -178,8 +178,8 @@ export function MusicEmbeds({ musics }) {
         }
         return (
           <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 text-primary text-sm hover:underline">
-            <Music2 size={14} /> {url}
+            className="flex items-center gap-2 text-primary text-sm hover:underline min-w-0">
+            <Music2 size={14} className="shrink-0" /> <span className="truncate">{url}</span>
           </a>
         );
       })}
