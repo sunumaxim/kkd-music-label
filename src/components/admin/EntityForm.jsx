@@ -32,6 +32,11 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
     handleChange(key, result.file_url);
   };
 
+  const handlePrivateUpload = async (key, file) => {
+    const result = await base44.integrations.Core.UploadPrivateFile({ file });
+    handleChange(key, result.file_uri);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -137,6 +142,26 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
                     if (e.target.files[0]) handleFileUpload(field.key, e.target.files[0]);
                   }}
                 />
+              </div>
+            )}
+
+            {field.type === 'privatefile' && (
+              <div className="space-y-2">
+                {data[field.key] && (
+                  field.isVideo ? (
+                    <video src={data[field.key]} controls className="w-full max-h-40 rounded-lg bg-black" />
+                  ) : (
+                    <audio src={data[field.key]} controls className="w-full" />
+                  )
+                )}
+                <Input
+                  type="file"
+                  accept="audio/*,video/*"
+                  onChange={(e) => {
+                    if (e.target.files[0]) handlePrivateUpload(field.key, e.target.files[0]);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">{field.placeholder} · Stockage privé, accessible uniquement après achat.</p>
               </div>
             )}
 

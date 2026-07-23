@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, User, ExternalLink, Instagram, Eye } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
+import BuyCard from '@/components/marketplace/BuyCard';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
@@ -162,6 +163,9 @@ export default function VideoDetail() {
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
+            {/* Achat exclusif */}
+            <BuyCard item={video} itemType="video" />
+
             {/* Description */}
             {video.description && (
               <p className="text-muted-foreground leading-relaxed">{video.description}</p>

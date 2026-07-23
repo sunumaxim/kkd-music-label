@@ -1,0 +1,60 @@
+{
+  "name": "Purchase",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'acheteur (email client Stripe)"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "release",
+        "video"
+      ],
+      "description": "Type de contenu achet\u00e9"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "ID du contenu achet\u00e9"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Titre du contenu (d\u00e9normalis\u00e9)"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Artiste (d\u00e9normalis\u00e9)"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Montant pay\u00e9 en euros"
+    },
+    "currency": {
+      "type": "string",
+      "default": "eur",
+      "description": "Devise"
+    },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "ID de la session de paiement Stripe"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "refunded"
+      ],
+      "default": "paid",
+      "description": "Statut de l'achat"
+    }
+  },
+  "required": [
+    "user_email",
+    "item_type",
+    "item_id",
+    "stripe_session_id"
+  ]
+}

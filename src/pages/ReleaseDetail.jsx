@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Calendar, User } from 'lucide-react';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
+import BuyCard from '@/components/marketplace/BuyCard';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
@@ -127,6 +128,9 @@ export default function ReleaseDetail() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 space-y-8">
+        {/* Achat exclusif */}
+        <BuyCard item={release} itemType="release" />
+
         {/* Player */}
         {streamUrl && (
           <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">

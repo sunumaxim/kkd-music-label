@@ -40,6 +40,7 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import FanSpace from './pages/FanSpace';
 import LiveDetail from './pages/LiveDetail';
+import MesAchats from './pages/MesAchats';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
         <Route path="/fans" element={<FanSpace />} />
         <Route path="/direct/:id" element={<LiveDetail />} />
+        <Route path="/mes-achats" element={<MesAchats />} />
       </Route>
 
       {/* Partner dashboard (protected) */}

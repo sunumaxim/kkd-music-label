@@ -23,6 +23,7 @@ const EMPTY = {
   thumbnail_url: '', video_type: 'clip_officiel',
   description: '', publish_date: new Date().toISOString().split('T')[0],
   is_featured: false,
+  is_for_sale: false, price: 0, protected_file_uri: '',
 };
 
 function getYoutubeId(url) {
@@ -62,6 +63,10 @@ export default function AdminVideos() {
   });
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const uploadPrivate = async (file) => {
+    const res = await base44.integrations.Core.UploadPrivateFile({ file });
+    set('protected_file_uri', res.file_uri);
+  };
 
   const openNew = () => { setForm(EMPTY); setEditing('new'); };
   const openEdit = (v) => { setForm({ ...EMPTY, ...v }); setEditing(v); };
@@ -162,6 +167,27 @@ export default function AdminVideos() {
           <div className="flex items-center gap-2">
             <Switch checked={!!form.is_featured} onCheckedChange={v => set('is_featured', v)} />
             <Label>Mise en avant (page d'accueil)</Label>
+          </div>
+
+          {/* Vente (avant disponibilité officielle) */}
+          <div className="border-t border-border/40 pt-4 mt-4 space-y-4">
+            <p className="font-display font-bold text-sm">Vente sur KKD</p>
+            <div className="flex items-center gap-2">
+              <Switch checked={!!form.is_for_sale} onCheckedChange={v => set('is_for_sale', v)} />
+              <Label>Mettre en vente (clip privé)</Label>
+            </div>
+            <div>
+              <Label className="mb-1.5 block">Prix (€)</Label>
+              <Input type="number" step="0.01" value={form.price || ''} onChange={e => set('price', parseFloat(e.target.value) || 0)} placeholder="0 = non vendu" />
+            </div>
+            <div>
+              <Label className="mb-1.5 block">Fichier vendu (clip privé)</Label>
+              {form.protected_file_uri && (
+                <video src={form.protected_file_uri} controls className="w-full max-h-40 rounded-lg bg-black mb-2" />
+              )}
+              <Input type="file" accept="video/*,audio/*" onChange={e => { if (e.target.files[0]) uploadPrivate(e.target.files[0]); }} />
+              <p className="text-xs text-muted-foreground mt-1">Stockage privé — accessible uniquement après achat.</p>
+            </div>
           </div>
         </div>
 

@@ -52,6 +52,20 @@
       "default": false,
       "description": "Mise en avant"
     },
+    "is_for_sale": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mettre en vente sur KKD avant disponibilit\u00e9 officielle"
+    },
+    "price": {
+      "type": "number",
+      "default": 0,
+      "description": "Prix de vente en euros (0 = non vendu)"
+    },
+    "protected_file_uri": {
+      "type": "string",
+      "description": "Fichier vendu (clip priv\u00e9) \u2014 accessible uniquement apr\u00e8s achat via lien sign\u00e9"
+    },
     "views_count": {
       "type": "number",
       "default": 0,

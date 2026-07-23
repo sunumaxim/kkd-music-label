@@ -61,6 +61,7 @@ export default function Footer() {
             © {new Date().getFullYear()} KKD Music. Tous droits réservés.
           </p>
           <div className="flex items-center gap-4">
+            <Link to="/mes-achats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Mes achats</Link>
             <Link to="/a-propos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">À propos</Link>
             <Link to="/confidentialite" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Politique de confidentialité</Link>
             <p className="text-xs text-muted-foreground">
