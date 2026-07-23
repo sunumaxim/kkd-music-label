@@ -1,22 +1,21 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Music, Newspaper } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Search, Music, Video, ShoppingBag } from 'lucide-react';
 
 const TABS = [
   { label: 'Accueil', path: '/', icon: Home },
-  { label: 'Artistes', path: '/artistes', icon: Users },
+  { label: 'Rechercher', path: '/recherche', icon: Search },
   { label: 'Musique', path: '/musique', icon: Music },
-  { label: 'Actualités', path: '/actualites', icon: Newspaper },
+  { label: 'Vidéos', path: '/videos', icon: Video },
+  { label: 'Achats', path: '/mes-achats', icon: ShoppingBag },
 ];
 
 // Deep child routes that should hide the bottom tabs
-const DEEP_ROUTES = ['/artistes/', '/actualites/'];
+const DEEP_ROUTES = ['/artistes/', '/actualites/', '/musique/', '/videos/'];
 
 export default function MobileBottomTabs() {
   const location = useLocation();
-  const navigate = useNavigate();
 
-  // Hide on deep child screens
   const isDeep = DEEP_ROUTES.some(
     (prefix) => location.pathname.startsWith(prefix) && location.pathname.length > prefix.length
   );
@@ -24,11 +23,9 @@ export default function MobileBottomTabs() {
 
   const handleTabPress = (e, tab) => {
     if (location.pathname === tab.path) {
-      // Re-tap on active tab: scroll to top instead of navigating
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    // Otherwise let the Link navigate normally, preserving browser history
   };
 
   return (
@@ -39,7 +36,6 @@ export default function MobileBottomTabs() {
       <div className="flex items-stretch">
         {TABS.map((tab) => {
           const Icon = tab.icon;
-          // Highlight if current path starts with tab path (handles sub-routes)
           const isActive = tab.path === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(tab.path);

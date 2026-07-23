@@ -20,8 +20,6 @@ import PublicLayout from './components/layout/PublicLayout';
 
 // Partner
 import PartnerDashboard from './pages/partner/PartnerDashboard.jsx';
-import StudioPhone from './pages/StudioPhone';
-import CorrespondentPortal from './pages/CorrespondentPortal';
 
 // Public pages
 import Home from './pages/Home';
@@ -38,8 +36,7 @@ import EventDetail from './pages/EventDetail';
 import Partnership from './pages/Partnership';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import FanSpace from './pages/FanSpace';
-import LiveDetail from './pages/LiveDetail';
+import Search from './pages/Search';
 import MesAchats from './pages/MesAchats';
 
 // Admin layout & pages
@@ -55,9 +52,6 @@ import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
-import BroadcastStudio from './pages/admin/BroadcastStudio.jsx';
-import AdminCorrespondents from './pages/admin/AdminCorrespondents.jsx';
-import AdminFanPosts from './pages/admin/AdminFanPosts';
 import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
@@ -104,16 +98,13 @@ const AuthenticatedApp = () => {
         <Route path="/partenaires" element={<Partnership />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
-        <Route path="/fans" element={<FanSpace />} />
-        <Route path="/direct/:id" element={<LiveDetail />} />
         <Route path="/mes-achats" element={<MesAchats />} />
+        <Route path="/recherche" element={<Search />} />
       </Route>
 
       {/* Partner dashboard (protected) */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/mon-espace" element={<PartnerDashboard />} />
-        <Route path="/studio/phone/:token" element={<StudioPhone />} />
-        <Route path="/correspondant/:token" element={<CorrespondentPortal />} />
       </Route>
 
       {/* Admin routes (admin only) */}
@@ -130,9 +121,6 @@ const AuthenticatedApp = () => {
           <Route path="/admin/publications" element={<AdminPublications />} />
           <Route path="/admin/mailing" element={<AdminMailing />} />
           <Route path="/admin/social" element={<AdminSocial />} />
-          <Route path="/admin/studio" element={<BroadcastStudio />} />
-          <Route path="/admin/correspondants" element={<AdminCorrespondents />} />
-          <Route path="/admin/fans" element={<AdminFanPosts />} />
         </Route>
       </Route>
 
