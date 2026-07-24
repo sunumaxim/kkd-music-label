@@ -7,6 +7,21 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { item_type, item_id, origin } = body;
 
+    // Liste blanche d'origines autorisées pour les URLs de redirection Stripe.
+    const ALLOWED_ORIGINS = [
+      'https://music.sunumaxim.com',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ];
+    let safeOrigin = '';
+    if (origin) {
+      try {
+        const u = new URL(origin);
+        if (ALLOWED_ORIGINS.includes(u.origin)) safeOrigin = u.origin;
+      } catch (_) {}
+    }
+    if (!safeOrigin) return Response.json({ error: 'Origine non autorisée' }, { status: 400 });
+
     if (!item_type || !item_id) {
       return Response.json({ error: 'item_type et item_id sont requis' }, { status: 400 });
     }
@@ -48,8 +63,8 @@ Deno.serve(async (req) => {
         item_title: String(title).slice(0, 500),
         artist_name: String(artistName).slice(0, 500)
       },
-      success_url: `${origin}/mes-achats?success=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/mes-achats?canceled=1`
+      success_url: `${safeOrigin}/mes-achats?success=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${safeOrigin}/mes-achats?canceled=1`
     });
 
     return Response.json({ url: session.url });

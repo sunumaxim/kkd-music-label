@@ -5,10 +5,22 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { user_email } = body;
-    if (!user_email) return Response.json({ error: 'user_email requis' }, { status: 400 });
+
+    // Authentification obligatoire : on ne fait jamais confiance à l'email fourni par le client.
+    let authEmail;
+    try {
+      const me = await base44.auth.me();
+      authEmail = me.email;
+    } catch (_) {
+      return Response.json({ error: 'Authentification requise' }, { status: 401 });
+    }
+    if (!authEmail) return Response.json({ error: 'Authentification requise' }, { status: 401 });
+    if (user_email && user_email !== authEmail) {
+      return Response.json({ error: 'Accès non autorisé' }, { status: 403 });
+    }
 
     const purchases = await base44.asServiceRole.entities.Purchase.filter({
-      user_email, status: 'paid'
+      user_email: authEmail, status: 'paid'
     });
 
     const result = [];
