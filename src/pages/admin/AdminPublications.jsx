@@ -97,6 +97,7 @@ async function publishToCatalog(pub) {
     release_type: releaseType,
     ...platformLinks,
     audio_file_url: pub.file_url && !pub.is_for_sale ? pub.file_url : '',
+    tracks: Array.isArray(pub.tracks) ? pub.tracks : [],
     is_for_sale: !!pub.is_for_sale,
     price: pub.price || 0,
     protected_file_uri: pub.is_for_sale ? pub.file_url : '',

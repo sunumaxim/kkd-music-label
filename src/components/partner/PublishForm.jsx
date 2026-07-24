@@ -46,6 +46,7 @@ export default function PublishForm({ user, onClose }) {
     description: '',
     cover_url: '',
     file_url: '',
+    tracks: [],
     is_for_sale: false,
     price: 0,
     preview_start: 0,
@@ -59,6 +60,7 @@ export default function PublishForm({ user, onClose }) {
 
   const selectedPlatform = PLATFORMS.find((p) => p.value === form.streaming_platform) || PLATFORMS[0];
   const isVideo = contentType === 'video_clip';
+  const isAlbum = contentType === 'album' || contentType === 'ep';
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -101,6 +103,21 @@ export default function PublishForm({ user, onClose }) {
     }
   };
 
+  const addTrack = () => set('tracks', [...form.tracks, { title: '', audio_file_url: '' }]);
+  const removeTrack = (idx) => set('tracks', form.tracks.filter((_, i) => i !== idx));
+  const setTrackTitle = (idx, v) => set('tracks', form.tracks.map((t, i) => (i === idx ? { ...t, title: v } : t)));
+  const handleTrackUpload = async (idx, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await base44.integrations.Core.UploadFile({ file });
+      set('tracks', form.tracks.map((t, i) => (i === idx ? { ...t, audio_file_url: res.file_url } : t)));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const toggleSale = (v) => {
     set('is_for_sale', v);
     set('file_url', ''); // require re-upload with the right storage (public vs private)
@@ -115,10 +132,14 @@ export default function PublishForm({ user, onClose }) {
     },
   });
 
+  const hasContent = isAlbum
+    ? form.tracks.filter((t) => t.audio_file_url).length > 0
+    : !!form.file_url;
   const canSubmit =
     form.title.trim() &&
-    (form.streaming_link.trim() || form.file_url) &&
+    !!form.cover_url &&
     (form.artist_id || form.artist_name.trim()) &&
+    hasContent &&
     (!form.is_for_sale || form.price > 0);
 
   const handleSubmit = (e) => {
@@ -137,10 +158,11 @@ export default function PublishForm({ user, onClose }) {
       streaming_platform: form.streaming_platform,
       description: form.description || '',
       cover_url: form.cover_url || '',
-      file_url: form.file_url || '',
-      is_for_sale: form.is_for_sale,
-      price: form.is_for_sale ? Number(form.price) : 0,
-      preview_start: form.is_for_sale ? form.preview_start : 0,
+      file_url: isAlbum ? '' : form.file_url || '',
+      tracks: isAlbum ? form.tracks.filter((t) => t.audio_file_url) : [],
+      is_for_sale: isAlbum ? false : form.is_for_sale,
+      price: isAlbum ? 0 : form.is_for_sale ? Number(form.price) : 0,
+      preview_start: isAlbum ? 0 : form.is_for_sale ? form.preview_start : 0,
     });
   };
 
@@ -253,44 +275,74 @@ export default function PublishForm({ user, onClose }) {
           )}
         </div>
 
-        {/* Fichier audio/vidéo (contenu principal) */}
-        <div>
-          <Label className="text-xs mb-1.5 block">
-            {isVideo ? 'Fichier vidéo' : 'Fichier audio'} {form.is_for_sale ? '(privé, vendu)' : '(gratuit)'} *
-          </Label>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors">
-            <Upload size={14} />
-            {uploading ? 'Envoi…' : form.file_url ? 'Fichier chargé ✓' : 'Téléverser le fichier'}
-            <input type="file" className="hidden" onChange={handleFileUpload} accept={isVideo ? 'video/*' : 'audio/*'} />
-          </label>
-          {form.is_for_sale && (
-            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-              <Lock size={10} /> Fichier stocké en privé, accessible uniquement après achat.
-            </p>
-          )}
-        </div>
-
-        {/* Gratuit / Payant */}
-        <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
-              <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 30s puis achat.</p>
+        {isAlbum ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs block">Pistes de l'album *</Label>
+              <button type="button" onClick={addTrack} className="text-xs text-primary hover:underline flex items-center gap-1">
+                <Plus size={11} /> Ajouter une piste
+              </button>
             </div>
-            <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} />
-          </div>
-          {form.is_for_sale && (
-            <>
-              <div>
-                <Label className="text-xs mb-1.5 block">Prix (euros) *</Label>
-                <Input type="number" min="1" step="1" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="5" required />
+            <p className="text-[11px] text-muted-foreground -mt-1">Ajoutez chaque titre avec son fichier audio. L'album sera gratuit et écoutable en entier.</p>
+            {form.tracks.map((t, idx) => (
+              <div key={idx} className="flex flex-col sm:flex-row gap-2 bg-card border border-border/50 rounded-xl p-3">
+                <Input value={t.title} onChange={(e) => setTrackTitle(idx, e.target.value)} placeholder={`Piste ${idx + 1} — titre`} className="text-sm sm:w-44" />
+                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors shrink-0">
+                  <Upload size={14} />
+                  {uploading ? 'Envoi…' : t.audio_file_url ? 'Audio ✓' : 'Audio'}
+                  <input type="file" className="hidden" onChange={(e) => handleTrackUpload(idx, e)} accept="audio/*" />
+                </label>
+                <button type="button" onClick={() => removeTrack(idx)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 sm:self-center">
+                  <X size={15} />
+                </button>
               </div>
-              {form.file_url && (
-                <PreviewSnippetSelector fileUrl={form.file_url} value={form.preview_start} onChange={(v) => set('preview_start', v)} />
+            ))}
+            {form.tracks.length === 0 && (
+              <p className="text-[11px] text-muted-foreground text-center py-3">Ajoutez au moins une piste.</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <div>
+              <Label className="text-xs mb-1.5 block">
+                {isVideo ? 'Fichier vidéo' : 'Fichier audio'} {form.is_for_sale ? '(privé, vendu)' : '(gratuit)'} *
+              </Label>
+              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors">
+                <Upload size={14} />
+                {uploading ? 'Envoi…' : form.file_url ? 'Fichier chargé ✓' : 'Téléverser le fichier'}
+                <input type="file" className="hidden" onChange={handleFileUpload} accept={isVideo ? 'video/*' : 'audio/*'} />
+              </label>
+              {form.is_for_sale && (
+                <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                  <Lock size={10} /> Fichier stocké en privé, accessible uniquement après achat.
+                </p>
               )}
-            </>
-          )}
-        </div>
+            </div>
+
+            {!isVideo && (
+              <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
+                    <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 30s puis achat.</p>
+                  </div>
+                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} />
+                </div>
+                {form.is_for_sale && (
+                  <>
+                    <div>
+                      <Label className="text-xs mb-1.5 block">Prix (euros) *</Label>
+                      <Input type="number" min="1" step="1" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="5" required />
+                    </div>
+                    {form.file_url && (
+                      <PreviewSnippetSelector fileUrl={form.file_url} value={form.preview_start} onChange={(v) => set('preview_start', v)} />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )}
 
         {/* Lien de streaming (facultatif, dépliable) */}
         <div>
@@ -329,13 +381,13 @@ export default function PublishForm({ user, onClose }) {
           <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Décrivez votre projet…" rows={3} />
         </div>
 
-        {/* Pochette (facultative) */}
+        {/* Pochette (obligatoire) */}
         <div>
-          <Label className="text-xs mb-1.5 block">Pochette / Miniature (facultatif)</Label>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors">
+          <Label className="text-xs mb-1.5 block">Pochette / Miniature *</Label>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-xs transition-colors">
             <Upload size={14} />
             {uploading ? 'Envoi…' : form.cover_url ? 'Image chargée ✓' : 'Choisir une image'}
-            <input type="file" className="hidden" onChange={handleCoverUpload} accept="image/*" />
+            <input type="file" className="hidden" onChange={handleCoverUpload} accept="image/*" required />
           </label>
         </div>
 
@@ -348,7 +400,7 @@ export default function PublishForm({ user, onClose }) {
         </Button>
         {!canSubmit && (
           <p className="text-[11px] text-muted-foreground text-center -mt-2">
-            Renseignez le titre, l'artiste et un fichier (ou un lien de streaming).
+            Renseignez le titre, l'artiste, la pochette et un fichier (ou un lien de streaming).
           </p>
         )}
       </form>

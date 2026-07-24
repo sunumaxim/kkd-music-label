@@ -6,6 +6,8 @@ import { ArrowLeft, Music, Calendar, User, Heart, Headphones, ShoppingCart } fro
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PaidPreview from '@/components/marketplace/PaidPreview';
+import PlayReleaseButton from '@/components/player/PlayReleaseButton';
+import ReleaseTracklist from '@/components/player/ReleaseTracklist';
 import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
@@ -160,18 +162,26 @@ export default function ReleaseDetail() {
           />
         )}
 
-        {/* Player */}
+        {/* Player externe (Spotify/YouTube…) */}
         {streamUrl && (
           <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
             <EmbeddedPlayer url={streamUrl} />
           </div>
         )}
 
-        {/* Lecture KKD — fichier audio gratuit (écoute complète) */}
-        {release.audio_file_url && !release.is_for_sale && (
-          <div className="bg-card border border-border/50 rounded-2xl p-5">
-            <p className="text-xs font-mono uppercase tracking-widest text-primary mb-3">Écouter sur KKD</p>
-            <audio controls src={release.audio_file_url} className="w-full" />
+        {/* Lecture KKD — gratuit (chanson complète, lecteur persistant) */}
+        {!release.is_for_sale && (release.audio_file_url || (release.tracks && release.tracks.length)) && (
+          <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-widest text-primary mb-1">Écouter sur KKD</p>
+                <p className="text-sm text-muted-foreground">
+                  {release.tracks && release.tracks.length ? `${release.tracks.length} piste(s) · ` : ''}Lecture complète gratuite
+                </p>
+              </div>
+              <PlayReleaseButton release={release} size="lg" />
+            </div>
+            {release.tracks && release.tracks.length > 0 && <ReleaseTracklist release={release} />}
           </div>
         )}
 

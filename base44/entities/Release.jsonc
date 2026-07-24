@@ -12,7 +12,7 @@
     },
     "cover_url": {
       "type": "string",
-      "description": "Pochette"
+      "description": "Pochette (obligatoire \u00e0 la publication)"
     },
     "release_type": {
       "type": "string",
@@ -56,7 +56,24 @@
     },
     "audio_file_url": {
       "type": "string",
-      "description": "Fichier audio (gratuit) h\u00e9berg\u00e9 sur KKD pour lecture int\u00e9gr\u00e9e continue"
+      "description": "Fichier audio (single gratuit) h\u00e9berg\u00e9 sur KKD pour lecture int\u00e9gr\u00e9e continue"
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Titre de la piste"
+          },
+          "audio_file_url": {
+            "type": "string",
+            "description": "Fichier audio de la piste"
+          }
+        }
+      },
+      "description": "Liste des pistes (album / EP) \u2014 chaque piste a son fichier audio"
     },
     "is_featured": {
       "type": "boolean",
@@ -66,7 +83,7 @@
     "is_for_sale": {
       "type": "boolean",
       "default": false,
-      "description": "Mettre en vente sur KKD avant disponibilit\u00e9 officielle"
+      "description": "Mettre en vente sur KKD (single/clip payant)"
     },
     "price": {
       "type": "number",

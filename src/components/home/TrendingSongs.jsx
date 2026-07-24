@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Play, Headphones } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { buildEntitySlug } from '@/lib/slugify';
+import PlayReleaseButton from '@/components/player/PlayReleaseButton';
+import { isPlayable } from '@/lib/releaseTracks';
 
 /**
  * "Trending Songs" — liste des sorties tendance avec sous-onglets genre.
@@ -101,8 +103,14 @@ export default function TrendingSongs({ releases = [], artists = [] }) {
                 <Headphones size={12} className="text-primary/70" />
                 {(r.plays_count || 0).toLocaleString('fr-FR')}
               </div>
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                <Play size={13} fill="currentColor" />
+              <div className="shrink-0">
+                {isPlayable(r) ? (
+                  <PlayReleaseButton release={r} size="sm" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Play size={13} fill="currentColor" />
+                  </div>
+                )}
               </div>
             </Link>
           ))}

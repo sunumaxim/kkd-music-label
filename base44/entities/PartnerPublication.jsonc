@@ -72,11 +72,26 @@
     },
     "cover_url": {
       "type": "string",
-      "description": "Pochette / miniature (optionnel)"
+      "description": "Pochette / miniature (obligatoire)"
     },
     "file_url": {
       "type": "string",
-      "description": "Fichier audio/vid\u00e9o t\u00e9l\u00e9vers\u00e9 (contenu principal). Public si gratuit, priv\u00e9 (file_uri) si payant."
+      "description": "Fichier audio/vid\u00e9o principal (single/clip). Public si gratuit, priv\u00e9 (file_uri) si payant."
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "audio_file_url": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Pistes d'un album / EP (une par fichier audio)"
     },
     "description": {
       "type": "string",
@@ -85,7 +100,7 @@
     "is_for_sale": {
       "type": "boolean",
       "default": false,
-      "description": "Contenu payant (vente exclusive KKD)"
+      "description": "Contenu payant (single payant)"
     },
     "price": {
       "type": "number",

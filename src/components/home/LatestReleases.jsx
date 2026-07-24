@@ -5,6 +5,8 @@ import { Play, Music as MusicIcon } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import CarouselRow from './CarouselRow';
 import { slugify } from '@/lib/slugify';
+import PlayReleaseButton from '@/components/player/PlayReleaseButton';
+import { isPlayable } from '@/lib/releaseTracks';
 
 const TYPE_LABELS = { single: 'Single', album: 'Album', ep: 'EP', projet_special: 'Projet' };
 
@@ -38,9 +40,13 @@ export default function LatestReleases({ releases }) {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-xl">
-                        <Play size={18} className="text-white ml-0.5" fill="white" />
-                      </div>
+                      {isPlayable(r) ? (
+                        <PlayReleaseButton release={r} size="md" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-xl">
+                          <Play size={18} className="text-white ml-0.5" fill="white" />
+                        </div>
+                      )}
                     </div>
                     {r.release_type && (
                       <span className="absolute top-2 left-2 text-[9px] font-mono uppercase tracking-wider bg-black/60 backdrop-blur text-white px-2 py-0.5 rounded-full">
