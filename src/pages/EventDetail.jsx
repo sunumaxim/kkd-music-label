@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileHeader from '@/components/mobile/MobileHeader';
+import TicketPurchase from '@/components/events/TicketPurchase';
 import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
@@ -35,6 +36,8 @@ export default function EventDetail() {
     },
   });
 
+  const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
+
   const { data: linkedReleases = [] } = useQuery({
     queryKey: ['event-linked-releases', event?.id, event?.linked_release_ids?.join(',') || ''],
     queryFn: async () => {
@@ -62,6 +65,17 @@ export default function EventDetail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Événement introuvable.</p>
+        <Link to="/evenements" className="text-primary text-sm">← Retour aux événements</Link>
+      </div>
+    );
+  }
+
+  const hidden = event.published_status && event.published_status !== 'approuve'
+    && me?.email !== event.organizer_email && me?.role !== 'admin';
+  if (hidden) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Cet événement n'est pas encore publié.</p>
         <Link to="/evenements" className="text-primary text-sm">← Retour aux événements</Link>
       </div>
     );
@@ -193,18 +207,20 @@ export default function EventDetail() {
           </div>
         )}
 
-        {/* CTA buttons */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          {event.ticket_url && (
+        {/* Billetterie KKD / CTA */}
+        <div className="mb-8 space-y-3">
+          {event.is_ticketed ? (
+            <TicketPurchase event={event} />
+          ) : event.ticket_url ? (
             <a
               href={event.ticket_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-primary text-primary-foreground font-medium px-6 py-3 rounded-full hover:bg-primary/80 transition-colors"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-medium px-6 py-3 rounded-full hover:bg-primary/80 transition-colors"
             >
               🎟️ Acheter des billets <ExternalLink size={14} />
             </a>
-          )}
+          ) : null}
         </div>
 
         {/* Share */}

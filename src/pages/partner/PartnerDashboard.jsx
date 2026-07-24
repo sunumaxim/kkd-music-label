@@ -6,12 +6,15 @@ import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
   User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
-  Headphones, Heart, ShoppingCart
+  Headphones, Heart, ShoppingCart, CalendarDays, Ticket
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import PublishForm from '@/components/partner/PublishForm';
+import PublishEventForm from '@/components/partner/PublishEventForm';
 import PartnerPromotions from '@/components/partner/PartnerPromotions';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import PartnerPromoVideo from '@/components/promo/PartnerPromoVideo';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
@@ -48,12 +51,14 @@ const TABS = [
   { id: 'artiste', label: 'Mon Artiste', icon: User },
   { id: 'publications', label: 'Publications', icon: Music },
   { id: 'promotion', label: 'Promotion', icon: Megaphone },
+  { id: 'evenements', label: 'Événements', icon: CalendarDays },
   { id: 'demandes', label: 'Demandes', icon: FileText },
 ];
 
 export default function PartnerDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showPublishForm, setShowPublishForm] = useState(false);
+  const [showPublishEventForm, setShowPublishEventForm] = useState(false);
   const [showAccessForm, setShowAccessForm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
@@ -87,6 +92,12 @@ export default function PartnerDashboard() {
   const { data: myAccessRequests = [] } = useQuery({
     queryKey: ['my-access-requests', user?.email],
     queryFn: () => base44.entities.ArtistAccessRequest.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+
+  const { data: myEvents = [] } = useQuery({
+    queryKey: ['partner-events', user?.email],
+    queryFn: () => base44.entities.Event.filter({ organizer_email: user.email }, '-event_date'),
     enabled: !!user?.email,
   });
 
@@ -146,6 +157,15 @@ export default function PartnerDashboard() {
             <div className="bg-card border border-border/50 rounded-2xl p-6">
               <ArtistAccessRequestForm user={user} onClose={() => setShowAccessForm(false)} />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overlay PublishEventForm */}
+      {showPublishEventForm && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-4 py-8">
+            <PublishEventForm user={user} onClose={() => setShowPublishEventForm(false)} />
           </div>
         </div>
       )}
@@ -538,6 +558,69 @@ export default function PartnerDashboard() {
                         </p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${cfg.color}`}>{cfg.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── ÉVÉNEMENTS TAB ── */}
+        {activeTab === 'evenements' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-extrabold">Mes événements</h2>
+              <Button size="sm" onClick={() => setShowPublishEventForm(true)} className="gap-2">
+                <Plus size={14} /> Publier un événement
+              </Button>
+            </div>
+            {myEvents.length === 0 ? (
+              <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
+                <CalendarDays size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground mb-4">Aucun événement soumis</p>
+                <Button onClick={() => setShowPublishEventForm(true)} className="gap-2">
+                  <Plus size={14} /> Créer un événement
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {myEvents.map((ev) => {
+                  const st = ev.published_status === 'en_attente'
+                    ? { label: 'En attente', cls: 'bg-amber-500/10 text-amber-400' }
+                    : ev.published_status === 'refuse'
+                      ? { label: 'Refusé', cls: 'bg-red-500/10 text-red-400' }
+                      : { label: 'Publié', cls: 'bg-emerald-500/10 text-emerald-400' };
+                  return (
+                    <div key={ev.id} className="bg-card border border-border/50 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        {ev.image_url ? (
+                          <img src={ev.image_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <CalendarDays size={18} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-heading font-bold text-sm">{ev.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {ev.event_date && format(new Date(ev.event_date), 'dd MMM yyyy HH:mm', { locale: fr })} · {ev.location} {ev.city}
+                              </p>
+                            </div>
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.cls}`}>{st.label}</span>
+                          </div>
+                          {ev.is_ticketed && (
+                            <p className="text-[11px] text-primary mt-1.5 flex items-center gap-1">
+                              <Ticket size={11} /> {Number(ev.ticket_price || 0).toLocaleString('fr-FR')} FCFA · {ev.tickets_sold || 0} vendu(s)
+                            </p>
+                          )}
+                          {ev.published_status === 'approuve' && (
+                            <Link to="/controle-acces" className="text-[11px] text-primary hover:underline">Contrôle d'accès →</Link>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

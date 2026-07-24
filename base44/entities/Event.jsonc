@@ -40,7 +40,7 @@
     },
     "ticket_url": {
       "type": "string",
-      "description": "Lien billetterie"
+      "description": "Lien billetterie externe (si pas de vente KKD)"
     },
     "stream_url": {
       "type": "string",
@@ -83,11 +83,96 @@
         "type": "string"
       },
       "default": [],
-      "description": "IDs des sorties li\u00e9es \u00e0 afficher sur la page \u00e9v\u00e9nement (\u00e9coute int\u00e9gr\u00e9e)"
+      "description": "IDs des sorties li\u00e9es \u00e0 afficher sur la page \u00e9v\u00e9nement"
+    },
+    "organizer_email": {
+      "type": "string",
+      "description": "Email de l'organisateur (partenaire)"
+    },
+    "organizer_name": {
+      "type": "string",
+      "description": "Nom de l'organisateur"
+    },
+    "published_status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "refuse"
+      ],
+      "default": "approuve",
+      "description": "Statut de validation (en_attente = soumis par partenaire, approuve = visible)"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes admin"
+    },
+    "is_ticketed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vente de billets en ligne via KKD/Wave"
+    },
+    "ticket_price": {
+      "type": "number",
+      "default": 0,
+      "description": "Prix du billet en FCFA"
+    },
+    "ticket_capacity": {
+      "type": "number",
+      "default": 0,
+      "description": "Capacit\u00e9 (0 = illimit\u00e9e)"
+    },
+    "tickets_sold": {
+      "type": "number",
+      "default": 0,
+      "description": "Billets vendus (valid\u00e9s)"
+    },
+    "managers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Emails autoris\u00e9s \u00e0 g\u00e9rer le contr\u00f4le d'acc\u00e8s"
+    },
+    "commission_pct": {
+      "type": "number",
+      "default": 10,
+      "description": "Commission KKD (%) sur les ventes de billets"
     }
   },
   "required": [
     "title",
     "event_date"
-  ]
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Ticket } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
@@ -25,6 +25,10 @@ const FIELDS = [
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'ticket_url', label: 'Lien billetterie', type: 'url', placeholder: 'https://...' },
   { key: 'stream_url', label: 'Lien Live Stream', type: 'url', placeholder: 'https://youtube.com/watch?v=...' },
+  { key: 'is_ticketed', label: 'Vente de billets KKD', type: 'boolean', placeholder: 'Activer la billetterie en ligne' },
+  { key: 'ticket_price', label: 'Prix billet (FCFA)', type: 'number' },
+  { key: 'ticket_capacity', label: 'Capacité (0 = illimitée)', type: 'number' },
+  { key: 'commission_pct', label: 'Commission KKD (%)', type: 'number' },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];
 
@@ -73,6 +77,15 @@ export default function AdminEvents() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Event.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-events'] }),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (id) => base44.entities.Event.update(id, { published_status: 'approuve' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-events'] }),
+  });
+  const refuseMutation = useMutation({
+    mutationFn: (id) => base44.entities.Event.update(id, { published_status: 'refuse' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-events'] }),
   });
 
@@ -129,10 +142,21 @@ export default function AdminEvents() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-heading font-bold text-sm truncate">{event.title}</p>
-                <p className="text-xs text-muted-foreground">{event.event_type} • {event.location} {event.city}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-heading font-bold text-sm truncate">{event.title}</p>
+                  {event.published_status === 'en_attente' && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full">En attente</span>}
+                  {event.published_status === 'refuse' && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Refusé</span>}
+                  {event.is_ticketed && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1"><Ticket size={9} /> {Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>}
+                </div>
+                <p className="text-xs text-muted-foreground">{event.event_type} • {event.location} {event.city}{event.organizer_email ? ` • ${event.organizer_email}` : ''}</p>
               </div>
               <div className="flex items-center gap-1">
+                {event.published_status === 'en_attente' && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate(event.id)} className="text-emerald-600 hover:text-emerald-700 text-xs gap-1"><Check size={13} /> Approuver</Button>
+                    <Button variant="ghost" size="sm" onClick={() => refuseMutation.mutate(event.id)} className="text-destructive text-xs gap-1"><X size={13} /> Refuser</Button>
+                  </>
+                )}
                 <TikTokPublishButton item={event} type="event" />
                 <Button variant="ghost" size="icon" onClick={() => setEditing(event)}>
                   <Pencil size={14} />

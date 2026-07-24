@@ -17,8 +17,9 @@ export default function Events() {
   });
 
   const now = new Date();
-  const upcoming = events.filter(e => new Date(e.event_date) >= now);
-  const past = events.filter(e => new Date(e.event_date) < now);
+  const visible = events.filter(e => !e.published_status || e.published_status === 'approuve');
+  const upcoming = visible.filter(e => new Date(e.event_date) >= now);
+  const past = visible.filter(e => new Date(e.event_date) < now);
 
   return (
     <div className="min-h-screen px-4 py-16 md:py-24">
@@ -122,6 +123,11 @@ function EventCard({ event, index }) {
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
+          {event.is_ticketed && (
+            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-2.5 rounded-full">
+              {Number(event.ticket_price || 0).toLocaleString('fr-FR')} FCFA
+            </span>
+          )}
           {hasStream && (
             <button
               onClick={() => setShowStream(v => !v)}

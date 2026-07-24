@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Music, Video, Users, CalendarDays, Newspaper, Handshake, ShoppingBag, ListMusic } from 'lucide-react';
+import { Home, Music, Video, Users, CalendarDays, Newspaper, Handshake, ShoppingBag, ListMusic, Ticket, ScanLine } from 'lucide-react';
 
 const nav = [
   { label: 'Accueil', path: '/', icon: Home },
@@ -57,6 +57,22 @@ export default function PublicSidebar() {
             }`}
           >
             <ListMusic size={18} /> Mes playlists
+          </Link>
+          <Link
+            to="/mes-billets"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive('/mes-billets') ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+            }`}
+          >
+            <Ticket size={18} /> Mes billets
+          </Link>
+          <Link
+            to="/controle-acces"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive('/controle-acces') ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+            }`}
+          >
+            <ScanLine size={18} /> Contrôle d'accès
           </Link>
         </div>
       </nav>

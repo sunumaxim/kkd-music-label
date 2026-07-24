@@ -38,6 +38,8 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Search from './pages/Search';
 import MesAchats from './pages/MesAchats';
+import MesBillets from './pages/MesBillets';
+import ControleAcces from './pages/ControleAcces';
 import Playlists from './pages/Playlists';
 
 // Admin layout & pages
@@ -56,6 +58,7 @@ import AdminPromoBanners from './pages/admin/AdminPromoBanners';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminTickets from './pages/admin/AdminTickets';
 import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
@@ -104,6 +107,8 @@ const AuthenticatedApp = () => {
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
         <Route path="/mes-achats" element={<MesAchats />} />
         <Route path="/playlists" element={<Playlists />} />
+        <Route path="/mes-billets" element={<MesBillets />} />
+        <Route path="/controle-acces" element={<ControleAcces />} />
         <Route path="/recherche" element={<Search />} />
       </Route>
 
@@ -129,6 +134,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/mailing" element={<AdminMailing />} />
           <Route path="/admin/social" element={<AdminSocial />} />
           <Route path="/admin/paiements" element={<AdminPayments />} />
+          <Route path="/admin/tickets" element={<AdminTickets />} />
         </Route>
       </Route>
 

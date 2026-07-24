@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
   LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
-  Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet
+  Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet, Ticket
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -37,6 +37,7 @@ const navGroups = [
       { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
       { label: 'Réseaux Sociaux', path: '/admin/social', icon: Share2 },
       { label: 'Paiements Wave', path: '/admin/paiements', icon: Wallet },
+      { label: 'Billetterie', path: '/admin/tickets', icon: Ticket },
     ]
   },
 ];
