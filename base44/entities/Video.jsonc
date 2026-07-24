@@ -66,6 +66,11 @@
       "type": "string",
       "description": "Fichier vendu (clip priv\u00e9) \u2014 accessible uniquement apr\u00e8s achat via lien sign\u00e9"
     },
+    "preview_start": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00e9but de l'extrait d'aper\u00e7u gratuit (secondes)"
+    },
     "views_count": {
       "type": "number",
       "default": 0,
@@ -109,7 +114,6 @@
     }
   },
   "required": [
-    "title",
-    "youtube_url"
+    "title"
   ]
 }

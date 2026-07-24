@@ -31,7 +31,87 @@ const TYPE_LABELS = {
   album: 'Album', ep: 'EP / Mixtape', autre: 'Autre',
 };
 
-function PublicationCard({ pub, onUpdateStatus }) {
+const PLATFORM_FIELD = {
+  spotify: 'spotify_url',
+  apple_music: 'apple_music_url',
+  youtube: 'youtube_url',
+  audiomack: 'audiomack_url',
+  deezer: 'deezer_url',
+};
+
+/**
+ * On "Publier": create the actual Release (or Video) in the catalog so it
+ * becomes immediately available and listenable. Also creates a new Artist
+ * profile if the partner requested one at publication time.
+ */
+async function publishToCatalog(pub) {
+  let artistId = pub.artist_id || '';
+  const artistName = pub.artist_name;
+
+  if (!artistId && pub.new_artist_genre) {
+    const created = await base44.entities.Artist.create({
+      name: artistName,
+      genre: pub.new_artist_genre,
+      photo_url: pub.new_artist_photo_url || '',
+    });
+    artistId = created.id;
+  }
+
+  const isVideo = pub.content_type === 'video_clip';
+
+  if (isVideo) {
+    const video = await base44.entities.Video.create({
+      title: pub.title,
+      artist_name: artistName,
+      youtube_url: pub.streaming_platform === 'youtube' ? pub.streaming_link : '',
+      video_file_url: pub.file_url || '',
+      thumbnail_url: pub.cover_url || '',
+      video_type: 'clip_officiel',
+      description: pub.description || '',
+      is_for_sale: !!pub.is_for_sale,
+      price: pub.price || 0,
+      protected_file_uri: pub.is_for_sale ? pub.file_url : '',
+      preview_start: pub.preview_start || 0,
+    });
+    await base44.entities.PartnerPublication.update(pub.id, {
+      status: 'publie',
+      published_as_release_id: video.id,
+      artist_id: artistId,
+    });
+    return video.id;
+  }
+
+  const releaseType =
+    pub.content_type === 'album' ? 'album' :
+    pub.content_type === 'ep' ? 'ep' : 'single';
+
+  const platformLinks = { spotify_url: '', apple_music_url: '', youtube_url: '', audiomack_url: '', deezer_url: '' };
+  const field = PLATFORM_FIELD[pub.streaming_platform];
+  if (field && pub.streaming_link) platformLinks[field] = pub.streaming_link;
+
+  const release = await base44.entities.Release.create({
+    title: pub.title,
+    artist_name: artistName,
+    cover_url: pub.cover_url || '',
+    description: pub.description || '',
+    release_type: releaseType,
+    ...platformLinks,
+    audio_file_url: pub.file_url && !pub.is_for_sale ? pub.file_url : '',
+    is_for_sale: !!pub.is_for_sale,
+    price: pub.price || 0,
+    protected_file_uri: pub.is_for_sale ? pub.file_url : '',
+    preview_start: pub.preview_start || 0,
+  });
+
+  await base44.entities.PartnerPublication.update(pub.id, {
+    status: 'publie',
+    published_as_release_id: release.id,
+    artist_id: artistId,
+  });
+  return release.id;
+}
+
+function PublicationCard({ pub, onUpdateStatus, onPublish, publishing }) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(pub.admin_notes || '');
   const [saving, setSaving] = useState(false);
@@ -149,11 +229,11 @@ function PublicationCard({ pub, onUpdateStatus }) {
             {pub.status !== 'publie' && (
               <Button
                 size="sm"
-                disabled={saving}
-                onClick={() => handleStatus('publie')}
+                disabled={saving || publishing}
+                onClick={async () => { setSaving(true); try { await onPublish(pub); } finally { setSaving(false); } }}
                 className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
               >
-                <CheckCircle size={13} /> Publier
+                <CheckCircle size={13} /> {publishing ? 'Publication…' : 'Publier'}
               </Button>
             )}
             {pub.status !== 'approuve' && pub.status !== 'publie' && (
@@ -197,6 +277,15 @@ export default function AdminPublications() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.PartnerPublication.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-publications'] }),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: (pub) => publishToCatalog(pub),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-publications'] });
+      queryClient.invalidateQueries({ queryKey: ['releases'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
   });
 
   const filtered = filter === 'all' ? publications : publications.filter(p => p.status === filter);
@@ -250,6 +339,8 @@ export default function AdminPublications() {
               key={pub.id}
               pub={pub}
               onUpdateStatus={(id, data) => updateMutation.mutateAsync({ id, data })}
+              onPublish={(p) => publishMutation.mutateAsync(p)}
+              publishing={publishMutation.isPending}
             />
           ))}
         </div>

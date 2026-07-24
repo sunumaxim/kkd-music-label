@@ -54,6 +54,10 @@
       "type": "string",
       "description": "Lien Deezer"
     },
+    "audio_file_url": {
+      "type": "string",
+      "description": "Fichier audio (gratuit) h\u00e9berg\u00e9 sur KKD pour lecture int\u00e9gr\u00e9e continue"
+    },
     "is_featured": {
       "type": "boolean",
       "default": false,
@@ -72,6 +76,11 @@
     "protected_file_uri": {
       "type": "string",
       "description": "Fichier vendu (audio/vid\u00e9o priv\u00e9) \u2014 accessible uniquement apr\u00e8s achat via lien sign\u00e9"
+    },
+    "preview_start": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00e9but de l'extrait d'\u00e9coute gratuit de 30s (secondes)"
     },
     "likes_count": {
       "type": "number",

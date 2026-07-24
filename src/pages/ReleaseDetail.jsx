@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Calendar, User, Heart, Headphones, ShoppingCart } from 'lucide-react';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import BuyCard from '@/components/marketplace/BuyCard';
+import PaidPreview from '@/components/marketplace/PaidPreview';
 import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
@@ -164,6 +165,19 @@ export default function ReleaseDetail() {
           <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
             <EmbeddedPlayer url={streamUrl} />
           </div>
+        )}
+
+        {/* Lecture KKD — fichier audio gratuit (écoute complète) */}
+        {release.audio_file_url && !release.is_for_sale && (
+          <div className="bg-card border border-border/50 rounded-2xl p-5">
+            <p className="text-xs font-mono uppercase tracking-widest text-primary mb-3">Écouter sur KKD</p>
+            <audio controls src={release.audio_file_url} className="w-full" />
+          </div>
+        )}
+
+        {/* Extrait gratuit 30s (contenu payant) */}
+        {release.is_for_sale && release.protected_file_uri && (
+          <PaidPreview protectedFileUri={release.protected_file_uri} previewStart={release.preview_start || 0} />
         )}
 
         {/* Streaming links */}

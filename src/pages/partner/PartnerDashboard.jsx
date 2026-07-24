@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
-  User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone
+  User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
+  Headphones, Heart, ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -93,6 +94,15 @@ export default function PartnerDashboard() {
   const approvedAccess = myAccessRequests.find(r => r.status === 'approuve');
   const linkedArtistId = invite?.artist_id || approvedAccess?.artist_id;
   const linkedArtistName = invite?.artist_name || approvedAccess?.artist_name;
+
+  const { data: artistReleases = [] } = useQuery({
+    queryKey: ['partner-artist-releases', linkedArtistName],
+    queryFn: () => base44.entities.Release.filter({ artist_name: linkedArtistName }, '-release_date'),
+    enabled: !!linkedArtistName,
+  });
+  const totalPlays = artistReleases.reduce((s, r) => s + (r.plays_count || 0), 0);
+  const totalLikes = artistReleases.reduce((s, r) => s + (r.likes_count || 0), 0);
+  const totalSales = artistReleases.reduce((s, r) => s + (r.sales_count || 0), 0);
 
   const pendingPubs = myPublications.filter(p => p.status === 'en_attente').length;
   const acceptedReqs = myRequests.filter(r => r.status === 'accepte').length;
@@ -230,6 +240,54 @@ export default function PartnerDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* Performance de l'artiste */}
+            {linkedArtistName && (
+              <div className="space-y-3">
+                <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Performance de mes sorties</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Écoutes', value: totalPlays, icon: Headphones },
+                    { label: "J'aime", value: totalLikes, icon: Heart },
+                    { label: 'Ventes', value: totalSales, icon: ShoppingCart },
+                  ].map((s) => {
+                    const Ic = s.icon;
+                    return (
+                      <div key={s.label} className="bg-card border border-border/50 rounded-xl p-4">
+                        <Ic size={15} className="text-primary mb-1" />
+                        <p className="font-display text-2xl font-extrabold">{s.value.toLocaleString('fr-FR')}</p>
+                        <p className="text-xs text-muted-foreground">{s.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {artistReleases.length > 0 && (
+                  <div className="space-y-2">
+                    {artistReleases.slice(0, 5).map((r) => (
+                      <div key={r.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center gap-3">
+                        {r.cover_url ? (
+                          <img src={r.cover_url} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                            <Music size={13} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading font-bold text-sm truncate">{r.title}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {r.is_for_sale ? 'Payant' : 'Gratuit'} · {r.release_type}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
+                          <span className="flex items-center gap-1"><Headphones size={11} /> {r.plays_count || 0}</span>
+                          <span className="flex items-center gap-1"><ShoppingCart size={11} /> {r.sales_count || 0}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Actions rapides */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

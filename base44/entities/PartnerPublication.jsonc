@@ -15,9 +15,9 @@
       "enum": [
         "sortie_musicale",
         "video_clip",
-        "playlist",
         "album",
         "ep",
+        "playlist",
         "autre"
       ],
       "default": "sortie_musicale",
@@ -31,9 +31,21 @@
       "type": "string",
       "description": "Nom de l'artiste"
     },
+    "artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste existant li\u00e9 (si s\u00e9lectionn\u00e9)"
+    },
+    "new_artist_genre": {
+      "type": "string",
+      "description": "Genre du nouveau profil artiste (si cr\u00e9ation \u00e0 la publication)"
+    },
+    "new_artist_photo_url": {
+      "type": "string",
+      "description": "Photo du nouveau profil artiste (si cr\u00e9ation \u00e0 la publication)"
+    },
     "streaming_link": {
       "type": "string",
-      "description": "Lien principal (Spotify, Apple Music, YouTube, Audiomack\u2026)"
+      "description": "Lien principal de streaming (facultatif)"
     },
     "streaming_platform": {
       "type": "string",
@@ -64,19 +76,34 @@
     },
     "file_url": {
       "type": "string",
-      "description": "Fichier joint (audio, vid\u00e9o, EPK\u2026)"
+      "description": "Fichier audio/vid\u00e9o t\u00e9l\u00e9vers\u00e9 (contenu principal). Public si gratuit, priv\u00e9 (file_uri) si payant."
     },
     "description": {
       "type": "string",
-      "description": "Message ou description pour l'\u00e9quipe KKD"
+      "description": "Description / message pour l'\u00e9quipe KKD"
+    },
+    "is_for_sale": {
+      "type": "boolean",
+      "default": false,
+      "description": "Contenu payant (vente exclusive KKD)"
+    },
+    "price": {
+      "type": "number",
+      "default": 0,
+      "description": "Prix de vente en euros (0 = non vendu)"
+    },
+    "preview_start": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00e9but de l'extrait d'\u00e9coute gratuit de 30s (secondes)"
     },
     "status": {
       "type": "string",
       "enum": [
         "en_attente",
         "approuve",
-        "refuse",
-        "publie"
+        "publie",
+        "refuse"
       ],
       "default": "en_attente",
       "description": "Statut de validation par l'admin"
@@ -87,13 +114,12 @@
     },
     "published_as_release_id": {
       "type": "string",
-      "description": "ID de la sortie cr\u00e9\u00e9e apr\u00e8s validation"
+      "description": "ID de la sortie/vid\u00e9o cr\u00e9\u00e9e apr\u00e8s publication admin"
     }
   },
   "required": [
     "partner_email",
     "title",
-    "streaming_link",
     "content_type"
   ]
 }
