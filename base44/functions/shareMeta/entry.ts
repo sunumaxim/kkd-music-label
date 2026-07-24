@@ -80,7 +80,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    const redirect = to || `${url.origin}/${BASE_PATHS[type] || 'musique'}/${slug}`;
+    // Validation stricte du paramètre 'to' : seul un chemin relatif (commençant par '/')
+    // ou une URL strictement same-origin http(s) est autorisé. Bloque javascript:, data:,
+    // les schémas relatifs (//) et les domaines externes (open redirect / XSS).
+    function safeRedirect(value, origin) {
+      if (!value) return null;
+      const v = String(value);
+      if (v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/\\')) return v;
+      try {
+        const u = new URL(v, origin);
+        if ((u.protocol === 'http:' || u.protocol === 'https:') && u.origin === new URL(origin).origin) {
+          return u.pathname + u.search + u.hash;
+        }
+      } catch (_) {}
+      return null;
+    }
+    const defaultRedirect = `${url.origin}/${BASE_PATHS[type] || 'musique'}/${slug}`;
+    const redirect = safeRedirect(to, url.origin) || defaultRedirect;
     const html = `<!doctype html>
 <html lang="fr"><head>
 <meta charset="utf-8">

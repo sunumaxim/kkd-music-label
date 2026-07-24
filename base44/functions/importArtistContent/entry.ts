@@ -237,6 +237,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 });
 
     const { action, spotify_url, deezer_url, audiomack_url, youtube_url, artist_id, artist_name } = await req.json();
 
