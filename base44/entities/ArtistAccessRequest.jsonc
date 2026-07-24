@@ -22,6 +22,11 @@
       "type": "string",
       "description": "Message de justification du demandeur"
     },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
+    },
     "status": {
       "type": "string",
       "enum": [

@@ -99,6 +99,11 @@
       "type": "string",
       "description": "Email de la personne ayant valid\u00e9 l'entr\u00e9e"
     },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
+    },
     "admin_notes": {
       "type": "string",
       "description": "Notes admin"

@@ -20,11 +20,11 @@
     },
     "release_title": {
       "type": "string",
-      "description": "Titre de la sortie (d\u00e9norm\u00e9)"
+      "description": "Titre de la sortie (d\u00e9normalis\u00e9)"
     },
     "cover_url": {
       "type": "string",
-      "description": "Pochette (d\u00e9norm\u00e9)"
+      "description": "Pochette (d\u00e9normalis\u00e9)"
     },
     "streaming_link": {
       "type": "string",
@@ -91,6 +91,11 @@
       "type": "string",
       "format": "date",
       "description": "Fin de la mise en avant"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
     },
     "admin_notes": {
       "type": "string",

@@ -15,7 +15,7 @@ const CATEGORY_LABELS = {
   info_artiste: 'Info Artiste',
 };
 
-export default function NewsPage() {
+export default function Actualites() {
   const queryClient = useQueryClient();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');

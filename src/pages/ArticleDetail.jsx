@@ -20,7 +20,7 @@ const CATEGORY_LABELS = {
   info_artiste: 'Info Artiste',
 };
 
-export default function NewsDetail() {
+export default function ArticleDetail() {
   const { id: slugParam } = useParams();
   const newsId = extractIdFromSlug(slugParam);
   const [copied, setCopied] = useState(false);

@@ -49,6 +49,11 @@
       ],
       "default": "paid",
       "description": "Statut de l'achat"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

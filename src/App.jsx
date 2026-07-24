@@ -29,8 +29,8 @@ import Music from './pages/Music';
 import ReleaseDetail from './pages/ReleaseDetail';
 import Videos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
-import NewsPage from './pages/NewsPage';
-import NewsDetail from './pages/NewsDetail';
+import Actualites from './pages/Actualites';
+import ArticleDetail from './pages/ArticleDetail';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import Partnership from './pages/Partnership';
@@ -100,8 +100,8 @@ const AuthenticatedApp = () => {
         <Route path="/musique/:slug" element={<ReleaseDetail />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/videos/:id" element={<VideoDetail />} />
-        <Route path="/actualites" element={<NewsPage />} />
-        <Route path="/actualites/:id" element={<NewsDetail />} />
+        <Route path="/actualites" element={<Actualites />} />
+        <Route path="/actualites/:id" element={<ArticleDetail />} />
         <Route path="/evenements" element={<Events />} />
         <Route path="/evenements/:slug" element={<EventDetail />} />
         <Route path="/partenaires" element={<Partnership />} />

@@ -49,6 +49,11 @@
       "default": "en_attente",
       "description": "Statut de validation admin"
     },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
+    },
     "admin_notes": {
       "type": "string",
       "description": "Notes admin"
