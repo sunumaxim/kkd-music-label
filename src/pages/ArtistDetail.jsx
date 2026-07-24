@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Music, Youtube, Instagram, Facebook,
-  Share2, Check, Play, Disc3, Calendar, MapPin, ExternalLink, Heart, Eye,
+  Share2, Check, Play, Disc3, Calendar, MapPin, ExternalLink, Heart, Eye, ShoppingCart,
 } from 'lucide-react';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -338,6 +338,9 @@ export default function ArtistDetail() {
                       <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
                         <span className="flex items-center gap-1"><Heart size={11} className="text-primary/70" /> {v.likes_count || 0}</span>
+                        {(v.sales_count || 0) > 0 && (
+                          <span className="flex items-center gap-1"><ShoppingCart size={11} className="text-primary/70" /> {v.sales_count}</span>
+                        )}
                         {v.publish_date && (
                           <span className="ml-auto">{new Date(v.publish_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}</span>
                         )}

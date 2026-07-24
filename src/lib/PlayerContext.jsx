@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { recordPlay } from '@/hooks/useListeningHistory';
+import { base44 } from '@/api/base44Client';
 
 const PlayerContext = createContext(null);
 
@@ -28,9 +29,14 @@ export function PlayerProvider({ children }) {
 
   const current = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
 
-  // Historique d'écoute local — enregistre la piste dès qu'elle devient active
+  // Historique d'écoute local + compteur d'écoutes (plays_count) côté serveur
   useEffect(() => {
-    if (current && current.audio_url) recordPlay(current);
+    if (current && current.audio_url) {
+      recordPlay(current);
+      if (current.item_type && current.item_id) {
+        base44.functions.invoke('incrementPlay', { item_type: current.item_type, item_id: current.item_id }).catch(() => {});
+      }
+    }
   }, [current?.key, current?.audio_url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lance la lecture quand la piste courante change

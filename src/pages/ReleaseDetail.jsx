@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Music, Calendar, User } from 'lucide-react';
+import { ArrowLeft, Music, Calendar, User, Heart, Headphones, ShoppingCart } from 'lucide-react';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import BuyCard from '@/components/marketplace/BuyCard';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
@@ -122,6 +122,17 @@ export default function ReleaseDetail() {
                 </span>
               )}
             </div>
+            <div className="flex items-center gap-4 mt-3 mb-4 flex-wrap text-sm text-muted-foreground">
+              {(release.likes_count || 0) > 0 && (
+                <span className="flex items-center gap-1.5"><Heart size={14} className="text-primary" /> {release.likes_count.toLocaleString('fr-FR')}</span>
+              )}
+              {(release.plays_count || 0) > 0 && (
+                <span className="flex items-center gap-1.5"><Headphones size={14} className="text-primary" /> {release.plays_count.toLocaleString('fr-FR')} écoutes</span>
+              )}
+              {(release.sales_count || 0) > 0 && (
+                <span className="flex items-center gap-1.5"><ShoppingCart size={14} className="text-primary" /> {release.sales_count} {release.is_for_sale && release.release_date && new Date(release.release_date) > new Date() ? 'précommande(s)' : 'achat(s)'}</span>
+              )}
+            </div>
             <ShareBar title={`${release.title} — ${release.artist_name}`} url={shareUrl} />
           </div>
         </div>
@@ -178,6 +189,14 @@ export default function ReleaseDetail() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Paroles */}
+        {release.lyrics && (
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <h2 className="font-display font-bold text-lg mb-3">Paroles</h2>
+            <p className="text-foreground/85 leading-relaxed whitespace-pre-line text-sm">{release.lyrics}</p>
           </div>
         )}
 

@@ -78,6 +78,20 @@
       "default": 0,
       "description": "Nombre de likes"
     },
+    "plays_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre d'\u00e9coutes sur KKD"
+    },
+    "sales_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre d'achats / pr\u00e9commandes"
+    },
+    "lyrics": {
+      "type": "string",
+      "description": "Paroles du titre"
+    },
     "comments": {
       "type": "array",
       "items": {

@@ -37,6 +37,23 @@ Deno.serve(async (req) => {
             stripe_session_id: session.id,
             status: 'paid'
           });
+
+          // Incrémente le compteur d'achats / précommandes sur le contenu vendu
+          try {
+            const target = md.item_type === 'release'
+              ? base44.asServiceRole.entities.Release
+              : md.item_type === 'video'
+                ? base44.asServiceRole.entities.Video
+                : null;
+            if (target) {
+              const found = await target.filter({ id: md.item_id });
+              if (found[0]) {
+                await target.update(md.item_id, { sales_count: (found[0].sales_count || 0) + 1 });
+              }
+            }
+          } catch (e) {
+            console.error('sales_count increment error:', e);
+          }
         }
       }
     }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, User, ExternalLink, Instagram, Eye } from 'lucide-react';
+import { ArrowLeft, User, ExternalLink, Instagram, Eye, Heart, ShoppingCart } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
 import BuyCard from '@/components/marketplace/BuyCard';
 import { Button } from '@/components/ui/button';
@@ -155,6 +155,18 @@ export default function VideoDetail() {
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Eye size={14} className="text-primary" />
                   {video.views_count.toLocaleString('fr-FR')} vue{video.views_count > 1 ? 's' : ''}
+                </span>
+              )}
+              {(video.likes_count || 0) > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Heart size={14} className="text-primary" />
+                  {video.likes_count.toLocaleString('fr-FR')} j'aime
+                </span>
+              )}
+              {(video.sales_count || 0) > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <ShoppingCart size={14} className="text-primary" />
+                  {video.sales_count} achat{video.sales_count > 1 ? 's' : ''}
                 </span>
               )}
             </div>

@@ -18,6 +18,7 @@ const FIELDS = [
   ]},
   { key: 'release_date', label: 'Date de sortie', type: 'date' },
   { key: 'description', label: 'Description', type: 'textarea' },
+  { key: 'lyrics', label: 'Paroles', type: 'textarea' },
   { key: 'spotify_url', label: 'Lien Spotify', type: 'url', placeholder: 'https://open.spotify.com/...' },
   { key: 'youtube_url', label: 'Lien YouTube', type: 'url', placeholder: 'https://youtube.com/...' },
   { key: 'apple_music_url', label: 'Lien Apple Music', type: 'url', placeholder: 'https://music.apple.com/...' },

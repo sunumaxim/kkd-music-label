@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Music, Heart } from 'lucide-react';
+import { Music, Heart, Headphones, ShoppingCart } from 'lucide-react';
 import UniversalPlayer from '@/components/shared/UniversalPlayer';
 import { buildEntitySlug } from '@/lib/slugify';
 
@@ -70,10 +70,18 @@ export default function ArtistReleasesGrid({ releases = [] }) {
               </Link>
               <p className="text-[11px] text-muted-foreground mt-0.5">{r.release_date?.slice(0, 4) || '—'}</p>
 
-              <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2.5 mt-1.5 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Heart size={11} className="text-primary/70" /> {r.likes_count || 0}
                 </span>
+                <span className="flex items-center gap-1">
+                  <Headphones size={11} className="text-primary/70" /> {r.plays_count || 0}
+                </span>
+                {(r.sales_count || 0) > 0 && (
+                  <span className="flex items-center gap-1">
+                    <ShoppingCart size={11} className="text-primary/70" /> {r.sales_count}
+                  </span>
+                )}
               </div>
 
               {streamUrl && (
