@@ -38,6 +38,7 @@ import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Search from './pages/Search';
 import MesAchats from './pages/MesAchats';
+import Playlists from './pages/Playlists';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
         <Route path="/mes-achats" element={<MesAchats />} />
+        <Route path="/playlists" element={<Playlists />} />
         <Route path="/recherche" element={<Search />} />
       </Route>
 

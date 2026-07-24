@@ -1,0 +1,68 @@
+{
+  "name": "Playlist",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email du propri\u00e9taire"
+    },
+    "title": {
+      "type": "string",
+      "description": "Nom de la playlist"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Image de couverture (auto depuis le 1er titre)"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "release_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist_name": {
+            "type": "string"
+          },
+          "cover_url": {
+            "type": "string"
+          },
+          "audio_url": {
+            "type": "string"
+          },
+          "added_date": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Titres de la playlist"
+    }
+  },
+  "required": [
+    "user_email",
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

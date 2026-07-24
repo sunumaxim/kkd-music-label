@@ -8,6 +8,7 @@ import BuyCard from '@/components/marketplace/BuyCard';
 import PaidPreview from '@/components/marketplace/PaidPreview';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
 import ReleaseTracklist from '@/components/player/ReleaseTracklist';
+import AddToPlaylist from '@/components/player/AddToPlaylist';
 import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
@@ -179,7 +180,10 @@ export default function ReleaseDetail() {
                   {release.tracks && release.tracks.length ? `${release.tracks.length} piste(s) · ` : ''}Lecture complète gratuite
                 </p>
               </div>
-              <PlayReleaseButton release={release} size="lg" />
+              <div className="flex items-center gap-2">
+                <AddToPlaylist release={release} />
+                <PlayReleaseButton release={release} size="lg" />
+              </div>
             </div>
             {release.tracks && release.tracks.length > 0 && <ReleaseTracklist release={release} />}
           </div>

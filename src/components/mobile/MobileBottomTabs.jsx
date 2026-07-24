@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Music, Video, ShoppingBag } from 'lucide-react';
+import { Home, Search, Music, Video, ShoppingBag, ListMusic } from 'lucide-react';
 
 const TABS = [
   { label: 'Accueil', path: '/', icon: Home },
-  { label: 'Rechercher', path: '/recherche', icon: Search },
   { label: 'Musique', path: '/musique', icon: Music },
-  { label: 'Vidéos', path: '/videos', icon: Video },
+  { label: 'Playlists', path: '/playlists', icon: ListMusic },
+  { label: 'Rechercher', path: '/recherche', icon: Search },
   { label: 'Achats', path: '/mes-achats', icon: ShoppingBag },
 ];
 

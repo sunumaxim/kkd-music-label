@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Music, Video, Users, CalendarDays, Newspaper, Handshake, ShoppingBag } from 'lucide-react';
+import { Home, Music, Video, Users, CalendarDays, Newspaper, Handshake, ShoppingBag, ListMusic } from 'lucide-react';
 
 const nav = [
   { label: 'Accueil', path: '/', icon: Home },
@@ -49,6 +49,14 @@ export default function PublicSidebar() {
             }`}
           >
             <ShoppingBag size={18} /> Mes achats
+          </Link>
+          <Link
+            to="/playlists"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive('/playlists') ? 'text-foreground bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+            }`}
+          >
+            <ListMusic size={18} /> Mes playlists
           </Link>
         </div>
       </nav>
