@@ -1,0 +1,38 @@
+{
+  "name": "ArtistFollow",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'utilisateur abonn\u00e9"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID de l'utilisateur abonn\u00e9"
+    },
+    "artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste suivi"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste suivi (d\u00e9norm\u00e9, pour affichage rapide)"
+    }
+  },
+  "required": [
+    "user_email",
+    "artist_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

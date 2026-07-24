@@ -36,6 +36,7 @@ export default function ContractDocument({ invite }) {
           <div style={{ fontWeight: 600, color: '#111' }}>Réf : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()}</div>
           <div>Émis le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
           <div>music.sunumaxim.com</div>
+          <div>Missira, Tambacounda, Sénégal</div>
         </div>
       </div>
 
@@ -104,9 +105,10 @@ export default function ContractDocument({ invite }) {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '40px' }}>Pour KKD Music</div>
           <img src={SIGNATURE_URL} alt="Signature" crossOrigin="anonymous" style={{ height: '70px', width: 'auto', marginBottom: '8px' }} />
-          <div style={{ fontSize: '12px', fontWeight: 700 }}>Abdoulaye Sylla</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>Chargé des ressources humaines</div>
+          <div style={{ fontSize: '12px', fontWeight: 700 }}>Madou Kane</div>
+          <div style={{ fontSize: '10px', color: '#666' }}>PDG — Président Directeur Général</div>
           <div style={{ fontSize: '10px', color: '#666' }}>SunuMaxim Group — KKD Music</div>
+          <div style={{ fontSize: '10px', color: '#666' }}>Missira, Tambacounda, Sénégal</div>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '40px' }}>{`Pour ${partyRole === 'le Label Partenaire' ? 'le Label' : "l'Artiste"}`}</div>

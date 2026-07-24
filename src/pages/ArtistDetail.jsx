@@ -15,6 +15,7 @@ import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import SimilarArtists from '@/components/artist/SimilarArtists';
 import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import FollowButton from '@/components/artist/FollowButton';
 import CarouselRow from '@/components/home/CarouselRow';
 import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
@@ -187,6 +188,7 @@ export default function ArtistDetail() {
               <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
             )}
           </div>
+          <FollowButton artistId={artist.id} artistName={artist.name} variant="hero" />
         </div>
       </div>
 
