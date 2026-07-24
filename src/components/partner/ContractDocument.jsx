@@ -60,7 +60,7 @@ export default function ContractDocument({ invite }) {
       {/* ── Articles ── */}
       <div style={{ fontSize: '11.5px', lineHeight: 1.7, color: '#222' }}>
         <Article num="1" title="Objet du contrat">
-          KKD Music assure la distribution numérique, la promotion et la gestion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} sur l'ensemble des plateformes partenaires (Spotify, Apple Music, YouTube Music, Audiomack, Deezer, etc.) ainsi que sur la plateforme music.sunumaxim.com.
+          KKD Music assure la distribution numérique, la promotion et la gestion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} exclusivement sur la plateforme <strong>music.sunumaxim.com</strong>. La diffusion des sorties musicales sur d'autres plateformes musicales (Spotify, Apple Music, YouTube Music, Audiomack, Deezer, etc.) n'est pas incluse automatiquement : elle nécessite une demande préalable adressée à KKD Music et est soumise à des critères spécifiques définis par l'équipe. {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} souhaitant une distribution multi-plateformes doit contacter KKD Music afin d'en convenir les conditions.
         </Article>
 
         <Article num="2" title="Durée">
