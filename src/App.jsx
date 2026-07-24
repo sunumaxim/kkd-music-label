@@ -50,6 +50,7 @@ import AdminEvents from './pages/admin/AdminEvents';
 import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
+import AdminPromotions from './pages/admin/AdminPromotions';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
 import SplashScreen from './components/shared/SplashScreen';
@@ -119,6 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/demandes" element={<AdminRequests />} />
           <Route path="/admin/invitations" element={<AdminInvites />} />
           <Route path="/admin/publications" element={<AdminPublications />} />
+          <Route path="/admin/promotions" element={<AdminPromotions />} />
           <Route path="/admin/mailing" element={<AdminMailing />} />
           <Route path="/admin/social" element={<AdminSocial />} />
         </Route>

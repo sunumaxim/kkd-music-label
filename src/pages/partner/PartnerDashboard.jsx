@@ -5,11 +5,12 @@ import { Link } from 'react-router-dom';
 import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
-  User, LayoutDashboard, SendHorizonal, UserCheck, X
+  User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import PublishForm from '@/components/partner/PublishForm';
+import PartnerPromotions from '@/components/partner/PartnerPromotions';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import {
@@ -44,6 +45,7 @@ const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'artiste', label: 'Mon Artiste', icon: User },
   { id: 'publications', label: 'Publications', icon: Music },
+  { id: 'promotion', label: 'Promotion', icon: Megaphone },
   { id: 'demandes', label: 'Demandes', icon: FileText },
 ];
 
@@ -408,6 +410,11 @@ export default function PartnerDashboard() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── PROMOTION TAB ── */}
+        {activeTab === 'promotion' && (
+          <PartnerPromotions user={user} />
         )}
 
         {/* ── DEMANDES TAB ── */}

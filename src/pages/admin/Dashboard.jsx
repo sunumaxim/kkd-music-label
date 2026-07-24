@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
   Inbox, UserPlus, Clock, ArrowRight, TrendingUp,
-  AlertTriangle, Bell
+  AlertTriangle, Bell, Megaphone
 } from 'lucide-react';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
@@ -20,9 +20,11 @@ export default function Dashboard() {
   const { data: news = [] } = useQuery({ queryKey: ['admin-news'], queryFn: () => base44.entities.News.list() });
   const { data: events = [] } = useQuery({ queryKey: ['admin-events'], queryFn: () => base44.entities.Event.list() });
   const { data: requests = [] } = useQuery({ queryKey: ['admin-requests'], queryFn: () => base44.entities.ServiceRequest.list('-created_date') });
+  const { data: promotions = [] } = useQuery({ queryKey: ['admin-promotions'], queryFn: () => base44.entities.SponsoredPlacement.list('-created_date') });
   const { data: invites = [] } = useQuery({ queryKey: ['admin-invites'], queryFn: () => base44.entities.ArtistInvite.list() });
 
   const pendingRequests = requests.filter(r => r.status === 'en_attente');
+  const pendingPromotions = promotions.filter(p => p.status === 'en_attente');
   const activeArtists = invites.filter(i => i.status === 'actif').length;
   const publishedNews = news.filter(n => n.is_published).length;
   const today = new Date();
@@ -70,7 +72,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Alertes ── */}
-      {(pendingRequests.length > 0 || expiringSoon.length > 0) && (
+      {(pendingRequests.length > 0 || expiringSoon.length > 0 || pendingPromotions.length > 0) && (
         <div className="space-y-2">
           {pendingRequests.length > 0 && (
             <Link
@@ -104,6 +106,23 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">À renouveler dans 30 jours</p>
               </div>
               <ArrowRight size={16} className="text-orange-400 shrink-0" />
+            </Link>
+          )}
+          {pendingPromotions.length > 0 && (
+            <Link
+              to="/admin/promotions"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-primary/10 border border-primary/20 active:scale-[0.98] transition-transform"
+            >
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                <Megaphone size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-primary">
+                  {pendingPromotions.length} demande{pendingPromotions.length > 1 ? 's' : ''} de mise en avant
+                </p>
+                <p className="text-xs text-muted-foreground">À valider (promotion payante)</p>
+              </div>
+              <ArrowRight size={16} className="text-primary shrink-0" />
             </Link>
           )}
         </div>
@@ -234,6 +253,7 @@ export default function Dashboard() {
             { label: 'Publier une sortie', path: '/admin/sorties', icon: Music, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
             { label: 'Publier un clip', path: '/admin/videos', icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/10' },
             { label: 'Rédiger un article', path: '/admin/actualites', icon: Newspaper, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+            { label: 'Valider une promo', path: '/admin/promotions', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
           ].map((a) => {
             const Icon = a.icon;
             return (

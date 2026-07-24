@@ -1,0 +1,104 @@
+{
+  "name": "SponsoredPlacement",
+  "type": "object",
+  "properties": {
+    "partner_email": {
+      "type": "string",
+      "description": "Email du partenaire qui demande la mise en avant"
+    },
+    "partner_name": {
+      "type": "string",
+      "description": "Nom du partenaire / artiste"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste"
+    },
+    "release_id": {
+      "type": "string",
+      "description": "ID de la sortie mise en avant"
+    },
+    "release_title": {
+      "type": "string",
+      "description": "Titre de la sortie (d\u00e9norm\u00e9)"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Pochette (d\u00e9norm\u00e9)"
+    },
+    "streaming_link": {
+      "type": "string",
+      "description": "Lien d'\u00e9coute (si pas de release_id)"
+    },
+    "target_section": {
+      "type": "string",
+      "enum": [
+        "hero",
+        "trending",
+        "both"
+      ],
+      "default": "hero",
+      "description": "Emplacement de la mise en avant"
+    },
+    "requested_days": {
+      "type": "number",
+      "default": 7,
+      "description": "Dur\u00e9e demand\u00e9e (jours)"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Montant factur\u00e9 (FCFA)"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "orange_money",
+        "wave",
+        "autre"
+      ],
+      "default": "orange_money",
+      "description": "Moyen de paiement"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "paye",
+        "rembourse"
+      ],
+      "default": "en_attente",
+      "description": "Statut du paiement"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "approuve",
+        "actif",
+        "expire",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de la demande"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "D\u00e9but de la mise en avant"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fin de la mise en avant"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes admin"
+    }
+  },
+  "required": [
+    "partner_email",
+    "release_title"
+  ]
+}

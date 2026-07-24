@@ -11,6 +11,7 @@ import LatestVideos from '@/components/home/LatestVideos';
 import TrendingArtists from '@/components/home/TrendingArtists';
 import LatestNews from '@/components/home/LatestNews';
 import PartnersCTA from '@/components/home/PartnersCTA';
+import SponsoredShelf from '@/components/home/SponsoredShelf';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 
 export default function Home() {
@@ -79,6 +80,8 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      <SponsoredShelf />
 
       {tab === 'foryou' ? (
         <>
