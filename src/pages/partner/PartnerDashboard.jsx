@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import PublishForm from '@/components/partner/PublishForm';
 import PartnerPromotions from '@/components/partner/PartnerPromotions';
+import PartnerPromoVideo from '@/components/promo/PartnerPromoVideo';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import {
@@ -91,6 +92,7 @@ export default function PartnerDashboard() {
   // Artiste approuvé lié au compte
   const approvedAccess = myAccessRequests.find(r => r.status === 'approuve');
   const linkedArtistId = invite?.artist_id || approvedAccess?.artist_id;
+  const linkedArtistName = invite?.artist_name || approvedAccess?.artist_name;
 
   const pendingPubs = myPublications.filter(p => p.status === 'en_attente').length;
   const acceptedReqs = myRequests.filter(r => r.status === 'accepte').length;
@@ -414,7 +416,16 @@ export default function PartnerDashboard() {
 
         {/* ── PROMOTION TAB ── */}
         {activeTab === 'promotion' && (
-          <PartnerPromotions user={user} />
+          <div className="space-y-6">
+            {linkedArtistName ? (
+              <PartnerPromoVideo artistName={linkedArtistName} />
+            ) : (
+              <div className="bg-card border border-border/50 rounded-2xl p-6 text-center text-sm text-muted-foreground">
+                Réclamez votre profil artiste pour générer des vidéos promo de vos sorties.
+              </div>
+            )}
+            <PartnerPromotions user={user} />
+          </div>
         )}
 
         {/* ── DEMANDES TAB ── */}
