@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { recordPlay } from '@/hooks/useListeningHistory';
 
 const PlayerContext = createContext(null);
 
@@ -26,6 +27,11 @@ export function PlayerProvider({ children }) {
   const [shuffle, setShuffle] = useState(false);
 
   const current = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
+
+  // Historique d'écoute local — enregistre la piste dès qu'elle devient active
+  useEffect(() => {
+    if (current && current.audio_url) recordPlay(current);
+  }, [current?.key, current?.audio_url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lance la lecture quand la piste courante change
   useEffect(() => {

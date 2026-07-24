@@ -2,6 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import HeroSlider from '@/components/home/HeroSlider';
+import RecentlyPlayed from '@/components/home/RecentlyPlayed';
 import LatestReleases from '@/components/home/LatestReleases';
 import TrendingArtists from '@/components/home/TrendingArtists';
 import NewArtists from '@/components/home/NewArtists';
@@ -54,6 +55,7 @@ export default function Home() {
 
       <HeroSlider releases={releases} videos={videos} events={events} news={news} />
 
+      <RecentlyPlayed />
       <LatestReleases releases={releases} />
       <LatestVideos videos={videos} />
       <TrendingArtists artists={artists} />
