@@ -3,7 +3,7 @@
  * change (valide → contenu débloqué / refuse) — in-app + email.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange } from "../../shared/emailKit.js";
 
 const STATUS_CONFIG = {
   valide: {
@@ -37,6 +37,9 @@ Deno.serve(async (req) => {
 
     if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
     if (old_data?.status === newStatus) return Response.json({ skipped: true });
+
+    const verified = await verifyStatusChange({ base44, entityName: "WavePayment", id: data?.id, field: "status", expected: newStatus });
+    if (!verified) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
     const notesBlock = data?.admin_notes

@@ -61,3 +61,22 @@ export async function pushNotification(opts) {
 export function stripHtml(s) {
   return (s || "").replace(/<[^>]+>/g, "").substring(0, 200);
 }
+
+/**
+ * Anti-falsification : re-fetch the real entity record and confirm its current
+ * status actually matches the claimed new status. A forged external POST
+ * (where the real record is still "en_attente") is rejected, so only genuine
+ * admin-driven status changes trigger notifications.
+ * opts: { base44, entityName, id, field, expected }
+ */
+export async function verifyStatusChange({ base44, entityName, id, field, expected }) {
+  if (!id || !field || !expected) return false;
+  try {
+    const records = await base44.asServiceRole.entities[entityName].filter({ id });
+    const rec = records && records[0];
+    return !!rec && rec[field] === expected;
+  } catch (e) {
+    console.error(`verifyStatusChange(${entityName}) error:`, e);
+    return false;
+  }
+}

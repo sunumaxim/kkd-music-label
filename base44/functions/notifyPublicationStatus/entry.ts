@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { verifyStatusChange } from "../../shared/emailKit.js";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 const PRIMARY = "#E50000";
@@ -69,6 +70,9 @@ Deno.serve(async (req) => {
     const userEmail = data?.partner_email;
 
     if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
+
+    const verified = await verifyStatusChange({ base44, entityName: "PartnerPublication", id: data?.id, field: "status", expected: newStatus });
+    if (!verified) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
     const adminNotes = data?.admin_notes;
