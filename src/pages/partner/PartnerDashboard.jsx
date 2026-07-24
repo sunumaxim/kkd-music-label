@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
+import NotificationsPanel from '@/components/shared/NotificationsPanel';
 import PublishForm from '@/components/partner/PublishForm';
 import PublishEventForm from '@/components/partner/PublishEventForm';
 import PartnerPromotions from '@/components/partner/PartnerPromotions';
@@ -214,6 +215,9 @@ export default function PartnerDashboard() {
               </h1>
               <p className="text-muted-foreground text-sm mt-1">Bienvenue dans votre espace KKD Music.</p>
             </div>
+
+            {/* Notifications récentes */}
+            <NotificationsPanel user={user} />
 
             {/* Contrat */}
             {invite && (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Bell, Check, CheckCheck, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const TYPE_COLORS = {
   info: 'bg-blue-500/10 text-blue-400',
@@ -11,6 +11,7 @@ const TYPE_COLORS = {
 };
 
 export default function NotificationBell({ user }) {
+  const navigate = useNavigate();
   const [notifs, setNotifs] = useState([]);
   const [open, setOpen] = useState(false);
   const ref = useRef();
@@ -53,6 +54,12 @@ export default function NotificationBell({ user }) {
     }
   };
 
+  const openNotif = async (notif) => {
+    await markRead(notif);
+    setOpen(false);
+    if (notif.link) navigate(notif.link);
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -93,7 +100,7 @@ export default function NotificationBell({ user }) {
               notifs.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => markRead(n)}
+                  onClick={() => openNotif(n)}
                   className={`px-4 py-3 border-b border-border/20 cursor-pointer hover:bg-secondary/50 transition-colors ${!n.is_read ? 'bg-primary/3' : ''}`}
                 >
                   <div className="flex items-start gap-3">

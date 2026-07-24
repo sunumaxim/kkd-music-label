@@ -45,6 +45,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Notifier l'acheteur que son billet est validé et téléchargeable
+    if (ticket.buyer_email) {
+      await base44.asServiceRole.entities.Notification.create({
+        user_email: ticket.buyer_email,
+        title: '✅ Billet validé !',
+        message: `Votre billet pour "${ticket.event_title || "l'événement"}" est confirmé. Téléchargez-le depuis la rubrique « Mes billets ».`,
+        type: 'success',
+        link: '/mes-billets',
+        is_read: false,
+      }).catch(() => {});
+    }
+
     return Response.json({ ticket_number: number, status: 'valide' });
   } catch (error) {
     console.error('validateTicketPayment error:', error);

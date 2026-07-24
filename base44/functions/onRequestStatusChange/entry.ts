@@ -5,7 +5,7 @@ const PRIMARY = "#E50000";
 const BG = "#0a0a0a";
 const CARD = "#111111";
 const BORDER = "#222222";
-const SITE_URL = "https://kkdmusic.com";
+const SITE_URL = "https://music.sunumaxim.com";
 
 function buildEmailHtml({ subject, headline, body, cta, extra = '' }) {
   const ctaBlock = cta ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:32px auto 0;"><tr><td style="border-radius:6px;background:${PRIMARY};"><a href="${cta.url}" style="display:inline-block;padding:14px 32px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;">${cta.label}</a></td></tr></table>` : '';
