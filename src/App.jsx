@@ -40,6 +40,7 @@ import Search from './pages/Search';
 import MesAchats from './pages/MesAchats';
 import MesBillets from './pages/MesBillets';
 import ControleAcces from './pages/ControleAcces';
+import PublicVerifTicket from './pages/PublicVerifTicket';
 import Playlists from './pages/Playlists';
 
 // Admin layout & pages
@@ -109,6 +110,7 @@ const AuthenticatedApp = () => {
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/mes-billets" element={<MesBillets />} />
         <Route path="/controle-acces" element={<ControleAcces />} />
+        <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
       </Route>
 

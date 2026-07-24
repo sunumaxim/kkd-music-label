@@ -15,9 +15,25 @@
       "format": "date-time",
       "description": "Date de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
     },
+    "event_image_url": {
+      "type": "string",
+      "description": "Affiche de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9, pour le QR/le billet)"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Artiste li\u00e9 (d\u00e9normalis\u00e9)"
+    },
     "organizer_email": {
       "type": "string",
       "description": "Email de l'organisateur (d\u00e9normalis\u00e9)"
+    },
+    "managers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Gestionnaires d'acc\u00e8s (d\u00e9normalis\u00e9)"
     },
     "buyer_email": {
       "type": "string",

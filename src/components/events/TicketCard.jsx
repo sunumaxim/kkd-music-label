@@ -1,6 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import QrWithLogo from '@/components/events/QrWithLogo';
 import { Ticket, CheckCircle2, Clock, XCircle, MapPin } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
@@ -15,19 +16,17 @@ const STATUS = {
 export default function TicketCard({ ticket }) {
   const st = STATUS[ticket.status] || STATUS.en_attente;
   const Icon = st.icon;
-  const qr = ticket.ticket_number
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(ticket.ticket_number)}`
-    : null;
+  const verifUrl = ticket.ticket_number ? `${window.location.origin}/billet/${ticket.ticket_number}` : '';
 
   return (
     <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
       <div className="flex flex-col sm:flex-row">
         {/* QR */}
         <div className="bg-gradient-to-br from-primary/10 to-card p-5 flex flex-col items-center justify-center gap-2 sm:w-56 shrink-0 border-b sm:border-b-0 sm:border-r border-border/40">
-          {qr ? (
+          {ticket.ticket_number ? (
             <>
-              <img src={qr} alt="QR billet" className="w-40 h-40 rounded-xl bg-white p-2" />
-              <p className="text-[10px] font-mono text-muted-foreground break-all text-center px-2">{ticket.ticket_number}</p>
+              <QrWithLogo value={verifUrl} image={ticket.event_image_url} size={170} />
+              <p className="text-[10px] font-mono text-muted-foreground break-all text-center px-2 mt-2">{ticket.ticket_number}</p>
             </>
           ) : (
             <div className="w-40 h-40 rounded-xl bg-secondary flex items-center justify-center">

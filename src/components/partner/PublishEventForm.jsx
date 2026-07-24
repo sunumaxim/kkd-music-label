@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,12 @@ export default function PublishEventForm({ user, onClose }) {
     title: '', event_type: 'concert', event_date: '', location: '', city: '',
     description: '', image_url: '', stream_url: '', ticket_url: '',
     is_ticketed: false, ticket_price: 0, ticket_capacity: 0, managersText: '',
+    artist_id: '', artist_name: '',
+  });
+
+  const { data: artists = [] } = useQuery({
+    queryKey: ['artists-all'],
+    queryFn: () => base44.entities.Artist.list('name', 200),
   });
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +68,8 @@ export default function PublishEventForm({ user, onClose }) {
         ticket_price: Number(form.ticket_price) || 0,
         ticket_capacity: Number(form.ticket_capacity) || 0,
         managers,
+        artist_id: form.artist_id || '',
+        artist_name: form.artist_name || '',
         organizer_email: user.email,
         organizer_name: user.full_name || user.email,
         published_status: 'en_attente',
@@ -108,6 +117,22 @@ export default function PublishEventForm({ user, onClose }) {
         <div className="space-y-1.5">
           <Label>Ville</Label>
           <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label>Artiste lié (optionnel)</Label>
+          <select
+            value={form.artist_id}
+            onChange={(e) => {
+              const a = artists.find((x) => x.id === e.target.value);
+              set('artist_id', e.target.value);
+              set('artist_name', a?.name || '');
+            }}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">— Aucun / Autre —</option>
+            {artists.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+          <p className="text-[11px] text-muted-foreground">L'événement apparaîtra sur le profil de cet artiste.</p>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label>Description</Label>

@@ -92,9 +92,11 @@ export default function ArtistDetail() {
       data
         .filter(
           (e) =>
-            e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
-            e.description?.toLowerCase().includes(artist?.name?.toLowerCase())
+            (e.artist_name && e.artist_name.toLowerCase() === artist?.name?.toLowerCase()) ||
+            (!e.artist_name && (e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
+              e.description?.toLowerCase().includes(artist?.name?.toLowerCase())))
         )
+        .filter((e) => !e.published_status || e.published_status === 'approuve')
         .slice(0, 6),
   });
 

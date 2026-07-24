@@ -12,7 +12,7 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Image de l'\u00e9v\u00e9nement"
+      "description": "Affiche / image de l'\u00e9v\u00e9nement"
     },
     "event_type": {
       "type": "string",
@@ -84,6 +84,14 @@
       },
       "default": [],
       "description": "IDs des sorties li\u00e9es \u00e0 afficher sur la page \u00e9v\u00e9nement"
+    },
+    "artist_id": {
+      "type": "string",
+      "description": "Artiste principal li\u00e9 (optionnel)"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste li\u00e9 (d\u00e9normalis\u00e9)"
     },
     "organizer_email": {
       "type": "string",

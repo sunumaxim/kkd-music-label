@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,6 +37,15 @@ export default function EventDetail() {
   });
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
+
+  const { data: artist } = useQuery({
+    queryKey: ['event-artist', event?.artist_name],
+    queryFn: async () => {
+      const r = await base44.entities.Artist.filter({ name: event.artist_name });
+      return r[0] || null;
+    },
+    enabled: !!event?.artist_name,
+  });
 
   const { data: linkedReleases = [] } = useQuery({
     queryKey: ['event-linked-releases', event?.id, event?.linked_release_ids?.join(',') || ''],
@@ -127,9 +136,20 @@ export default function EventDetail() {
         </div>
 
         {/* Title */}
-        <h1 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-6">
+        <h1 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-3">
           {event.title}
         </h1>
+        {event.artist_name && (
+          <div className="mb-6">
+            {artist ? (
+              <Link to={`/artistes/${buildEntitySlug(artist.name, artist.id)}`} className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm font-medium">
+                <User size={13} /> {event.artist_name}
+              </Link>
+            ) : (
+              <span className="text-sm text-muted-foreground">{event.artist_name}</span>
+            )}
+          </div>
+        )}
 
         {/* Info grid */}
         <div className="grid sm:grid-cols-2 gap-4 mb-8">

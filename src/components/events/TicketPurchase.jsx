@@ -63,6 +63,8 @@ export default function TicketPurchase({ event }) {
         event_id: event.id,
         event_title: event.title,
         event_date: event.event_date,
+        event_image_url: event.image_url || '',
+        artist_name: event.artist_name || '',
         organizer_email: event.organizer_email || '',
         managers: event.managers || [],
         buyer_email: email,

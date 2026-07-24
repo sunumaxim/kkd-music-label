@@ -20,6 +20,7 @@ const FIELDS = [
     { value: 'rencontre', label: 'Rencontre artistique' },
   ]},
   { key: 'event_date', label: 'Date et heure', type: 'datetime' },
+  { key: 'artist_name', label: 'Artiste lié', type: 'text', placeholder: "Nom de l'artiste" },
   { key: 'location', label: 'Lieu', type: 'text', placeholder: 'Ex: Salle Pleyel' },
   { key: 'city', label: 'Ville', type: 'text', placeholder: 'Ex: Paris' },
   { key: 'description', label: 'Description', type: 'textarea' },
