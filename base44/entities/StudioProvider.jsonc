@@ -1,0 +1,68 @@
+{
+  "name": "StudioProvider",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nom du studio / cam\u00e9raman / prestataire"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "studio_enregistrement",
+        "cameraman",
+        "studio_mixage",
+        "autre"
+      ],
+      "default": "studio_enregistrement",
+      "description": "Type de prestataire"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Photo / logo du prestataire"
+    },
+    "city": {
+      "type": "string",
+      "description": "Ville"
+    },
+    "phone": {
+      "type": "string",
+      "description": "T\u00e9l\u00e9phone / WhatsApp"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email de contact"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description / \u00e9quipements / services"
+    },
+    "portfolio_url": {
+      "type": "string",
+      "description": "Lien portfolio / site web"
+    },
+    "instagram_url": {
+      "type": "string",
+      "description": "Lien Instagram"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Actif et visible sur la page d'accueil"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mise en avant"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Ordre d'affichage"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

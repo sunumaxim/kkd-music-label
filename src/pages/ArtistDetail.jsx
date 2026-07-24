@@ -14,6 +14,7 @@ import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import SimilarArtists from '@/components/artist/SimilarArtists';
 import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
+import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import CarouselRow from '@/components/home/CarouselRow';
 import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
@@ -169,7 +170,7 @@ export default function ArtistDetail() {
             <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight break-words leading-tight">
               {artist.name}
             </h1>
-            <BadgeCheck size={28} className="text-yellow-400 shrink-0" fill="currentColor" />
+            {artist.is_verified && <VerifiedBadge size={30} />}
           </div>
           <div className="flex items-center flex-wrap gap-2 mt-2">
             {artist.genre && (

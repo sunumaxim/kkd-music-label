@@ -112,6 +112,11 @@
       "type": "string",
       "description": "Lien Facebook"
     },
+    "is_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Artiste certifi\u00e9 \u2014 affiche le badge bleu \u00ab V\u00e9rifi\u00e9 \u00bb"
+    },
     "is_featured": {
       "type": "boolean",
       "default": false,

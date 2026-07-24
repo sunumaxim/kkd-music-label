@@ -60,6 +60,7 @@ import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminTickets from './pages/admin/AdminTickets';
+import AdminStudios from './pages/admin/AdminStudios.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
@@ -137,6 +138,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/social" element={<AdminSocial />} />
           <Route path="/admin/paiements" element={<AdminPayments />} />
           <Route path="/admin/tickets" element={<AdminTickets />} />
+          <Route path="/admin/studios" element={<AdminStudios />} />
         </Route>
       </Route>
 

@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, UserPlus, Building2, Calendar, AlertCircle, UserCheck, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, X, UserPlus, Building2, Calendar, AlertCircle, UserCheck, CheckCircle, XCircle, ShieldCheck, Download } from 'lucide-react';
 import ArtistSelector from '@/components/partner/ArtistSelector';
+import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import GoldLabelBadge from '@/components/shared/GoldLabelBadge';
+import ContractDownloader from '@/components/partner/ContractDownloader';
 
 const statusColors = {
   invite: 'bg-yellow-500/10 text-yellow-400',
@@ -71,6 +74,7 @@ export default function AdminInvites() {
   };
 
   const handleStatusChange = (id, status) => updateMutation.mutate({ id, data: { status } });
+  const handleVerify = (inv) => updateMutation.mutate({ id: inv.id, data: { is_verified: !inv.is_verified } });
 
   const today = new Date();
   const expiringSoon = invites.filter(i => {
@@ -228,7 +232,14 @@ export default function AdminInvites() {
                       {inv.invite_type === 'label_partenaire' ? <Building2 size={18} className="text-primary" /> : <UserPlus size={18} className="text-primary" />}
                     </div>
                     <div>
-                      <p className="font-heading font-bold text-sm">{inv.artist_name}</p>
+                      <p className="font-heading font-bold text-sm flex items-center gap-1.5">
+                        {inv.artist_name}
+                        {inv.is_verified && (
+                          inv.invite_type === 'label_partenaire'
+                            ? <GoldLabelBadge size={16} />
+                            : <VerifiedBadge size={16} />
+                        )}
+                      </p>
                       <p className="text-xs text-muted-foreground">{inv.email}</p>
                       <div className="flex items-center gap-2 flex-wrap mt-1">
                         <span className="text-xs bg-secondary/50 px-2 py-0.5 rounded-full">{typeLabels[inv.invite_type]}</span>
@@ -247,6 +258,14 @@ export default function AdminInvites() {
                         {Object.entries(statusLabels).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    <button
+                      onClick={() => handleVerify(inv)}
+                      title={inv.is_verified ? 'Retirer la certification' : 'Certifier'}
+                      className={`p-1.5 rounded-lg transition-colors ${inv.is_verified ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+                    >
+                      <ShieldCheck size={16} />
+                    </button>
+                    <ContractDownloader invite={inv} variant="outline" size="sm" />
                     <button onClick={() => deleteMutation.mutate(inv.id)} className="text-muted-foreground hover:text-red-400 transition-colors"><X size={16} /></button>
                   </div>
                 </div>

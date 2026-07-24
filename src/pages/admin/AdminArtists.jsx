@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ArrowLeft, Star, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, Star, Download, ShieldCheck } from 'lucide-react';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
 import ArtistImporter from '@/components/partner/ArtistImporter';
+import VerifiedBadge from '@/components/shared/VerifiedBadge';
 
 const EMPTY = {
   name: '', genre: '', biography: '', label: '',
@@ -21,7 +22,7 @@ const EMPTY = {
   instagram_url: '', instagram_username: '',
   tiktok_url: '', tiktok_username: '',
   facebook_url: '',
-  is_featured: false, order: 0,
+  is_featured: false, is_verified: false, order: 0,
 };
 
 function TagInput({ value = [], onChange, placeholder }) {
@@ -266,6 +267,10 @@ export default function AdminArtists() {
               <Switch checked={!!form.is_featured} onCheckedChange={v => set('is_featured', v)} />
               <Label>Mis en avant (accueil)</Label>
             </div>
+            <div className="flex items-center gap-2 mt-6">
+              <Switch checked={!!form.is_verified} onCheckedChange={v => set('is_verified', v)} />
+              <Label className="flex items-center gap-1.5">Certifié <VerifiedBadge size={14} /></Label>
+            </div>
           </div>
         </div>
 
@@ -322,13 +327,24 @@ export default function AdminArtists() {
               </div>
               <div className="p-3 flex items-center justify-between">
                 <div>
-                  <p className="font-heading font-bold text-sm">{artist.name}</p>
+                  <p className="font-heading font-bold text-sm flex items-center gap-1">
+                    {artist.name}
+                    {artist.is_verified && <VerifiedBadge size={14} />}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {artist.genre || 'Genre non défini'}
                     {artist.label ? ` · ${artist.label}` : ''}
                   </p>
                 </div>
                 <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title={artist.is_verified ? 'Retirer la certification' : 'Certifier (badge bleu)'}
+                    onClick={() => updateMutation.mutate({ id: artist.id, data: { is_verified: !artist.is_verified } })}
+                  >
+                    <ShieldCheck size={14} className={artist.is_verified ? 'text-primary' : 'text-muted-foreground'} />
+                  </Button>
                   <Button variant="ghost" size="icon" title="Importer Spotify/YouTube/Wikipedia" onClick={() => setImporting(artist)}>
                     <Download size={14} className="text-primary" />
                   </Button>

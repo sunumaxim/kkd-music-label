@@ -11,6 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import NotificationsPanel from '@/components/shared/NotificationsPanel';
+import ContractDownloader from '@/components/partner/ContractDownloader';
+import GoldLabelBadge from '@/components/shared/GoldLabelBadge';
+import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import PublishForm from '@/components/partner/PublishForm';
 import PublishEventForm from '@/components/partner/PublishEventForm';
 import PartnerPromotions from '@/components/partner/PartnerPromotions';
@@ -230,9 +233,14 @@ export default function PartnerDashboard() {
                   <CheckCircle size={20} className={invite.status === 'actif' ? 'text-green-400' : 'text-orange-400'} />
                 </div>
                 <div className="flex-1">
-                  <p className="font-heading font-bold text-sm">
+                  <p className="font-heading font-bold text-sm flex items-center gap-1.5">
                     Contrat KKD Music
-                    {invite.label_name && <span className="ml-2 text-xs text-muted-foreground">· {invite.label_name}</span>}
+                    {invite.is_verified && (
+                      invite.invite_type === 'label_partenaire'
+                        ? <GoldLabelBadge size={15} />
+                        : <VerifiedBadge size={15} />
+                    )}
+                    {invite.label_name && <span className="ml-2 text-xs text-muted-foreground font-normal">· {invite.label_name}</span>}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {invite.invite_type === 'artiste_kkd' ? 'Artiste KKD' : 'Label Partenaire'} · Statut :{' '}
@@ -245,6 +253,9 @@ export default function PartnerDashboard() {
                       Expire le : {new Date(invite.contract_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   )}
+                </div>
+                <div className="shrink-0">
+                  <ContractDownloader invite={invite} label="Télécharger" variant="outline" />
                 </div>
               </div>
             )}

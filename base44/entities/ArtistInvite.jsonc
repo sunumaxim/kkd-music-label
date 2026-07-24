@@ -52,6 +52,11 @@
       "default": "invite",
       "description": "Statut du contrat"
     },
+    "is_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Contrat certifi\u00e9 \u2014 badge bleu pour artiste, badge dor\u00e9 pour label"
+    },
     "notes": {
       "type": "string",
       "description": "Notes sur l'invitation / contrat"
