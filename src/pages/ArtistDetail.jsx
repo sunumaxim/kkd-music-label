@@ -4,15 +4,17 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Music, Youtube, Instagram, Facebook,
-  Share2, Check, Play, Disc3, Calendar, MapPin, ExternalLink
+  Share2, Check, Play, Disc3, Calendar, MapPin, ExternalLink, Heart, Eye,
 } from 'lucide-react';
-import { StreamingLinks } from '../components/shared/StreamingEmbed';
+import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
+import PageMeta from '@/components/shared/PageMeta';
 import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
 import ArtistTopTracks from '@/components/artist/ArtistTopTracks';
 import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
-import ArtistReleasesCarousel from '@/components/artist/ArtistReleasesCarousel';
+import ArtistReleasesGrid from '@/components/artist/ArtistReleasesGrid';
+import SimilarArtists from '@/components/artist/SimilarArtists';
 import { buildEntitySlug } from '@/lib/slugify';
 
 const VIDEO_TYPE_LABELS = {
@@ -29,11 +31,24 @@ const VIDEO_TYPE_COLORS = {
   making_of: 'bg-orange-500/10 text-orange-400',
 };
 
+function SectionHeader({ icon: Icon, title, count }) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="font-heading font-bold text-lg flex items-center gap-2">
+        {Icon && <Icon size={18} className="text-primary" />}
+        {title}
+      </h2>
+      {count !== undefined && (
+        <span className="text-xs font-mono text-muted-foreground/60">{count}</span>
+      )}
+    </div>
+  );
+}
+
 export default function ArtistDetail() {
   const { id } = useParams();
   const [copied, setCopied] = useState(false);
   const [videoFilter, setVideoFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState('discographie');
 
   const handleShare = () => {
     const url = window.location.href;
@@ -56,7 +71,7 @@ export default function ArtistDetail() {
     queryKey: ['artist-releases', artist?.name],
     queryFn: () => base44.entities.Release.filter({ artist_name: artist?.name }),
     enabled: !!artist?.name,
-    select: data => [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
+    select: (data) => [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
   });
 
   const { data: videos = [] } = useQuery({
@@ -69,22 +84,21 @@ export default function ArtistDetail() {
     queryKey: ['artist-events', artist?.name],
     queryFn: () => base44.entities.Event.list('-event_date'),
     enabled: !!artist?.name,
-    select: data => data.filter(e =>
-      e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
-      e.description?.toLowerCase().includes(artist?.name?.toLowerCase())
-    ).slice(0, 6),
+    select: (data) =>
+      data
+        .filter(
+          (e) =>
+            e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
+            e.description?.toLowerCase().includes(artist?.name?.toLowerCase())
+        )
+        .slice(0, 6),
   });
 
-  const availableVideoTypes = [...new Set(videos.map(v => v.video_type).filter(Boolean))];
-  const filteredVideos = videoFilter === 'all' ? videos : videos.filter(v => v.video_type === videoFilter);
-
-  const tabs = [
-    { id: 'discographie', label: 'Discographie', count: releases.length },
-    { id: 'videos', label: 'Vidéos', count: videos.length },
-    ...(events.length > 0 ? [{ id: 'concerts', label: 'Concerts', count: events.length }] : []),
-    ...(artist?.biography ? [{ id: 'bio', label: 'Biographie' }] : []),
-    ...(artist?.gallery?.length > 0 ? [{ id: 'galerie', label: 'Galerie' }] : []),
-  ];
+  const availableVideoTypes = [...new Set(videos.map((v) => v.video_type).filter(Boolean))];
+  const filteredVideos = videoFilter === 'all' ? videos : videos.filter((v) => v.video_type === videoFilter);
+  const totalLikes =
+    releases.reduce((s, r) => s + (r.likes_count || 0), 0) +
+    videos.reduce((s, v) => s + (v.likes_count || 0), 0);
 
   if (isLoading) {
     return (
@@ -109,11 +123,17 @@ export default function ArtistDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      <PageMeta
+        title={artist.name}
+        description={artist.biography?.slice(0, 160) || `${artist.genre || 'Artiste'} sur KKD Music.`}
+        image={artist.photo_url}
+        type="profile"
+      />
       <MobileHeader title={artist.name} backPath="/artistes" />
 
       {/* ── HERO ── */}
-      <div className="relative h-64 md:h-[480px] overflow-hidden">
+      <div className="relative h-72 md:h-[420px] overflow-hidden max-w-full">
         {artist.photo_url ? (
           <img src={artist.photo_url} alt={artist.name} className="w-full h-full object-cover object-top" />
         ) : (
@@ -121,7 +141,6 @@ export default function ArtistDetail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
 
-        {/* Back */}
         <Link
           to="/artistes"
           className="hidden md:inline-flex absolute top-6 left-6 items-center gap-2 text-sm text-white/80 hover:text-white bg-black/30 backdrop-blur-sm rounded-full px-4 py-2 transition-colors"
@@ -129,7 +148,6 @@ export default function ArtistDetail() {
           <ArrowLeft size={14} /> Artistes
         </Link>
 
-        {/* Share */}
         <button
           onClick={handleShare}
           className="absolute top-6 right-6 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white text-sm font-medium transition-colors"
@@ -138,290 +156,265 @@ export default function ArtistDetail() {
           {copied ? 'Copié !' : 'Partager'}
         </button>
 
-        {/* Identity */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight">{artist.name}</h1>
-            <div className="flex items-center flex-wrap gap-2 mt-2">
-              {artist.genre && (
-                <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
-                  {artist.genre}
-                </span>
-              )}
-              {artist.label && (
-                <span className="bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full border border-white/20">
-                  {artist.label}
-                </span>
-              )}
-              {artist.active_since && (
-                <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
-              )}
-            </div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-full">
+          <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight break-words leading-tight">
+            {artist.name}
+          </h1>
+          <div className="flex items-center flex-wrap gap-2 mt-2">
+            {artist.genre && (
+              <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
+                {artist.genre}
+              </span>
+            )}
+            {artist.label && (
+              <span className="bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full border border-white/20">
+                {artist.label}
+              </span>
+            )}
+            {artist.active_since && (
+              <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── MAIN LAYOUT ── */}
-      <div className="max-w-5xl mx-auto px-4">
+      {/* ── VERTICAL STACK ── */}
+      <div className="max-w-3xl mx-auto px-4 pb-16">
 
-        {/* ── STATS + SOCIAL BAR ── */}
+        {/* Stats + social */}
         <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-b border-border/50">
-          {/* Stats */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5 flex-wrap">
             {releases.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Disc3 size={15} className="text-primary" />
                 <span className="text-sm font-bold">{releases.length}</span>
-                <span className="text-sm text-muted-foreground">sortie{releases.length > 1 ? 's' : ''}</span>
+                <span className="text-xs text-muted-foreground">sorties</span>
               </div>
             )}
             {videos.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Play size={15} className="text-primary" />
                 <span className="text-sm font-bold">{videos.length}</span>
-                <span className="text-sm text-muted-foreground">vidéo{videos.length > 1 ? 's' : ''}</span>
+                <span className="text-xs text-muted-foreground">vidéos</span>
               </div>
             )}
             {events.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Calendar size={15} className="text-primary" />
                 <span className="text-sm font-bold">{events.length}</span>
-                <span className="text-sm text-muted-foreground">concert{events.length > 1 ? 's' : ''}</span>
+                <span className="text-xs text-muted-foreground">concerts</span>
+              </div>
+            )}
+            {totalLikes > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Heart size={15} className="text-primary" />
+                <span className="text-sm font-bold">{totalLikes.toLocaleString('fr-FR')}</span>
+                <span className="text-xs text-muted-foreground">j'aime</span>
               </div>
             )}
           </div>
 
-          {/* Social links */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {artist.instagram_url && (
-              <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 transition-all">
+              <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 transition-all">
                 <Instagram size={15} />
               </a>
             )}
             {artist.tiktok_url && (
-              <a href={artist.tiktok_url} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
-                </svg>
+              <a href={artist.tiktok_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
               </a>
             )}
             {artist.facebook_url && (
-              <a href={artist.facebook_url} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-all">
+              <a href={artist.facebook_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-all">
                 <Facebook size={15} />
               </a>
             )}
             {artist.youtube_url && (
-              <a href={artist.youtube_url} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all">
+              <a href={artist.youtube_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all">
                 <Youtube size={15} />
               </a>
             )}
             {artist.website_url && (
-              <a href={artist.website_url} target="_blank" rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
+              <a href={artist.website_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
                 <ExternalLink size={14} />
               </a>
             )}
           </div>
         </div>
 
-        {/* ── CONTENT + SIDEBAR ── */}
-        <div className="grid md:grid-cols-3 gap-8 py-8">
+        {/* Streaming */}
+        <div className="py-5">
+          <StreamingLinks
+            spotify={artist.spotify_url}
+            youtube={artist.youtube_url}
+            apple_music={artist.apple_music_url}
+            audiomack={artist.audiomack_url}
+            deezer={artist.deezer_url}
+            soundcloud={artist.soundcloud_url}
+          />
+        </div>
 
-          {/* ── LEFT : TABS ── */}
-          <div className="md:col-span-2 space-y-6">
+        {/* Discographie */}
+        <section className="py-6 border-t border-border/30">
+          <SectionHeader icon={Disc3} title="Discographie" count={releases.length} />
+          {releases.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Disc3 size={36} className="mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Aucune sortie disponible.</p>
+            </div>
+          ) : (
+            <ArtistReleasesGrid releases={releases} />
+          )}
+          <div className="mt-6">
+            <ArtistTopTracks artist={artist} />
+          </div>
+        </section>
 
-            {/* Tab nav */}
-            <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl overflow-x-auto">
-              {tabs.map(tab => (
+        {/* Vidéos */}
+        {videos.length > 0 && (
+          <section className="py-6 border-t border-border/30">
+            <SectionHeader icon={Youtube} title="Vidéos" count={videos.length} />
+
+            {availableVideoTypes.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-4">
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                  onClick={() => setVideoFilter('all')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    videoFilter === 'all'
+                      ? 'bg-primary text-white border-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/40'
                   }`}
                 >
-                  {tab.label}
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      activeTab === tab.id ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
+                  Tous ({videos.length})
                 </button>
-              ))}
-            </div>
-
-            {/* ── TAB: DISCOGRAPHIE ── */}
-            {activeTab === 'discographie' && (
-              <div>
-                {releases.length === 0 ? (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <Disc3 size={40} className="mx-auto mb-3 opacity-20" />
-                    <p>Aucune sortie disponible.</p>
-                  </div>
-                ) : (
-                  <ArtistReleasesCarousel releases={releases} />
-                )}
-                <ArtistTopTracks artist={artist} />
-              </div>
-            )}
-
-            {/* ── TAB: VIDEOS ── */}
-            {activeTab === 'videos' && (
-              <div className="space-y-4">
-                {/* Filter bar */}
-                {availableVideoTypes.length > 1 && (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setVideoFilter('all')}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                        videoFilter === 'all'
-                          ? 'bg-primary text-white border-primary'
-                          : 'border-border text-muted-foreground hover:border-primary/40'
-                      }`}
-                    >
-                      Tous ({videos.length})
-                    </button>
-                    {availableVideoTypes.map(type => (
-                      <button
-                        key={type}
-                        onClick={() => setVideoFilter(type)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                          videoFilter === type
-                            ? 'bg-primary text-white border-primary'
-                            : 'border-border text-muted-foreground hover:border-primary/40'
-                        }`}
-                      >
-                        {VIDEO_TYPE_LABELS[type] || type} ({videos.filter(v => v.video_type === type).length})
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {filteredVideos.length === 0 ? (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <Youtube size={40} className="mx-auto mb-3 opacity-20" />
-                    <p>Aucune vidéo disponible.</p>
-                  </div>
-                ) : (
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {filteredVideos.map(v => {
-                      const videoId = getYoutubeId(v.youtube_url);
-                      const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
-                      return (
-                        <Link
-                          key={v.id}
-                          to={`/videos/${v.id}`}
-                          className="bg-card border border-border/50 rounded-xl overflow-hidden group hover:border-primary/40 hover:shadow-lg transition-all"
-                        >
-                          <div className="relative aspect-video bg-secondary overflow-hidden">
-                            {thumb ? (
-                              <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Youtube size={32} className="text-muted-foreground/20" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                                <Play size={18} className="text-white ml-1" fill="white" />
-                              </div>
-                            </div>
-                            {v.video_type && (
-                              <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${VIDEO_TYPE_COLORS[v.video_type] || 'bg-secondary text-foreground'}`}>
-                                {VIDEO_TYPE_LABELS[v.video_type]}
-                              </span>
-                            )}
-                          </div>
-                          <div className="p-3">
-                            <p className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{v.title}</p>
-                            {v.publish_date && (
-                              <p className="text-[11px] text-muted-foreground mt-1">
-                                {new Date(v.publish_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}
-                              </p>
-                            )}
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── TAB: CONCERTS ── */}
-            {activeTab === 'concerts' && (
-              <div className="space-y-3">
-                {events.map(e => (
-                  <Link
-                    key={e.id}
-                    to={`/evenements/${buildEntitySlug(e.title, e.id)}`}
-                    className="flex items-center gap-4 bg-card border border-border/50 rounded-xl p-4 hover:border-primary/40 transition-all group"
+                {availableVideoTypes.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setVideoFilter(type)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                      videoFilter === type
+                        ? 'bg-primary text-white border-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/40'
+                    }`}
                   >
-                    {e.event_date && (
-                      <div className="text-center bg-primary/10 border border-primary/20 rounded-xl p-3 shrink-0 min-w-[60px]">
-                        <p className="text-[10px] font-mono text-primary/70 uppercase">
-                          {new Date(e.event_date).toLocaleDateString('fr-FR', { month: 'short' })}
-                        </p>
-                        <p className="text-2xl font-display font-extrabold text-primary leading-none">
-                          {new Date(e.event_date).getDate()}
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors">{e.title}</p>
-                      {(e.city || e.location) && (
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                          <MapPin size={11} />
-                          {[e.city, e.location].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
-                    </div>
-                    <ArrowLeft size={14} className="text-muted-foreground rotate-180 shrink-0" />
-                  </Link>
+                    {VIDEO_TYPE_LABELS[type] || type} ({videos.filter((v) => v.video_type === type).length})
+                  </button>
                 ))}
               </div>
             )}
 
-            {/* ── TAB: BIOGRAPHIE ── */}
-            {activeTab === 'bio' && (
-              <div className="bg-card border border-border/50 rounded-2xl p-6">
-                <p className="text-muted-foreground leading-relaxed whitespace-pre-line text-sm">{artist.biography}</p>
-              </div>
-            )}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {filteredVideos.map((v) => {
+                const videoId = getYoutubeId(v.youtube_url);
+                const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
+                return (
+                  <Link
+                    key={v.id}
+                    to={`/videos/${v.id}`}
+                    className="bg-card border border-border/40 rounded-2xl overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all"
+                  >
+                    <div className="relative aspect-video bg-secondary overflow-hidden">
+                      {thumb ? (
+                        <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Youtube size={32} className="text-muted-foreground/20" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                          <Play size={18} className="text-white ml-1" fill="white" />
+                        </div>
+                      </div>
+                      {v.video_type && (
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${VIDEO_TYPE_COLORS[v.video_type] || 'bg-secondary text-foreground'}`}>
+                          {VIDEO_TYPE_LABELS[v.video_type]}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3 min-w-0">
+                      <p className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{v.title}</p>
+                      <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
+                        <span className="flex items-center gap-1"><Heart size={11} className="text-primary/70" /> {v.likes_count || 0}</span>
+                        {v.publish_date && (
+                          <span className="ml-auto">{new Date(v.publish_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-            {/* ── TAB: GALERIE ── */}
-            {activeTab === 'galerie' && (
-              <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
-            )}
-          </div>
+        {/* Concerts & événements */}
+        {events.length > 0 && (
+          <section className="py-6 border-t border-border/30">
+            <SectionHeader icon={Calendar} title="Concerts & événements" count={events.length} />
+            <div className="space-y-3">
+              {events.map((e) => (
+                <Link
+                  key={e.id}
+                  to={`/evenements/${buildEntitySlug(e.title, e.id)}`}
+                  className="flex items-center gap-3 sm:gap-4 bg-card border border-border/40 rounded-2xl p-3 sm:p-4 hover:border-primary/40 transition-all group"
+                >
+                  {e.event_date && (
+                    <div className="text-center bg-primary/10 border border-primary/20 rounded-xl p-2.5 sm:p-3 shrink-0 min-w-[56px]">
+                      <p className="text-[10px] font-mono text-primary/70 uppercase">
+                        {new Date(e.event_date).toLocaleDateString('fr-FR', { month: 'short' })}
+                      </p>
+                      <p className="text-xl sm:text-2xl font-display font-extrabold text-primary leading-none">
+                        {new Date(e.event_date).getDate()}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors truncate">{e.title}</p>
+                    {(e.city || e.location) && (
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
+                        <MapPin size={11} className="shrink-0" />
+                        <span className="truncate">{[e.city, e.location].filter(Boolean).join(' · ')}</span>
+                      </p>
+                    )}
+                  </div>
+                  <ArrowLeft size={14} className="text-muted-foreground rotate-180 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* ── SIDEBAR ── */}
-          <div className="space-y-5">
-            {/* Streaming */}
-            <StreamingLinks
-              spotify={artist.spotify_url}
-              youtube={artist.youtube_url}
-              apple_music={artist.apple_music_url}
-              audiomack={artist.audiomack_url}
-              deezer={artist.deezer_url}
-              soundcloud={artist.soundcloud_url}
-            />
+        {/* Biographie */}
+        {artist.biography && (
+          <section className="py-6 border-t border-border/30">
+            <SectionHeader title="Biographie" />
+            <div className="bg-card border border-border/40 rounded-2xl p-5">
+              <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{artist.biography}</p>
+            </div>
+          </section>
+        )}
 
-            {/* Info card */}
-            <ArtistInfoCard artist={artist} />
+        {/* Galerie */}
+        {artist.gallery?.length > 0 && (
+          <section className="py-6 border-t border-border/30">
+            <SectionHeader title="Galerie" />
+            <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
+          </section>
+        )}
 
-            {/* Social sync */}
-            <ArtistSocialSync artist={artist} />
-          </div>
-        </div>
+        {/* Infos & sync réseaux */}
+        <section className="py-6 border-t border-border/30 space-y-5">
+          <ArtistInfoCard artist={artist} />
+          <ArtistSocialSync artist={artist} />
+        </section>
+
+        {/* Recommandations */}
+        <section className="py-6 border-t border-border/30">
+          <SimilarArtists genre={artist.genre} artistId={artist.id} />
+        </section>
       </div>
     </div>
   );
