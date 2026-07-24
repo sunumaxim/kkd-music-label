@@ -61,7 +61,7 @@ export function buildSlides(releases, videos, events, news) {
 
 function BrandFallback() {
   return (
-    <section className="relative min-h-[88vh] md:min-h-[92vh] flex flex-col items-center justify-center overflow-hidden bg-background">
+    <section className="relative min-h-[64vh] md:min-h-[92vh] flex flex-col items-center justify-center overflow-hidden bg-background">
       <video src={HERO_VIDEO} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover opacity-20" style={{ pointerEvents: 'none' }} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/90" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
@@ -70,7 +70,7 @@ function BrandFallback() {
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           KKD MUSIC — Label Indépendant Africain
         </div>
-        <h1 className="font-display text-6xl md:text-8xl font-extrabold tracking-tight leading-none">
+        <h1 className="font-display text-4xl sm:text-6xl md:text-8xl font-extrabold tracking-tight leading-none">
           <span className="text-foreground">KKD</span><span className="text-primary"> MUSIC</span>
         </h1>
         <p className="mt-5 text-muted-foreground text-base md:text-lg">Distribution · Promotion · Développement artistique</p>
@@ -109,7 +109,7 @@ export default function HeroSlider({ releases, videos, events, news }) {
 
   return (
     <section
-      className="relative h-[86vh] md:h-[92vh] min-h-[540px] overflow-hidden bg-background select-none"
+      className="relative h-[64vh] md:h-[92vh] min-h-[420px] overflow-hidden bg-background select-none"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -133,7 +133,7 @@ export default function HeroSlider({ releases, videos, events, news }) {
       <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 h-full max-w-7xl mx-auto px-4 md:px-8 flex items-end pb-20 md:pb-28">
+      <div className="relative z-10 h-full max-w-7xl mx-auto px-4 md:px-8 flex items-end pb-14 md:pb-28">
         <AnimatePresence mode="wait">
           <motion.div
             key={cur.id}

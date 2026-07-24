@@ -115,9 +115,15 @@ export default function ReleaseDetail() {
             </span>
             <h1 className="font-display text-3xl md:text-5xl font-extrabold leading-tight mb-2">{release.title}</h1>
             <div className="flex items-center gap-3 flex-wrap mb-4">
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <User size={13} className="text-primary" /> {release.artist_name}
-              </span>
+              {artist ? (
+                <Link to={`/artistes/${buildEntitySlug(artist.name, artist.id)}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <User size={13} className="text-primary" /> {release.artist_name}
+                </Link>
+              ) : (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <User size={13} className="text-primary" /> {release.artist_name}
+                </span>
+              )}
               {release.release_date && (
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Calendar size={13} /> {new Date(release.release_date).getFullYear()}
