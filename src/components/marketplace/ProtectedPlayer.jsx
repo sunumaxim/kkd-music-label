@@ -25,7 +25,11 @@ export default function ProtectedPlayer({ url, isVideo, title }) {
   }
 
   return (
-    <div className="space-y-1.5 select-none" onContextMenu={(e) => e.preventDefault()}>
+    <div className="space-y-2 select-none bg-card rounded-2xl border border-border/40 p-3 shadow-sm" onContextMenu={(e) => e.preventDefault()}>
+      <div className="flex items-center gap-2 text-primary">
+        <ShieldCheck size={14} className="shrink-0" />
+        <span className="text-[11px] font-mono uppercase tracking-widest">Lecture sur KKD uniquement</span>
+      </div>
       {isVideo ? (
         <video
           ref={ref}
@@ -46,9 +50,8 @@ export default function ProtectedPlayer({ url, isVideo, title }) {
           title={title}
         />
       )}
-      <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-        <ShieldCheck size={11} className="text-primary" />
-        Lecture sur KKD uniquement — téléchargement et extraction désactivés.
+      <p className="text-[10px] text-muted-foreground">
+        Téléchargement et extraction désactivés.
       </p>
     </div>
   );

@@ -137,9 +137,9 @@ export default function UniversalPlayer({ url, label, autoExpand = false, classN
         href={url}
         target="_blank"
         rel="noreferrer"
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary text-sm font-medium hover:bg-secondary/70 transition-colors ${className}`}
+        className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-sm hover:bg-primary/80 transition-colors ${className}`}
       >
-        <ExternalLink size={13} />
+        <ExternalLink size={14} />
         Écouter
       </a>
     );
@@ -155,11 +155,11 @@ export default function UniversalPlayer({ url, label, autoExpand = false, classN
       {!autoExpand && (
         <button
           onClick={() => setExpanded(v => !v)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-medium transition-colors w-full justify-center ${platformColor}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full border text-xs font-semibold transition-all w-full justify-center shadow-sm hover:shadow-md ${platformColor}`}
         >
           {expanded
-            ? <><Pause size={12} /> Masquer le lecteur</>
-            : <><Play size={12} fill="currentColor" /> Écouter sur {platformLabel}</>
+            ? <><Pause size={13} /> Masquer le lecteur</>
+            : <><Play size={13} fill="currentColor" /> Écouter sur {platformLabel}</>
           }
         </button>
       )}
@@ -171,7 +171,7 @@ export default function UniversalPlayer({ url, label, autoExpand = false, classN
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden rounded-xl"
+            className="overflow-hidden rounded-2xl border border-border/40 bg-card"
           >
             <iframe
               src={embedUrl}
@@ -182,7 +182,7 @@ export default function UniversalPlayer({ url, label, autoExpand = false, classN
               allowFullScreen
               sandbox={sandbox}
               loading="lazy"
-              className="rounded-xl w-full block"
+              className="rounded-2xl w-full block"
               title={label || platformLabel}
             />
           </motion.div>
@@ -200,7 +200,7 @@ export function EmbeddedPlayer({ url, className = '' }) {
   const embedHeight = getEmbedHeight(info);
   const sandbox = getSandbox(info);
   return (
-    <div className={`rounded-xl overflow-hidden ${className}`}>
+    <div className={`rounded-2xl overflow-hidden border border-border/40 bg-card ${className}`}>
       <iframe
         src={embedUrl}
         width="100%"
@@ -210,7 +210,7 @@ export function EmbeddedPlayer({ url, className = '' }) {
         allowFullScreen
         sandbox={sandbox}
         loading="lazy"
-        className="rounded-xl w-full block"
+        className="rounded-2xl w-full block"
       />
     </div>
   );

@@ -17,7 +17,7 @@ export default function NowPlayingBar() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-14 md:bottom-0 left-0 md:left-60 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border/40 select-none">
+    <div className="fixed bottom-14 md:bottom-0 left-0 md:left-60 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border/40 shadow-2xl select-none">
       {/* Ligne de progression (mobile) */}
       <div className="md:hidden h-0.5 bg-secondary/60 cursor-pointer"
         onClick={(e) => { if (duration > 0) { const r = e.currentTarget.getBoundingClientRect(); player.seek(((e.clientX - r.left) / r.width) * duration); } }}
@@ -29,9 +29,9 @@ export default function NowPlayingBar() {
         {/* Infos piste */}
         <div className="flex items-center gap-3 min-w-0 flex-1 md:flex-none md:w-56">
           {current.cover_url ? (
-            <img src={current.cover_url} alt="" className="w-11 h-11 rounded-md object-cover shrink-0" />
+            <img src={current.cover_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0 shadow-sm" />
           ) : (
-            <div className="w-11 h-11 rounded-md bg-primary/15 flex items-center justify-center shrink-0 text-primary">♪</div>
+            <div className="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 text-primary">♪</div>
           )}
           <div className="min-w-0">
             <p className="font-heading font-bold text-sm truncate">{current.title}</p>
@@ -40,13 +40,13 @@ export default function NowPlayingBar() {
         </div>
 
         {/* Contrôles */}
-        <div className="flex items-center justify-center gap-1 md:gap-2 flex-1">
+        <div className="flex items-center justify-center gap-1 md:gap-2 shrink-0 md:flex-1">
           <button onClick={player.prev} className="hidden md:inline-flex p-2 text-muted-foreground hover:text-foreground transition-colors">
             <SkipBack size={18} />
           </button>
           <button
             onClick={player.togglePlay}
-            className="inline-flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/80 transition-colors"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/80 transition-colors shrink-0"
           >
             {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
           </button>

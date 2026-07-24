@@ -20,7 +20,7 @@ export function ReleaseCard({ release, allReleases = [], onPlayAll }) {
   const hasPlayer = !!streamingUrl;
 
   return (
-    <div className="bg-card border border-border/50 rounded-xl overflow-hidden group">
+    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden group shadow-sm hover:shadow-md transition-shadow">
       <div className="relative aspect-square">
         {release.cover_url
           ? <img src={release.cover_url} alt={release.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -114,7 +114,7 @@ export function PlaylistPlayer({ releases, artistName }) {
   const currentUrl = current.spotify_url || current.youtube_url || current.apple_music_url || current.audiomack_url;
 
   return (
-    <div className="bg-card border border-primary/20 rounded-2xl overflow-hidden">
+    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden shadow-sm">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-secondary/30 transition-colors"
