@@ -32,8 +32,8 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Purchase.create({
         user_email: email,
         item_type, item_id, item_title, artist_name,
-        amount: session.amount_total ? session.amount_total / 100 : 0,
-        currency: session.currency || 'eur',
+        amount: session.amount_total || 0,
+        currency: session.currency || 'xof',
         stripe_session_id: session_id,
         status: 'paid'
       });
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     if (item?.protected_file_uri) {
       const signed = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
         file_uri: item.protected_file_uri,
-        expires_in: 3600
+        expires_in: 86400
       });
       protected_url = signed.signed_url;
     }

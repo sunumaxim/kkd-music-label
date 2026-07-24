@@ -32,8 +32,8 @@ Deno.serve(async (req) => {
             item_id: md.item_id,
             item_title: md.item_title || '',
             artist_name: md.artist_name || '',
-            amount: session.amount_total ? session.amount_total / 100 : 0,
-            currency: session.currency || 'eur',
+            amount: session.amount_total || 0,
+            currency: session.currency || 'xof',
             stripe_session_id: session.id,
             status: 'paid'
           });

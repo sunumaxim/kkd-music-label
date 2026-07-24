@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProtectedPlayer from '@/components/marketplace/ProtectedPlayer';
 import MobileHeader from '@/components/mobile/MobileHeader';
-import { Music, Film, Loader2, Mail } from 'lucide-react';
+import { Music, Film, Loader2, Mail, Play, ListMusic } from 'lucide-react';
+import { usePlayer } from '@/lib/PlayerContext';
 
 export default function MesAchats() {
   const [params] = useSearchParams();
@@ -15,6 +16,19 @@ export default function MesAchats() {
   const [redeeming, setRedeeming] = useState(false);
   const [message, setMessage] = useState('');
   const loaded = useRef(false);
+  const player = usePlayer();
+
+  const buildTrack = (p) => ({
+    key: p.item_id,
+    title: p.item_title,
+    artist_name: p.artist_name,
+    cover_url: p.cover_url,
+    audio_url: p.protected_url,
+    item_id: p.item_id,
+    item_type: p.item_type,
+  });
+  const audioPurchases = purchases.filter((p) => !p.is_video && p.protected_url);
+  const playAll = () => { if (audioPurchases.length) player.playQueue(audioPurchases.map(buildTrack), 0); };
 
   const loadPurchases = async (emailArg) => {
     const em = (emailArg || email || '').trim();
@@ -95,6 +109,15 @@ export default function MesAchats() {
           <p className="text-muted-foreground text-sm">Aucun achat pour cet email.</p>
         )}
 
+        {audioPurchases.length > 0 && (
+          <button
+            onClick={playAll}
+            className="flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/80 transition-colors"
+          >
+            <ListMusic size={16} /> Tout écouter
+          </button>
+        )}
+
         <div className="space-y-4">
           {purchases.map((p, i) => (
             <div key={i} className="bg-card border border-border/50 rounded-2xl p-4 space-y-3">
@@ -109,11 +132,22 @@ export default function MesAchats() {
                 <div className="flex-1 min-w-0">
                   <p className="font-heading font-bold truncate">{p.item_title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {p.artist_name} • {p.is_video ? 'Clip' : 'Sortie'} • {Number(p.amount || 0).toFixed(2).replace('.', ',')} €
+                    {p.artist_name} • {p.is_video ? 'Clip' : 'Sortie'} • {Number(p.amount || 0).toLocaleString('fr-FR')} FCFA
                   </p>
                 </div>
               </div>
-              <ProtectedPlayer url={p.protected_url} isVideo={p.is_video} title={p.item_title} />
+              {p.is_video ? (
+                <ProtectedPlayer url={p.protected_url} isVideo title={p.item_title} />
+              ) : p.protected_url ? (
+                <button
+                  onClick={() => player.playTrack(buildTrack(p))}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors w-full"
+                >
+                  <Play size={15} /> Écouter sur KKD
+                </button>
+              ) : (
+                <p className="text-xs text-muted-foreground">Contenu audio non disponible.</p>
+              )}
             </div>
           ))}
         </div>

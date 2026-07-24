@@ -177,8 +177,8 @@ export default function AdminVideos() {
               <Label>Mettre en vente (clip privé)</Label>
             </div>
             <div>
-              <Label className="mb-1.5 block">Prix (€)</Label>
-              <Input type="number" step="0.01" value={form.price || ''} onChange={e => set('price', parseFloat(e.target.value) || 0)} placeholder="0 = non vendu" />
+              <Label className="mb-1.5 block">Prix (FCFA)</Label>
+              <Input type="number" step="1" value={form.price || ''} onChange={e => set('price', parseInt(e.target.value) || 0)} placeholder="0 = non vendu" />
             </div>
             <div>
               <Label className="mb-1.5 block">Fichier vendu (clip privé)</Label>

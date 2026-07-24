@@ -24,7 +24,7 @@ const FIELDS = [
   { key: 'audiomack_url', label: 'Lien Audiomack', type: 'url', placeholder: 'https://audiomack.com/...' },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher sur la page d\'accueil' },
   { key: 'is_for_sale', label: 'Mettre en vente', type: 'boolean', placeholder: 'Vendre avant disponibilité officielle' },
-  { key: 'price', label: 'Prix (€)', type: 'number', placeholder: '0 = non vendu' },
+  { key: 'price', label: 'Prix (FCFA)', type: 'number', placeholder: '0 = non vendu' },
   { key: 'protected_file_uri', label: 'Fichier vendu (audio)', type: 'privatefile', placeholder: 'Fichier audio privé vendu après achat', isVideo: false },
 ];
 

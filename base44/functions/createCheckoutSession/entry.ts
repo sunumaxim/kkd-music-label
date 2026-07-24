@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
       line_items: [{
         quantity: 1,
         price_data: {
-          currency: 'eur',
-          unit_amount: Math.round(Number(item.price) * 100),
+          currency: 'xof',
+          unit_amount: Math.round(Number(item.price)),
           product_data: { name: artistName ? `${title} — ${artistName}` : title }
         }
       }],

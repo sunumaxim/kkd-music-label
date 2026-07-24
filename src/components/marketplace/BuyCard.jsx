@@ -50,7 +50,7 @@ export default function BuyCard({ item, itemType }) {
       </p>
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="text-2xl font-display font-extrabold">
-          {Number(item.price).toFixed(2).replace('.', ',')} €
+          {Number(item.price).toLocaleString('fr-FR')} <span className="text-base font-medium">FCFA</span>
         </div>
         <Button onClick={handleBuy} disabled={loading} className="bg-primary hover:bg-primary/80">
           {loading
