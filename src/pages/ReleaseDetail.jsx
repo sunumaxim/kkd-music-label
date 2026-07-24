@@ -12,7 +12,7 @@ import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
-import { extractIdFromSlug, buildShareUrl, slugify } from '@/lib/slugify';
+import { extractIdFromSlug, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, slugify } from '@/lib/slugify';
 
 const TYPE_LABELS = {
   single: 'Single',
@@ -53,6 +53,7 @@ export default function ReleaseDetail() {
 
   const streamUrl = release ? (release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url) : null;
   const shareUrl = release ? buildShareUrl('/musique', release.title, release.id) : '';
+  const sharePreviewUrl = release ? buildSharePreviewUrl('release', buildEntitySlug(release.title, release.id), shareUrl) : '';
 
   if (isLoading) {
     return (
@@ -134,7 +135,7 @@ export default function ReleaseDetail() {
                 <span className="flex items-center gap-1.5"><ShoppingCart size={14} className="text-primary" /> {release.sales_count} {release.is_for_sale && release.release_date && new Date(release.release_date) > new Date() ? 'précommande(s)' : 'achat(s)'}</span>
               )}
             </div>
-            <ShareBar title={`${release.title} — ${release.artist_name}`} url={shareUrl} />
+            <ShareBar title={`${release.title} — ${release.artist_name}`} url={sharePreviewUrl} />
           </div>
         </div>
       </div>

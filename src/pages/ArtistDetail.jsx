@@ -15,7 +15,7 @@ import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import SimilarArtists from '@/components/artist/SimilarArtists';
 import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
 import CarouselRow from '@/components/home/CarouselRow';
-import { buildEntitySlug } from '@/lib/slugify';
+import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
 const VIDEO_TYPE_LABELS = {
   clip_officiel: 'Clip officiel',
@@ -47,14 +47,16 @@ function SectionHeader({ icon: Icon, title, count }) {
 }
 
 export default function ArtistDetail() {
-  const { id } = useParams();
+  const { id: slugParam } = useParams();
+  const id = extractIdFromSlug(slugParam);
   const [copied, setCopied] = useState(false);
   const [videoFilter, setVideoFilter] = useState('all');
 
   const handleShare = () => {
-    const url = window.location.href;
+    if (!artist) return;
+    const url = buildSharePreviewUrl('artist', buildEntitySlug(artist.name, artist.id), buildShareUrl('/artistes', artist.name, artist.id));
     if (navigator.share) {
-      navigator.share({ title: artist?.name, url });
+      navigator.share({ title: artist.name, url });
     } else {
       navigator.clipboard.writeText(url);
       setCopied(true);

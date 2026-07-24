@@ -11,7 +11,7 @@ import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPl
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { buildShareUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
@@ -22,7 +22,7 @@ const EVENT_TYPE_LABELS = {
 };
 
 export default function EventDetail() {
-  const { id: slugParam } = useParams();
+  const { slug: slugParam } = useParams();
   const id = extractIdFromSlug(slugParam);
   const [showStream, setShowStream] = useState(false);
   const queryClient = useQueryClient();
@@ -48,6 +48,7 @@ export default function EventDetail() {
   });
 
   const shareUrl = event ? buildShareUrl('/evenements', event.title, event.id) : '';
+  const sharePreviewUrl = event ? buildSharePreviewUrl('event', buildEntitySlug(event.title, event.id), shareUrl) : '';
 
   if (isLoading) {
     return (
@@ -209,7 +210,7 @@ export default function EventDetail() {
         {/* Share */}
         <div className="mb-8 pb-6 border-b border-border">
           <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Partager cet événement</p>
-          <ShareBar title={event.title} url={shareUrl} />
+          <ShareBar title={event.title} url={sharePreviewUrl} />
         </div>
 
         {/* Linked releases */}

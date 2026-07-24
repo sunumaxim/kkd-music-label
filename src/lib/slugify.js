@@ -37,6 +37,17 @@ export function buildShareUrl(basePath, title, id) {
 }
 
 /**
+ * Build a share URL pointing to the backend share-meta endpoint, which serves
+ * the actual entity image in Open Graph tags (WhatsApp / Facebook / Twitter
+ * previews) and redirects humans to the clean app route.
+ * e.g. buildSharePreviewUrl('release', 'mon-titre--abc123')
+ */
+export function buildSharePreviewUrl(type, slug, appUrl) {
+  const base = `${window.location.origin}/functions/shareMeta?type=${encodeURIComponent(type)}&slug=${encodeURIComponent(slug)}`;
+  return appUrl ? `${base}&to=${encodeURIComponent(appUrl)}` : base;
+}
+
+/**
  * Extract ID from a slug-based URL param
  * e.g. "mon-article-cool--abc123" → "abc123"
  * Falls back to the param itself (old-style numeric/UUID IDs)

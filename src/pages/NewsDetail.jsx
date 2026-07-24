@@ -11,7 +11,7 @@ import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } fr
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { slugify, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 
 const CATEGORY_LABELS = {
   communique: 'Communiqué',
@@ -35,7 +35,9 @@ export default function NewsDetail() {
   });
 
   const handleShare = async () => {
-    await navigator.clipboard.writeText(window.location.href);
+    if (!item) return;
+    const url = buildSharePreviewUrl('news', buildEntitySlug(item.title, item.id));
+    await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -45,6 +47,7 @@ export default function NewsDetail() {
   };
 
   const shareUrl = item ? buildShareUrl('/actualites', item.title, item.id) : '';
+  const sharePreviewUrl = item ? buildSharePreviewUrl('news', buildEntitySlug(item.title, item.id), shareUrl) : '';
 
   if (isLoading) {
     return (
@@ -150,7 +153,7 @@ export default function NewsDetail() {
         {/* Share bar */}
         <div className="mt-10 pt-6 border-t border-border">
           <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Partager cet article</p>
-          <ShareBar title={item.title} url={shareUrl} />
+          <ShareBar title={item.title} url={sharePreviewUrl} />
         </div>
 
         {/* Comments & likes */}

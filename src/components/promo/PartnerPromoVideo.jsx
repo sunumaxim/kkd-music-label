@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Video, Download, Loader2, Music, AlertTriangle, Sparkles } from 'lucide-react';
+import { Video, Download, Loader2, Music, AlertTriangle, Sparkles, Upload } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
 const ACCENT = '#E60000';
@@ -112,6 +112,8 @@ export default function PartnerPromoVideo({ artistName }) {
   const [error, setError] = useState('');
   const [coverImg, setCoverImg] = useState(null);
   const [logoImg, setLogoImg] = useState(null);
+  const [uploadedAudioUrl, setUploadedAudioUrl] = useState(null);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const { data: releases = [] } = useQuery({
     queryKey: ['partner-promo-releases', artistName],
@@ -142,6 +144,18 @@ export default function PartnerPromoVideo({ artistName }) {
     drawPoster(canvas.getContext('2d'), 720, 720, coverImg, logoImg, selected, 0);
   }, [coverImg, logoImg, selected]);
 
+  const uploadAudio = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAudio(true);
+    try {
+      const res = await base44.integrations.Core.UploadFile({ file });
+      setUploadedAudioUrl(res.file_url);
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
   const generate = async () => {
     if (!selected) return;
     setError(''); setResultUrl(null); setGenerating(true); setProgress(0);
@@ -152,10 +166,15 @@ export default function PartnerPromoVideo({ artistName }) {
 
     let audioEl = null, audioCtx = null;
     try {
-      let audioUrl = null;
-      if (selected.protected_file_uri) {
+      let audioUrl = uploadedAudioUrl;
+      if (!audioUrl && selected.protected_file_uri) {
         const s = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: selected.protected_file_uri, expires_in: 180 });
         audioUrl = s.signed_url;
+      }
+      if (!audioUrl) {
+        setError('Fournissez un fichier audio pour générer la vidéo : téléversez un extrait de la sortie, ou ajoutez un fichier protégé à la sortie côté admin.');
+        setGenerating(false);
+        return;
       }
 
       const fps = 30;
@@ -240,7 +259,7 @@ export default function PartnerPromoVideo({ artistName }) {
         <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground/60">Choisir une sortie</label>
         <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {releases.map(r => (
-            <button key={r.id} type="button" onClick={() => { setSelectedId(r.id); setResultUrl(null); }}
+            <button key={r.id} type="button" onClick={() => { setSelectedId(r.id); setResultUrl(null); setUploadedAudioUrl(null); setError(''); }}
               className={`shrink-0 w-16 text-center ${selected?.id === r.id ? '' : 'opacity-60 hover:opacity-100'}`}>
               <div className={`w-16 h-16 rounded-lg overflow-hidden bg-secondary border-2 ${selected?.id === r.id ? 'border-primary' : 'border-transparent'}`}>
                 {r.cover_url
@@ -268,12 +287,17 @@ export default function PartnerPromoVideo({ artistName }) {
         ))}
       </div>
 
-      {!selected?.protected_file_uri && (
-        <div className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-2.5">
-          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-          <span>Aucun fichier audio sécurisé pour cette sortie : la vidéo sera générée sans son (pochette animée seule). Ajoutez un fichier protégé via l'admin pour inclure l'extrait audio.</span>
-        </div>
-      )}
+      <div className="space-y-2">
+        <label className="text-xs font-mono uppercase tracking-widest text-muted-foreground/60">Audio de l'extrait *</label>
+        {selected?.protected_file_uri && !uploadedAudioUrl && (
+          <p className="text-[11px] text-muted-foreground">Le fichier sécurisé de la sortie sera utilisé pour le son.</p>
+        )}
+        <label className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors w-fit">
+          <Upload size={14} />
+          {uploadingAudio ? 'Envoi…' : uploadedAudioUrl ? 'Audio chargé ✓ (cliquer pour changer)' : 'Téléverser un extrait audio (.mp3, .wav, .m4a)'}
+          <input type="file" className="hidden" onChange={uploadAudio} accept="audio/*" />
+        </label>
+      </div>
 
       {error && (
         <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5">
@@ -282,7 +306,7 @@ export default function PartnerPromoVideo({ artistName }) {
         </div>
       )}
 
-      <Button onClick={generate} disabled={generating || !selected} className="w-full gap-2">
+      <Button onClick={generate} disabled={generating || !selected || (!uploadedAudioUrl && !selected?.protected_file_uri)} className="w-full gap-2">
         {generating ? <><Loader2 size={15} className="animate-spin" /> Génération… {progress}%</> : <><Video size={15} /> Générer la vidéo promo</>}
       </Button>
 
