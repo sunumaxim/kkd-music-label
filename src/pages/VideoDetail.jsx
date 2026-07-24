@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, User, ExternalLink, Instagram, Eye, Heart, ShoppingCart } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
 import BuyCard from '@/components/marketplace/BuyCard';
+import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
@@ -177,6 +178,15 @@ export default function VideoDetail() {
           <div className="md:col-span-2 space-y-6">
             {/* Achat exclusif */}
             <BuyCard item={video} itemType="video" />
+
+            {video.is_for_sale && (
+              <PromoAssetGenerator
+                coverUrl={video.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null)}
+                title={video.title}
+                artistName={video.artist_name}
+                kind="video"
+              />
+            )}
 
             {/* Description */}
             {video.description && (

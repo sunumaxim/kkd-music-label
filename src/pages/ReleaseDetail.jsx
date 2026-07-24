@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Calendar, User, Heart, Headphones, ShoppingCart } from 'lucide-react';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import BuyCard from '@/components/marketplace/BuyCard';
+import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
@@ -141,6 +142,15 @@ export default function ReleaseDetail() {
       <div className="max-w-4xl mx-auto px-4 space-y-8">
         {/* Achat exclusif */}
         <BuyCard item={release} itemType="release" />
+
+        {release.is_for_sale && (
+          <PromoAssetGenerator
+            coverUrl={release.cover_url}
+            title={release.title}
+            artistName={release.artist_name}
+            kind="release"
+          />
+        )}
 
         {/* Player */}
         {streamUrl && (
