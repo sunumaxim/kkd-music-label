@@ -7,6 +7,8 @@ import Footer from './Footer';
 import MobileBottomTabs from '@/components/mobile/MobileBottomTabs';
 import PageTransition from './PageTransition';
 import NowPlayingBar from '@/components/player/NowPlayingBar';
+import PromoZone from '@/components/shared/PromoZone';
+import AudioAnnouncement from '@/components/shared/AudioAnnouncement';
 import { PlayerProvider, usePlayer } from '@/lib/PlayerContext';
 
 function PublicLayoutInner() {
@@ -18,6 +20,7 @@ function PublicLayoutInner() {
       <PublicSidebar />
       <PublicTopbar />
       <main className={`pt-16 md:pl-60 ${current ? 'pb-36 md:pb-24' : 'pb-16 md:pb-0'}`}>
+        <PromoZone placement="top_banner" />
         <AnimatePresence mode="wait" initial={false}>
           <PageTransition key={location.pathname}>
             <Outlet />
@@ -27,6 +30,7 @@ function PublicLayoutInner() {
       <div className={`hidden md:block md:pl-60 ${current ? 'md:pb-24' : ''}`}>
         <Footer />
       </div>
+      <AudioAnnouncement />
       <NowPlayingBar />
       <MobileBottomTabs />
     </div>
