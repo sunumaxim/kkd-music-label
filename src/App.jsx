@@ -55,6 +55,7 @@ import AdminPromotions from './pages/admin/AdminPromotions';
 import AdminPromoBanners from './pages/admin/AdminPromoBanners';
 import AdminMailing from './pages/admin/AdminMailing';
 import AdminSocial from './pages/admin/AdminSocial';
+import AdminPayments from './pages/admin/AdminPayments';
 import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
@@ -127,6 +128,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/promo-banners" element={<AdminPromoBanners />} />
           <Route path="/admin/mailing" element={<AdminMailing />} />
           <Route path="/admin/social" element={<AdminSocial />} />
+          <Route path="/admin/paiements" element={<AdminPayments />} />
         </Route>
       </Route>
 

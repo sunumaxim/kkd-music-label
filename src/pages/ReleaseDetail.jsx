@@ -5,7 +5,6 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Music, Calendar, User, Heart, Headphones, ShoppingCart } from 'lucide-react';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import BuyCard from '@/components/marketplace/BuyCard';
-import PaidPreview from '@/components/marketplace/PaidPreview';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
 import ReleaseTracklist from '@/components/player/ReleaseTracklist';
 import AddToPlaylist from '@/components/player/AddToPlaylist';
@@ -187,11 +186,6 @@ export default function ReleaseDetail() {
             </div>
             {release.tracks && release.tracks.length > 0 && <ReleaseTracklist release={release} />}
           </div>
-        )}
-
-        {/* Extrait gratuit 30s (contenu payant) */}
-        {release.is_for_sale && release.protected_file_uri && (
-          <PaidPreview protectedFileUri={release.protected_file_uri} previewStart={release.preview_start || 0} />
         )}
 
         {/* Streaming links */}

@@ -1,0 +1,90 @@
+{
+  "name": "WavePayment",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'acheteur"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "release",
+        "video"
+      ],
+      "description": "Type de contenu"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "ID du contenu"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Titre (d\u00e9normalis\u00e9)"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Artiste (d\u00e9normalis\u00e9)"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Montant en FCFA"
+    },
+    "wave_reference": {
+      "type": "string",
+      "description": "R\u00e9f\u00e9rence / ID de transaction Wave"
+    },
+    "proof_file_url": {
+      "type": "string",
+      "description": "Capture du re\u00e7u (facultatif)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "valide",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de validation admin"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes admin"
+    }
+  },
+  "required": [
+    "user_email",
+    "item_type",
+    "item_id",
+    "wave_reference"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
