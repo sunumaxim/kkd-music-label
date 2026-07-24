@@ -115,16 +115,19 @@
     "wave_reference"
   ],
   "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
     "read": {
       "$or": [
         {
           "created_by_id": "{{user.id}}"
         },
         {
-          "data.organizer_email": "{{user.email}}"
+          "data.buyer_email": "{{user.email}}"
         },
         {
-          "data.managers": "{{user.email}}"
+          "data.organizer_email": "{{user.email}}"
         },
         {
           "user_condition": {
@@ -132,9 +135,6 @@
           }
         }
       ]
-    },
-    "create": {
-      "created_by_id": "{{user.id}}"
     },
     "update": {
       "user_condition": {
