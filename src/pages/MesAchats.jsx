@@ -15,6 +15,7 @@ export default function MesAchats() {
   const [loading, setLoading] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const [message, setMessage] = useState('');
+  const [tab, setTab] = useState('audio');
   const loaded = useRef(false);
   const player = usePlayer();
 
@@ -28,6 +29,7 @@ export default function MesAchats() {
     item_type: p.item_type,
   });
   const audioPurchases = purchases.filter((p) => !p.is_video && p.protected_url);
+  const videoPurchases = purchases.filter((p) => p.is_video && p.protected_url);
   const playAll = () => { if (audioPurchases.length) player.playQueue(audioPurchases.map(buildTrack), 0); };
 
   const loadPurchases = async (emailArg) => {
@@ -109,17 +111,35 @@ export default function MesAchats() {
           <p className="text-muted-foreground text-sm">Aucun achat pour cet email.</p>
         )}
 
-        {audioPurchases.length > 0 && (
-          <button
-            onClick={playAll}
-            className="flex items-center gap-2 mb-4 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/80 transition-colors"
-          >
-            <ListMusic size={16} /> Tout écouter
-          </button>
+        {/* Onglets bibliothèque */}
+        {purchases.length > 0 && (
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
+            <button
+              onClick={() => setTab('audio')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${tab === 'audio' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'}`}
+            >
+              <Music size={15} /> Musique <span className="text-xs opacity-70">{audioPurchases.length}</span>
+            </button>
+            <button
+              onClick={() => setTab('video')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${tab === 'video' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/70'}`}
+            >
+              <Film size={15} /> Vidéos <span className="text-xs opacity-70">{videoPurchases.length}</span>
+            </button>
+            {tab === 'audio' && audioPurchases.length > 0 && (
+              <button
+                onClick={playAll}
+                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
+              >
+                <ListMusic size={16} /> Tout écouter
+              </button>
+            )}
+          </div>
         )}
 
+        {/* Liste filtrée */}
         <div className="space-y-4">
-          {purchases.map((p, i) => (
+          {purchases.length > 0 && (tab === 'audio' ? audioPurchases : videoPurchases).map((p, i) => (
             <div key={i} className="bg-card border border-border/50 rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-3">
                 {p.cover_url ? (
@@ -146,10 +166,13 @@ export default function MesAchats() {
                   <Play size={15} /> Écouter sur KKD
                 </button>
               ) : (
-                <p className="text-xs text-muted-foreground">Contenu audio non disponible.</p>
+                <p className="text-xs text-muted-foreground">Contenu non disponible.</p>
               )}
             </div>
           ))}
+          {purchases.length > 0 && (tab === 'audio' ? audioPurchases : videoPurchases).length === 0 && (
+            <p className="text-muted-foreground text-sm">Aucun contenu dans cette section.</p>
+          )}
         </div>
 
         <Link to="/" className="text-sm text-primary hover:underline mt-6 inline-block">← Retour à l'accueil</Link>
