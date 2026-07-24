@@ -3,18 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  ArrowLeft, Music, Youtube, Instagram, Facebook,
-  Share2, Check, Play, Disc3, Calendar, MapPin, ExternalLink, Heart, Eye, ShoppingCart,
+  ArrowLeft, Youtube, Instagram, Facebook, BadgeCheck, Share2, Check, Play,
+  Disc3, Calendar, MapPin, ExternalLink, Eye, Heart, ShoppingCart,
 } from 'lucide-react';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
 import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
-import ArtistTopTracks from '@/components/artist/ArtistTopTracks';
 import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
-import ArtistReleasesGrid from '@/components/artist/ArtistReleasesGrid';
 import SimilarArtists from '@/components/artist/SimilarArtists';
+import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
+import CarouselRow from '@/components/home/CarouselRow';
 import { buildEntitySlug } from '@/lib/slugify';
 
 const VIDEO_TYPE_LABELS = {
@@ -22,6 +22,7 @@ const VIDEO_TYPE_LABELS = {
   teaser: 'Teaser',
   interview: 'Interview',
   making_of: 'Making-of',
+  replay_live: 'Replay live',
 };
 
 const VIDEO_TYPE_COLORS = {
@@ -71,7 +72,8 @@ export default function ArtistDetail() {
     queryKey: ['artist-releases', artist?.name],
     queryFn: () => base44.entities.Release.filter({ artist_name: artist?.name }),
     enabled: !!artist?.name,
-    select: (data) => [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
+    select: (data) =>
+      [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
   });
 
   const { data: videos = [] } = useQuery({
@@ -96,9 +98,11 @@ export default function ArtistDetail() {
 
   const availableVideoTypes = [...new Set(videos.map((v) => v.video_type).filter(Boolean))];
   const filteredVideos = videoFilter === 'all' ? videos : videos.filter((v) => v.video_type === videoFilter);
-  const totalLikes =
-    releases.reduce((s, r) => s + (r.likes_count || 0), 0) +
-    videos.reduce((s, v) => s + (v.likes_count || 0), 0);
+
+  const albums = releases.filter((r) => ['album', 'ep', 'projet_special'].includes(r.release_type));
+  const totalPlays =
+    releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
+    videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
 
   if (isLoading) {
     return (
@@ -133,7 +137,7 @@ export default function ArtistDetail() {
       <MobileHeader title={artist.name} backPath="/artistes" />
 
       {/* ── HERO ── */}
-      <div className="relative h-72 md:h-[420px] overflow-hidden max-w-full">
+      <div className="relative h-72 md:h-[440px] overflow-hidden max-w-full">
         {artist.photo_url ? (
           <img src={artist.photo_url} alt={artist.name} className="w-full h-full object-cover object-top" />
         ) : (
@@ -157,9 +161,12 @@ export default function ArtistDetail() {
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-full">
-          <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight break-words leading-tight">
-            {artist.name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight break-words leading-tight">
+              {artist.name}
+            </h1>
+            <BadgeCheck size={28} className="text-yellow-400 shrink-0" fill="currentColor" />
+          </div>
           <div className="flex items-center flex-wrap gap-2 mt-2">
             {artist.genre && (
               <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
@@ -178,73 +185,47 @@ export default function ArtistDetail() {
         </div>
       </div>
 
-      {/* ── VERTICAL STACK ── */}
+      {/* ── CORPS ── */}
       <div className="max-w-3xl mx-auto px-4 pb-16">
 
-        {/* Stats + social */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-5 border-b border-border/50">
-          <div className="flex items-center gap-5 flex-wrap">
-            {releases.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Disc3 size={15} className="text-primary" />
-                <span className="text-sm font-bold">{releases.length}</span>
-                <span className="text-xs text-muted-foreground">sorties</span>
-              </div>
-            )}
-            {videos.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Play size={15} className="text-primary" />
-                <span className="text-sm font-bold">{videos.length}</span>
-                <span className="text-xs text-muted-foreground">vidéos</span>
-              </div>
-            )}
-            {events.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Calendar size={15} className="text-primary" />
-                <span className="text-sm font-bold">{events.length}</span>
-                <span className="text-xs text-muted-foreground">concerts</span>
-              </div>
-            )}
-            {totalLikes > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Heart size={15} className="text-primary" />
-                <span className="text-sm font-bold">{totalLikes.toLocaleString('fr-FR')}</span>
-                <span className="text-xs text-muted-foreground">j'aime</span>
-              </div>
-            )}
-          </div>
+        {/* Chanson populaire + actions */}
+        <ArtistPopularTracks releases={releases} artist={artist} totalPlays={totalPlays} />
 
-          <div className="flex items-center gap-2.5">
-            {artist.instagram_url && (
-              <a href={artist.instagram_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-pink-400 hover:bg-pink-500/10 transition-all">
-                <Instagram size={15} />
-              </a>
-            )}
-            {artist.tiktok_url && (
-              <a href={artist.tiktok_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
-              </a>
-            )}
-            {artist.facebook_url && (
-              <a href={artist.facebook_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 transition-all">
-                <Facebook size={15} />
-              </a>
-            )}
-            {artist.youtube_url && (
-              <a href={artist.youtube_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all">
-                <Youtube size={15} />
-              </a>
-            )}
-            {artist.website_url && (
-              <a href={artist.website_url} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
-                <ExternalLink size={14} />
-              </a>
-            )}
-          </div>
-        </div>
+        {/* Albums */}
+        {albums.length > 0 && (
+          <section className="py-6 border-t border-border/30">
+            <SectionHeader icon={Disc3} title="Albums" count={albums.length} />
+            <CarouselRow>
+              {albums.map((r) => (
+                <div key={r.id} className="snap-start shrink-0 w-44 md:w-48">
+                  <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="group block">
+                    <div className="relative aspect-square rounded-xl overflow-hidden bg-card mb-2 shadow-lg shadow-black/20">
+                      {r.cover_url ? (
+                        <img
+                          src={r.cover_url}
+                          alt={r.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Disc3 size={32} className="text-primary/25" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-heading font-bold text-sm truncate">{r.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {r.release_type === 'ep' ? 'EP' : r.release_type === 'projet_special' ? 'Projet spécial' : 'Album'}
+                      {r.release_date ? ` • ${new Date(r.release_date).getFullYear()}` : ''}
+                    </p>
+                  </Link>
+                </div>
+              ))}
+            </CarouselRow>
+          </section>
+        )}
 
-        {/* Streaming */}
-        <div className="py-5">
+        {/* Streaming plateformes */}
+        <div className="py-6 border-t border-border/30">
           <StreamingLinks
             spotify={artist.spotify_url}
             youtube={artist.youtube_url}
@@ -254,22 +235,6 @@ export default function ArtistDetail() {
             soundcloud={artist.soundcloud_url}
           />
         </div>
-
-        {/* Discographie */}
-        <section className="py-6 border-t border-border/30">
-          <SectionHeader icon={Disc3} title="Discographie" count={releases.length} />
-          {releases.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Disc3 size={36} className="mx-auto mb-3 opacity-20" />
-              <p className="text-sm">Aucune sortie disponible.</p>
-            </div>
-          ) : (
-            <ArtistReleasesGrid releases={releases} />
-          )}
-          <div className="mt-6">
-            <ArtistTopTracks artist={artist} />
-          </div>
-        </section>
 
         {/* Vidéos */}
         {videos.length > 0 && (
@@ -356,7 +321,7 @@ export default function ArtistDetail() {
         {/* Concerts & événements */}
         {events.length > 0 && (
           <section className="py-6 border-t border-border/30">
-            <SectionHeader icon={Calendar} title="Concerts & événements" count={events.length} />
+            <SectionHeader icon={Calendar} title="Prochains événements" count={events.length} />
             <div className="space-y-3">
               {events.map((e) => (
                 <Link
