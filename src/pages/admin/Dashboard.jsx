@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
   Inbox, UserPlus, Clock, ArrowRight, TrendingUp,
-  AlertTriangle, Bell, Radio
+  AlertTriangle, Bell
 } from 'lucide-react';
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
@@ -68,21 +68,6 @@ export default function Dashboard() {
         </div>
         <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto opacity-90" />
       </div>
-
-      {/* ── Studio de diffusion ── */}
-      <Link
-        to="/admin/studio"
-        className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-red-600/15 to-purple-600/10 border border-red-500/30 active:scale-[0.98] transition-transform"
-      >
-        <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0">
-          <Radio size={22} className="text-red-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm">Studio de Diffusion</p>
-          <p className="text-xs text-muted-foreground">Pilotez vos directs YouTube · TikTok · Facebook · Instagram</p>
-        </div>
-        <ArrowRight size={18} className="text-red-400 shrink-0" />
-      </Link>
 
       {/* ── Alertes ── */}
       {(pendingRequests.length > 0 || expiringSoon.length > 0) && (

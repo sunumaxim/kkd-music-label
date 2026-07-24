@@ -1,149 +1,99 @@
 import React, { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Upload, X, ImagePlus } from 'lucide-react';
-
-const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
-const LOGO_SCALE = 0.22; // logo = 22% de la largeur de l'image
+import { Label } from '@/components/ui/label';
+import { X, Loader2, ImagePlus } from 'lucide-react';
 
 /**
- * Applique le watermark (logo KKD) sur une image via canvas
- * et retourne un File prêt à uploader.
+ * Uploader d'images générique (photos d'artistes, miniatures, galeries).
+ * Props :
+ *  - label     : libellé affiché au-dessus
+ *  - value     : string (URL) si multiple=false, ou string[] si multiple=true
+ *  - onChange  : reçoit la nouvelle valeur (string | string[])
+ *  - multiple  : active le mode galerie (plusieurs images)
  */
-async function applyWatermark(imageFile) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const logo = new Image();
-    img.crossOrigin = 'anonymous';
-    logo.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      logo.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-
-        // Image principale
-        ctx.drawImage(img, 0, 0);
-
-        // Overlay sombre en bas
-        const gradH = img.height * 0.18;
-        const grad = ctx.createLinearGradient(0, img.height - gradH, 0, img.height);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(1, 'rgba(0,0,0,0.55)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, img.height - gradH, img.width, gradH);
-
-        // Logo en bas à droite
-        const logoW = img.width * LOGO_SCALE;
-        const logoH = (logo.height / logo.width) * logoW;
-        const margin = img.width * 0.03;
-        ctx.globalAlpha = 0.88;
-        ctx.drawImage(logo, img.width - logoW - margin, img.height - logoH - margin, logoW, logoH);
-        ctx.globalAlpha = 1;
-
-        canvas.toBlob((blob) => {
-          resolve(new File([blob], imageFile.name, { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.92);
-      };
-      logo.onerror = () => {
-        // Si le logo échoue à charger, on upload sans watermark
-        resolve(imageFile);
-      };
-      logo.src = LOGO_URL + '?t=' + Date.now();
-    };
-    img.onerror = () => resolve(imageFile); // fallback: upload sans watermark si l'image échoue
-    img.src = URL.createObjectURL(imageFile);
-  });
-}
-
-/**
- * WatermarkUploader — upload une ou plusieurs photos avec watermark automatique.
- * 
- * Props:
- *   value: string | string[]   — URL(s) actuelle(s)
- *   onChange: (url | urls) => void
- *   multiple: boolean          — galerie multi-photos (default false)
- *   label: string
- */
-export default function WatermarkUploader({ value, onChange, multiple = false, label = 'Photo' }) {
-  const inputRef = useRef();
+export default function WatermarkUploader({ label, value, onChange, multiple = false }) {
+  const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleFiles = async (files) => {
-    if (!files.length) return;
+  const upload = async (files) => {
+    if (!files || !files.length) return;
     setUploading(true);
-
-    const results = [];
-    for (const file of files) {
-      const watermarked = await applyWatermark(file);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: watermarked });
-      results.push(file_url);
-    }
-
-    if (multiple) {
-      const existing = Array.isArray(value) ? value : (value ? [value] : []);
-      onChange([...existing, ...results]);
-    } else {
-      onChange(results[0]);
-    }
-    setUploading(false);
-  };
-
-  const removePhoto = (idx) => {
-    if (multiple) {
-      const arr = Array.isArray(value) ? [...value] : [];
-      arr.splice(idx, 1);
-      onChange(arr);
-    } else {
-      onChange('');
+    try {
+      if (multiple) {
+        const urls = [];
+        for (const f of Array.from(files)) {
+          const res = await base44.integrations.Core.UploadFile({ file: f });
+          if (res?.file_url) urls.push(res.file_url);
+        }
+        onChange([...(value || []), ...urls]);
+      } else {
+        const res = await base44.integrations.Core.UploadFile({ file: files[0] });
+        if (res?.file_url) onChange(res.file_url);
+      }
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
     }
   };
 
-  const urls = multiple
-    ? (Array.isArray(value) ? value : (value ? [value] : []))
-    : (value ? [value] : []);
+  const remove = (url) => {
+    if (multiple) onChange((value || []).filter((v) => v !== url));
+    else onChange('');
+  };
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium text-foreground">{label}</p>
+    <div className="space-y-2">
+      {label && <Label className="text-xs mb-1 block">{label}</Label>}
 
-      {/* Galerie existante */}
-      {urls.length > 0 && (
-        <div className={`grid gap-2 ${multiple ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'}`}>
-          {urls.map((url, i) => (
-            <div key={i} className="relative group aspect-square rounded-lg overflow-hidden bg-secondary">
+      {multiple ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {(value || []).map((url) => (
+            <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-secondary group">
               <img src={url} alt="" className="w-full h-full object-cover" />
               <button
-                onClick={() => removePhoto(i)}
-                className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                type="button"
+                onClick={() => remove(url)}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <X size={12} className="text-white" />
+                <X size={12} />
               </button>
-              {i === 0 && multiple && (
-                <span className="absolute bottom-1 left-1 bg-primary/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                  PRINCIPALE
-                </span>
-              )}
             </div>
           ))}
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="aspect-square rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+          >
+            {uploading ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          {value ? (
+            <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-secondary shrink-0 group">
+              <img src={value} alt="" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => remove(value)}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="w-24 h-24 rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors shrink-0 disabled:opacity-50"
+            >
+              {uploading ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
+            </button>
+          )}
+          {!value && <p className="text-xs text-muted-foreground">Cliquez pour téléverser une image.</p>}
         </div>
       )}
-
-      {/* Bouton upload */}
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="flex items-center gap-2 border border-dashed border-border hover:border-primary/50 rounded-lg px-4 py-3 text-sm text-muted-foreground hover:text-primary transition-colors w-full justify-center"
-      >
-        {uploading ? (
-          <><Loader2 size={15} className="animate-spin" /> Traitement du watermark...</>
-        ) : (
-          <><ImagePlus size={15} /> {multiple ? 'Ajouter des photos' : 'Choisir une photo'}</>
-        )}
-      </button>
-      <p className="text-xs text-muted-foreground">Le logo KKD Music sera automatiquement apposé sur chaque photo.</p>
 
       <input
         ref={inputRef}
@@ -151,7 +101,7 @@ export default function WatermarkUploader({ value, onChange, multiple = false, l
         accept="image/*"
         multiple={multiple}
         className="hidden"
-        onChange={(e) => handleFiles(Array.from(e.target.files || []))}
+        onChange={(e) => upload(e.target.files)}
       />
     </div>
   );
