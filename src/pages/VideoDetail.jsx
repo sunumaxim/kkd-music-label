@@ -91,6 +91,7 @@ export default function VideoDetail() {
   }
 
   const videoId = getYouTubeId(video.youtube_url);
+  const effectivelyPaid = video.is_for_sale && Number(video.price) > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,8 +110,8 @@ export default function VideoDetail() {
           <ArrowLeft size={16} /> Toutes les vidéos
         </Link>
 
-        {/* Video player */}
-        {videoId && (
+        {/* Video player — lecture libre uniquement pour les vidéos gratuites */}
+        {!effectivelyPaid && videoId && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,7 +128,7 @@ export default function VideoDetail() {
             </div>
           </motion.div>
         )}
-        {!videoId && video.video_file_url && (
+        {!effectivelyPaid && !videoId && video.video_file_url && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

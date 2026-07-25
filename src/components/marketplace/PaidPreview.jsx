@@ -6,7 +6,7 @@ import { Play, Pause, Lock } from 'lucide-react';
  * PaidPreview — plays a 30s free excerpt of a paid track.
  * The full file stays protected (private) and is only unlocked after purchase.
  */
-export default function PaidPreview({ protectedFileUri, audioUrl, previewStart = 0, duration = 30 }) {
+export default function PaidPreview({ protectedFileUri, audioUrl, previewStart = 0, duration = 30, isVideo = false }) {
   const [url, setUrl] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -55,25 +55,32 @@ export default function PaidPreview({ protectedFileUri, audioUrl, previewStart =
   return (
     <div className="bg-card border border-primary/20 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-mono uppercase tracking-widest text-primary">Extrait gratuit (30s)</p>
+        <p className="text-xs font-mono uppercase tracking-widest text-primary">Extrait gratuit ({duration}s)</p>
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <Lock size={10} /> Achat requis pour le titre complet
+          <Lock size={10} /> Achat requis pour le contenu complet
         </span>
       </div>
       {loading ? (
         <p className="text-xs text-muted-foreground">Chargement de l'extrait…</p>
       ) : url ? (
-        <div className="flex items-center gap-4">
-          <button onClick={toggle} className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/80 transition-colors">
-            {playing ? <Pause size={18} /> : <Play size={18} fill="currentColor" />}
-          </button>
-          <div className="flex-1">
-            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-150" style={{ width: `${progress}%` }} />
+        <div className="space-y-3">
+          {isVideo && (
+            <video ref={audioRef} src={url} onTimeUpdate={onTime} onEnded={() => setPlaying(false)} preload="metadata" className="w-full rounded-xl bg-black max-h-64" />
+          )}
+          <div className="flex items-center gap-4">
+            <button onClick={toggle} className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 hover:bg-primary/80 transition-colors">
+              {playing ? <Pause size={18} /> : <Play size={18} fill="currentColor" />}
+            </button>
+            <div className="flex-1">
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary transition-all duration-150" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">Aperçu de {duration} secondes</p>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">Aperçu de 30 secondes</p>
+            {!isVideo && (
+              <audio ref={audioRef} src={url} onTimeUpdate={onTime} onEnded={() => setPlaying(false)} preload="metadata" className="hidden" />
+            )}
           </div>
-          <audio ref={audioRef} src={url} onTimeUpdate={onTime} onEnded={() => setPlaying(false)} preload="metadata" className="hidden" />
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">Extrait indisponible pour le moment.</p>

@@ -175,8 +175,9 @@ export default function BuyCard({ item, itemType }) {
       {(item.protected_file_uri || item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)) && (
         <PaidPreview
           protectedFileUri={item.protected_file_uri}
-          audioUrl={item.protected_file_uri ? null : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url))}
+          audioUrl={item.protected_file_uri ? null : (video ? item.video_file_url : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)))}
           previewStart={item.preview_start || 0}
+          isVideo={video}
         />
       )}
 

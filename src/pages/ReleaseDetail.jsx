@@ -55,6 +55,7 @@ export default function ReleaseDetail() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['release', id] });
 
   const streamUrl = release ? (release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url) : null;
+  const effectivelyPaid = release ? (release.is_for_sale && Number(release.price) > 0) : false;
   const shareUrl = release ? buildShareUrl('/musique', release.title, release.id) : '';
   const sharePreviewUrl = release ? buildSharePreviewUrl('release', buildEntitySlug(release.title, release.id), shareUrl) : '';
 
@@ -169,8 +170,15 @@ export default function ReleaseDetail() {
           </div>
         )}
 
+        {/* Aucun audio disponible */}
+        {!effectivelyPaid && !streamUrl && !release.audio_file_url && !(release.tracks && release.tracks.length) && (
+          <div className="bg-card border border-dashed border-border/60 rounded-2xl p-6 text-center">
+            <p className="text-sm text-muted-foreground">Aucun audio n'a encore été ajouté à cette sortie. Le fichier audio sera disponible dès qu'il sera téléversé.</p>
+          </div>
+        )}
+
         {/* Lecture KKD — gratuit (chanson complète, lecteur persistant) */}
-        {!release.is_for_sale && (release.audio_file_url || (release.tracks && release.tracks.length)) && (
+        {!effectivelyPaid && (release.audio_file_url || (release.tracks && release.tracks.length)) && (
           <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
