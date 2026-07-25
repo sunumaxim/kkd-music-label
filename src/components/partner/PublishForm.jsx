@@ -14,6 +14,7 @@ import {
 import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
 import PublishPreview from './PublishPreview';
+import MediaUploader from './MediaUploader';
 import { usePlayableUrl } from '@/hooks/usePlayableUrl';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -70,8 +71,7 @@ export default function PublishForm({ user, onClose }) {
   // URL d'écoute (signée si fichier privé/vendu) pour l'étape de prévisualisation
   const playable = usePlayableUrl(isAlbum ? '' : form.file_url);
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleFileUpload = async (file) => {
     if (!file) return;
     setUploading(true);
     try {
@@ -91,8 +91,7 @@ export default function PublishForm({ user, onClose }) {
     }
   };
 
-  const handleCoverUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleCoverUpload = async (file) => {
     if (!file) return;
     setUploading(true);
     try {
@@ -374,21 +373,21 @@ export default function PublishForm({ user, onClose }) {
           </div>
         ) : (
           <>
-            <div>
-              <Label className="text-xs mb-1.5 block">
-                {isVideo ? 'Fichier vidéo' : 'Fichier audio'} {form.is_for_sale ? '(privé, vendu)' : '(gratuit)'} *
-              </Label>
-              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors">
-                <Upload size={14} />
-                {uploading ? 'Envoi…' : form.file_url ? 'Fichier chargé ✓' : 'Téléverser le fichier'}
-                <input type="file" className="hidden" onChange={handleFileUpload} accept={isVideo ? 'video/*' : 'audio/*'} />
-              </label>
-              {form.is_for_sale && (
-                <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-                  <Lock size={10} /> Fichier stocké en privé, accessible uniquement après achat.
-                </p>
-              )}
-            </div>
+            <MediaUploader
+              label={`${isVideo ? 'Fichier vidéo' : 'Fichier audio'} ${form.is_for_sale ? '(privé, vendu)' : '(gratuit)'} *`}
+              kind={isVideo ? 'video' : 'audio'}
+              accept={isVideo ? 'video/*' : 'audio/*'}
+              value={form.file_url}
+              uploading={uploading}
+              isPrivate={form.is_for_sale}
+              onUpload={handleFileUpload}
+              onClear={() => set('file_url', '')}
+            />
+            {form.is_for_sale && (
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Lock size={10} /> Fichier stocké en privé, accessible uniquement après achat.
+              </p>
+            )}
 
             {!isVideo && (
               <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
@@ -453,14 +452,16 @@ export default function PublishForm({ user, onClose }) {
         </div>
 
         {/* Pochette (obligatoire) */}
-        <div>
-          <Label className="text-xs mb-1.5 block">Pochette / Miniature *</Label>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-xs transition-colors">
-            <Upload size={14} />
-            {uploading ? 'Envoi…' : form.cover_url ? 'Image chargée ✓' : 'Choisir une image'}
-            <input type="file" className="hidden" onChange={handleCoverUpload} accept="image/*" required />
-          </label>
-        </div>
+        <MediaUploader
+          label="Pochette / Miniature *"
+          hint="Glissez l'image ici ou cliquez pour parcourir"
+          kind="image"
+          accept="image/*"
+          value={form.cover_url}
+          uploading={uploading}
+          onUpload={handleCoverUpload}
+          onClear={() => set('cover_url', '')}
+        />
 
         <div className="pt-2">
           <Button
