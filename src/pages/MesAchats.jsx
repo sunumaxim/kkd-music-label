@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ProtectedPlayer from '@/components/marketplace/ProtectedPlayer';
 import MobileHeader from '@/components/mobile/MobileHeader';
-import { Music, Film, Loader2, Mail, Play, ListMusic } from 'lucide-react';
+import { Music, Film, Loader2, Mail, Play, ListMusic, Shuffle } from 'lucide-react';
 import { usePlayer } from '@/lib/PlayerContext';
 
 export default function MesAchats() {
@@ -31,6 +31,12 @@ export default function MesAchats() {
   const audioPurchases = purchases.filter((p) => !p.is_video && p.protected_url);
   const videoPurchases = purchases.filter((p) => p.is_video && p.protected_url);
   const playAll = () => { if (audioPurchases.length) player.playQueue(audioPurchases.map(buildTrack), 0); };
+  const shuffleAll = () => {
+    if (!audioPurchases.length) return;
+    const shuffled = [...audioPurchases].sort(() => Math.random() - 0.5);
+    player.setShuffle(true);
+    player.playQueue(shuffled.map(buildTrack), 0);
+  };
 
   const loadPurchases = async (emailArg) => {
     const em = (emailArg || email || '').trim();
@@ -127,12 +133,20 @@ export default function MesAchats() {
               <Film size={15} /> Vidéos <span className="text-xs opacity-70">{videoPurchases.length}</span>
             </button>
             {tab === 'audio' && audioPurchases.length > 0 && (
-              <button
-                onClick={playAll}
-                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
-              >
-                <ListMusic size={16} /> Tout écouter
-              </button>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={shuffleAll}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors"
+                >
+                  <Shuffle size={16} /> Aléatoire
+                </button>
+                <button
+                  onClick={playAll}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+                >
+                  <ListMusic size={16} /> Tout écouter
+                </button>
+              </div>
             )}
           </div>
         )}

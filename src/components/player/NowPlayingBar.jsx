@@ -92,6 +92,15 @@ export default function NowPlayingBar() {
           </div>
         </div>
 
+        {/* Shuffle (mobile) */}
+        <button
+          onClick={() => player.setShuffle(!shuffle)}
+          className={`md:hidden p-2 transition-colors ${shuffle ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          title="Lecture aléatoire"
+        >
+          <Shuffle size={18} />
+        </button>
+
         {/* Stop (mobile) */}
         <button onClick={player.stop} className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors">
           <X size={18} />
