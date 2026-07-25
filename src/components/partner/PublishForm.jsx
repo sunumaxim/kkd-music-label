@@ -15,6 +15,7 @@ import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
 import PublishPreview from './PublishPreview';
 import { usePlayableUrl } from '@/hooks/usePlayableUrl';
+import { useToast } from '@/components/ui/use-toast';
 
 const CONTENT_TYPES = [
   { value: 'sortie_musicale', label: 'Single / Titre', icon: Music, release_type: 'single' },
@@ -61,6 +62,7 @@ export default function PublishForm({ user, onClose }) {
   });
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+  const { toast } = useToast();
 
   const selectedPlatform = PLATFORMS.find((p) => p.value === form.streaming_platform) || PLATFORMS[0];
   const isVideo = contentType === 'video_clip';
@@ -76,10 +78,14 @@ export default function PublishForm({ user, onClose }) {
       if (form.is_for_sale) {
         const res = await base44.integrations.Core.UploadPrivateFile({ file });
         set('file_url', res.file_uri);
+        toast({ title: 'Fichier audio chargé', description: 'Stockage privé — accessible après achat.' });
       } else {
         const res = await base44.integrations.Core.UploadFile({ file });
         set('file_url', res.file_url);
+        toast({ title: 'Fichier audio chargé', description: 'Écoute gratuite disponible.' });
       }
+    } catch (err) {
+      toast({ title: 'Échec du téléversement audio', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -92,6 +98,9 @@ export default function PublishForm({ user, onClose }) {
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('cover_url', res.file_url);
+      toast({ title: 'Pochette chargée' });
+    } catch (err) {
+      toast({ title: 'Échec de la pochette', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -104,6 +113,8 @@ export default function PublishForm({ user, onClose }) {
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('new_artist_photo_url', res.file_url);
+    } catch (err) {
+      toast({ title: 'Échec de la photo', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -119,6 +130,9 @@ export default function PublishForm({ user, onClose }) {
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('tracks', form.tracks.map((t, i) => (i === idx ? { ...t, audio_file_url: res.file_url } : t)));
+      toast({ title: `Piste ${idx + 1} chargée` });
+    } catch (err) {
+      toast({ title: 'Échec de la piste', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -149,8 +163,20 @@ export default function PublishForm({ user, onClose }) {
     (!form.is_for_sale || form.price > 0);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!canSubmit) return;
+    // Cohérence fichier / mode de vente : gratuit => URL publique, payant => fichier privé
+    if (!isAlbum && form.file_url) {
+      const isPublic = String(form.file_url).startsWith('http');
+      if (form.is_for_sale && isPublic) {
+        toast({ title: 'Fichier incohérent', description: 'Contenu en vente mais fichier public. Re-téléversez en mode payant.', variant: 'destructive' });
+        return;
+      }
+      if (!form.is_for_sale && !isPublic) {
+        toast({ title: 'Fichier incohérent', description: 'Contenu gratuit mais fichier privé. Re-téléversez en mode gratuit.', variant: 'destructive' });
+        return;
+      }
+    }
     mutation.mutate({
       partner_email: user.email,
       partner_name: user.full_name || user.email,
@@ -371,7 +397,7 @@ export default function PublishForm({ user, onClose }) {
                     <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
                     <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 30s puis achat.</p>
                   </div>
-                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} />
+                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} disabled={uploading} />
                 </div>
                 {form.is_for_sale && (
                   <>
