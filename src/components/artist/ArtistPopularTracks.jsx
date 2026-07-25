@@ -1,24 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Pause, Shuffle, Heart, Check, Headphones } from 'lucide-react';
+import { Play, Pause, Shuffle, Headphones } from 'lucide-react';
 import UniversalPlayer from '@/components/shared/UniversalPlayer';
+import { usePlayer } from '@/lib/PlayerContext';
+import { getReleaseTracks } from '@/lib/releaseTracks';
 import { buildEntitySlug } from '@/lib/slugify';
 
 /**
- * Barre d'actions (Suivre / Lecture aléatoire / Play) + "Chanson Populaire".
- * Lecture intégrée via UniversalPlayer (Spotify/YouTube/Deezer…) déplié par piste.
- * Le suivi est un préférence locale (localStorage) — aucune donnée serveur.
+ * Barre d'actions (Lecture aléatoire / Play) + "Chanson Populaire".
+ * Lecture native via le lecteur global KKD quand l'audio est hébergé sur KKD ;
+ * repli sur l'embed externe (Spotify/YouTube/Deezer…) sinon.
  */
 export default function ArtistPopularTracks({ releases = [], artist, totalPlays = 0 }) {
+  const player = usePlayer();
   const [activeId, setActiveId] = useState(null);
   const [shuffled, setShuffled] = useState(false);
-  const [following, setFollowing] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(`kkd_follow_${artist?.id}`) || 'false');
-    } catch {
-      return false;
-    }
-  });
 
   const popular = useMemo(
     () =>
@@ -36,17 +32,15 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
     [popular, shuffled]
   );
 
-  const toggleFollow = () => {
-    const next = !following;
-    setFollowing(next);
-    try {
-      localStorage.setItem(`kkd_follow_${artist?.id}`, JSON.stringify(next));
-    } catch {}
-  };
+  const firstPlayable = displayList.find((r) => getReleaseTracks(r).length);
+  const firstTracks = firstPlayable ? getReleaseTracks(firstPlayable) : [];
+  const firstIsCurrent = firstTracks.some((t) => t.key === player.current?.key);
+  const firstPlaying = firstIsCurrent && player.isPlaying;
 
   const playFirst = () => {
-    if (!displayList[0]) return;
-    setActiveId((cur) => (cur === displayList[0].id ? null : displayList[0].id));
+    if (!firstTracks.length) return;
+    if (firstIsCurrent) player.togglePlay();
+    else player.playQueue(firstTracks, 0);
   };
 
   return (
@@ -54,28 +48,19 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
       {/* Barre d'actions */}
       <div className="flex items-center gap-3 flex-wrap py-5">
         <button
-          onClick={toggleFollow}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-colors ${
-            following
-              ? 'bg-secondary text-secondary-foreground'
-              : 'bg-foreground text-background hover:opacity-90'
-          }`}
+          onClick={playFirst}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-105 transition-transform disabled:opacity-40"
+          aria-label="Lecture"
+          disabled={!firstTracks.length}
         >
-          {following ? (
-            <>
-              <Check size={15} /> Suivi
-            </>
+          {firstPlaying ? (
+            <Pause size={22} fill="currentColor" />
           ) : (
-            <>
-              <Heart size={15} /> Suivre
-            </>
+            <Play size={22} fill="currentColor" className="ml-0.5" />
           )}
         </button>
         <button
-          onClick={() => {
-            setShuffled((s) => !s);
-            setActiveId(null);
-          }}
+          onClick={() => setShuffled((s) => !s)}
           className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
             shuffled
               ? 'bg-primary/20 text-primary'
@@ -84,17 +69,6 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
           aria-label="Lecture aléatoire"
         >
           <Shuffle size={18} />
-        </button>
-        <button
-          onClick={playFirst}
-          className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-105 transition-transform"
-          aria-label="Lecture"
-        >
-          {activeId ? (
-            <Pause size={22} fill="currentColor" />
-          ) : (
-            <Play size={22} fill="currentColor" className="ml-0.5" />
-          )}
         </button>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground ml-auto">
           <Headphones size={13} className="text-primary" />
@@ -109,20 +83,32 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
       </div>
       <div className="space-y-1">
         {displayList.map((r) => {
+          const tracks = getReleaseTracks(r);
+          const hasLocal = tracks.length > 0;
+          const isCurrent = hasLocal && tracks.some((t) => t.key === player.current?.key);
+          const playing = isCurrent && player.isPlaying;
           const streamUrl =
             r.spotify_url || r.deezer_url || r.audiomack_url || r.apple_music_url || r.youtube_url;
           const isActive = activeId === r.id;
+          const onPlay = () => {
+            if (hasLocal) {
+              if (isCurrent) player.togglePlay();
+              else player.playQueue(tracks, 0);
+            } else {
+              setActiveId(isActive ? null : r.id);
+            }
+          };
           return (
             <div key={r.id}>
               <div
                 className={`flex items-center gap-3 p-2 rounded-xl group transition-colors ${
-                  isActive ? 'bg-primary/10' : 'hover:bg-secondary/60'
+                  isCurrent ? 'bg-primary/10' : 'hover:bg-secondary/60'
                 }`}
               >
                 <button
-                  onClick={() => setActiveId(isActive ? null : r.id)}
+                  onClick={onPlay}
                   className="relative w-12 h-12 rounded-lg overflow-hidden bg-secondary shrink-0"
-                  aria-label={isActive ? 'Pause' : 'Lire'}
+                  aria-label={playing ? 'Pause' : 'Lire'}
                 >
                   {r.cover_url ? (
                     <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover" />
@@ -133,10 +119,10 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
                   )}
                   <div
                     className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity ${
-                      isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     }`}
                   >
-                    {isActive ? (
+                    {playing ? (
                       <Pause size={16} className="text-white" fill="white" />
                     ) : (
                       <Play size={16} className="text-white ml-0.5" fill="white" />
@@ -146,7 +132,7 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
                 <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="flex-1 min-w-0">
                   <p
                     className={`font-heading font-bold text-sm truncate transition-colors ${
-                      isActive ? 'text-primary' : 'group-hover:text-primary'
+                      isCurrent ? 'text-primary' : 'group-hover:text-primary'
                     }`}
                   >
                     {r.title}
@@ -161,7 +147,7 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
                   {(r.plays_count || 0).toLocaleString('fr-FR')}
                 </span>
               </div>
-              {isActive && streamUrl && (
+              {isActive && !hasLocal && streamUrl && (
                 <div className="pl-16 pr-2 pb-2">
                   <UniversalPlayer url={streamUrl} label={r.title} className="w-full" />
                 </div>

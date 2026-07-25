@@ -23,6 +23,8 @@ const FIELDS = [
   { key: 'youtube_url', label: 'Lien YouTube', type: 'url', placeholder: 'https://youtube.com/...' },
   { key: 'apple_music_url', label: 'Lien Apple Music', type: 'url', placeholder: 'https://music.apple.com/...' },
   { key: 'audiomack_url', label: 'Lien Audiomack', type: 'url', placeholder: 'https://audiomack.com/...' },
+  { key: 'deezer_url', label: 'Lien Deezer', type: 'url', placeholder: 'https://deezer.com/...' },
+  { key: 'audio_file_url', label: 'Fichier audio (lecture gratuite KKD)', type: 'audiofile', placeholder: "Audio écoutable directement sur KKD (single / piste unique). Pour un album multi-pistes, préférez la publication partenaire." },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher sur la page d\'accueil' },
   { key: 'is_for_sale', label: 'Mettre en vente', type: 'boolean', placeholder: 'Vendre avant disponibilité officielle' },
   { key: 'price', label: 'Prix (FCFA)', type: 'number', placeholder: '0 = non vendu' },

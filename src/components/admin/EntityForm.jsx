@@ -145,6 +145,22 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
               </div>
             )}
 
+            {field.type === 'audiofile' && (
+              <div className="space-y-2">
+                {data[field.key] && (
+                  <audio src={data[field.key]} controls className="w-full" />
+                )}
+                <Input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => {
+                    if (e.target.files[0]) handleFileUpload(field.key, e.target.files[0]);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">{field.placeholder || 'Fichier audio public, écoutable gratuitement sur KKD.'}</p>
+              </div>
+            )}
+
             {field.type === 'privatefile' && (
               <div className="space-y-2">
                 {data[field.key] && (

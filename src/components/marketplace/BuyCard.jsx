@@ -172,8 +172,12 @@ export default function BuyCard({ item, itemType }) {
       </p>
 
       {/* Aperçu gratuit 30s */}
-      {item.protected_file_uri && (
-        <PaidPreview protectedFileUri={item.protected_file_uri} previewStart={item.preview_start || 0} />
+      {(item.protected_file_uri || item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)) && (
+        <PaidPreview
+          protectedFileUri={item.protected_file_uri}
+          audioUrl={item.protected_file_uri ? null : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url))}
+          previewStart={item.preview_start || 0}
+        />
       )}
 
       <Link to="/mes-achats" className="text-xs text-primary hover:underline block">Voir mes achats</Link>

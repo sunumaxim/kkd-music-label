@@ -6,7 +6,7 @@ import { Play, Pause, Lock } from 'lucide-react';
  * PaidPreview — plays a 30s free excerpt of a paid track.
  * The full file stays protected (private) and is only unlocked after purchase.
  */
-export default function PaidPreview({ protectedFileUri, previewStart = 0, duration = 30 }) {
+export default function PaidPreview({ protectedFileUri, audioUrl, previewStart = 0, duration = 30 }) {
   const [url, setUrl] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -16,12 +16,13 @@ export default function PaidPreview({ protectedFileUri, previewStart = 0, durati
   useEffect(() => {
     let active = true;
     (async () => {
-      if (!protectedFileUri) return;
+      const source = audioUrl || protectedFileUri;
+      if (!source) { if (active) setLoading(false); return; }
       try {
-        if (protectedFileUri.startsWith('http')) {
-          if (active) setUrl(protectedFileUri);
+        if (source.startsWith('http')) {
+          if (active) setUrl(source);
         } else {
-          const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: protectedFileUri });
+          const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: source });
           if (active) setUrl(res.signed_url);
         }
       } catch {
@@ -31,7 +32,7 @@ export default function PaidPreview({ protectedFileUri, previewStart = 0, durati
       }
     })();
     return () => { active = false; };
-  }, [protectedFileUri]);
+  }, [protectedFileUri, audioUrl]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -49,7 +50,7 @@ export default function PaidPreview({ protectedFileUri, previewStart = 0, durati
     setProgress(Math.min(100, ((a.currentTime - previewStart) / duration) * 100));
   };
 
-  if (!protectedFileUri) return null;
+  if (!protectedFileUri && !audioUrl) return null;
 
   return (
     <div className="bg-card border border-primary/20 rounded-2xl p-5">
