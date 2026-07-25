@@ -58,10 +58,11 @@ async function publishToCatalog(pub) {
   }
 
   const isVideo = pub.content_type === 'video_clip';
+  const fullTitle = pub.featuring_artist ? `${pub.title} (feat. ${pub.featuring_artist})` : pub.title;
 
   if (isVideo) {
     const video = await base44.entities.Video.create({
-      title: pub.title,
+      title: fullTitle,
       artist_name: artistName,
       youtube_url: pub.streaming_platform === 'youtube' ? pub.streaming_link : '',
       video_file_url: pub.file_url || '',
@@ -90,7 +91,7 @@ async function publishToCatalog(pub) {
   if (field && pub.streaming_link) platformLinks[field] = pub.streaming_link;
 
   const release = await base44.entities.Release.create({
-    title: pub.title,
+    title: fullTitle,
     artist_name: artistName,
     cover_url: pub.cover_url || '',
     description: pub.description || '',

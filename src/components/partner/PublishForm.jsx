@@ -9,10 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import {
   Music, Video, Disc, ListMusic, Upload,
-  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Sparkles, Lock
+  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Sparkles, Lock, Eye
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
+import PublishPreview from './PublishPreview';
+import { usePlayableUrl } from '@/hooks/usePlayableUrl';
 
 const CONTENT_TYPES = [
   { value: 'sortie_musicale', label: 'Single / Titre', icon: Music, release_type: 'single' },
@@ -43,6 +45,8 @@ export default function PublishForm({ user, onClose }) {
     title: '',
     artist_id: '',
     artist_name: user?.full_name || '',
+    featuring_artist: '',
+    featuring_artist_id: '',
     description: '',
     cover_url: '',
     file_url: '',
@@ -61,6 +65,8 @@ export default function PublishForm({ user, onClose }) {
   const selectedPlatform = PLATFORMS.find((p) => p.value === form.streaming_platform) || PLATFORMS[0];
   const isVideo = contentType === 'video_clip';
   const isAlbum = contentType === 'album' || contentType === 'ep';
+  // URL d'écoute (signée si fichier privé/vendu) pour l'étape de prévisualisation
+  const playable = usePlayableUrl(isAlbum ? '' : form.file_url);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -152,6 +158,8 @@ export default function PublishForm({ user, onClose }) {
       title: form.title.trim(),
       artist_name: form.artist_name.trim(),
       artist_id: form.artist_id || '',
+      featuring_artist: form.featuring_artist.trim(),
+      featuring_artist_id: form.featuring_artist_id || '',
       new_artist_genre: newArtist ? form.new_artist_genre.trim() : '',
       new_artist_photo_url: newArtist ? form.new_artist_photo_url : '',
       streaming_link: form.streaming_link || '',
@@ -205,6 +213,23 @@ export default function PublishForm({ user, onClose }) {
     );
   }
 
+  // ---- Étape 3 : Prévisualisation + Publication ----
+  if (step === 3) {
+    return (
+      <PublishPreview
+        form={form}
+        contentType={contentType}
+        isVideo={isVideo}
+        isAlbum={isAlbum}
+        playableUrl={isAlbum ? null : playable.url}
+        playableLoading={playable.loading}
+        onBack={() => setStep(2)}
+        onPublish={handleSubmit}
+        publishing={mutation.isPending}
+      />
+    );
+  }
+
   const selected = CONTENT_TYPES.find((t) => t.value === contentType);
   const SelIcon = selected?.icon || Music;
 
@@ -222,7 +247,7 @@ export default function PublishForm({ user, onClose }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); if (canSubmit && !uploading) setStep(3); }} className="space-y-5">
         {/* Titre */}
         <div>
           <Label className="text-xs mb-1.5 block">Titre *</Label>
@@ -272,6 +297,26 @@ export default function PublishForm({ user, onClose }) {
                 <Input value={form.artist_name} onChange={(e) => { set('artist_name', e.target.value); set('artist_id', ''); }} placeholder="Ou saisir le nom de scène manuellement" />
               )}
             </div>
+          )}
+        </div>
+
+        {/* Artiste en featuring / collaboration (optionnel) */}
+        <div className="space-y-1.5">
+          <Label className="text-xs mb-1.5 flex items-center gap-1.5">
+            <User size={12} className="text-primary" /> Artiste en featuring / collaboration (optionnel)
+          </Label>
+          <ArtistSelector
+            value={form.featuring_artist_id}
+            onChange={(id, name) => { set('featuring_artist_id', id); set('featuring_artist', name); }}
+            placeholder="Rechercher l'artiste en featuring…"
+          />
+          {form.featuring_artist_id ? (
+            <button type="button" onClick={() => { set('featuring_artist_id', ''); set('featuring_artist', ''); }}
+              className="text-[11px] text-muted-foreground hover:text-destructive flex items-center gap-1">
+              <X size={11} /> Retirer le featuring
+            </button>
+          ) : (
+            <Input value={form.featuring_artist} onChange={(e) => set('featuring_artist', e.target.value)} placeholder="Ou saisir le nom du featuring manuellement" />
           )}
         </div>
 
@@ -391,18 +436,21 @@ export default function PublishForm({ user, onClose }) {
           </label>
         </div>
 
-        <Button type="submit" disabled={mutation.isPending || uploading || !canSubmit} className="w-full h-12 font-bold text-base">
-          {mutation.isPending ? (
-            <><Loader2 size={16} className="animate-spin mr-2" /> Envoi en cours…</>
-          ) : (
-            <><Sparkles size={16} className="mr-2" /> Soumettre ma publication</>
+        <div className="pt-2">
+          <Button
+            type="button"
+            disabled={uploading || !canSubmit}
+            onClick={() => setStep(3)}
+            className="w-full h-12 font-bold text-base"
+          >
+            <Eye size={16} className="mr-2" /> Prévisualiser avant publication
+          </Button>
+          {!canSubmit && (
+            <p className="text-[11px] text-muted-foreground text-center mt-2">
+              Renseignez le titre, l'artiste, la pochette et un fichier audio obligatoirement.
+            </p>
           )}
-        </Button>
-        {!canSubmit && (
-          <p className="text-[11px] text-muted-foreground text-center -mt-2">
-            Renseignez le titre, l'artiste, la pochette et un fichier (ou un lien de streaming).
-          </p>
-        )}
+        </div>
       </form>
     </motion.div>
   );

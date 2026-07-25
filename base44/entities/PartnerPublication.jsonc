@@ -29,11 +29,19 @@
     },
     "artist_name": {
       "type": "string",
-      "description": "Nom de l'artiste"
+      "description": "Nom de l'artiste principal"
     },
     "artist_id": {
       "type": "string",
       "description": "ID de l'artiste existant li\u00e9 (si s\u00e9lectionn\u00e9)"
+    },
+    "featuring_artist": {
+      "type": "string",
+      "description": "Nom de l'artiste en featuring / collaboration (optionnel)"
+    },
+    "featuring_artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste en featuring (si s\u00e9lectionn\u00e9 dans le catalogue)"
     },
     "new_artist_genre": {
       "type": "string",

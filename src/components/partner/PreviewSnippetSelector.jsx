@@ -1,23 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Scissors, Play, Pause } from 'lucide-react';
+import { Scissors, Play, Pause, Loader2 } from 'lucide-react';
+import { usePlayableUrl } from '@/hooks/usePlayableUrl';
 
 /**
  * PreviewSnippetSelector — lets the artist drag to choose the 30s
  * preview excerpt that listeners can hear for free before buying.
+ * Gère les fichiers privés (vendus) via URL signée.
  */
 export default function PreviewSnippetSelector({ fileUrl, value = 0, onChange }) {
+  const { url: playableUrl, loading } = usePlayableUrl(fileUrl);
   const audioRef = useRef(null);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
-    if (!fileUrl) { setDuration(0); return; }
-    const a = new Audio(fileUrl);
+    if (!playableUrl) { setDuration(0); return; }
+    const a = new Audio(playableUrl);
     a.preload = 'metadata';
     a.onloadedmetadata = () => setDuration(a.duration || 0);
     audioRef.current = a;
     return () => { a.pause(); };
-  }, [fileUrl]);
+  }, [playableUrl]);
 
   const PREVIEW = 30;
   const maxStart = Math.max(0, Math.floor(duration - PREVIEW));
@@ -49,7 +52,9 @@ export default function PreviewSnippetSelector({ fileUrl, value = 0, onChange })
       <p className="text-xs text-muted-foreground leading-relaxed">
         Glissez pour choisir la partie que les auditeurs pourront écouter gratuitement avant d'acheter.
       </p>
-      {duration > 0 ? (
+      {loading ? (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Chargement du fichier…</p>
+      ) : duration > 0 ? (
         <>
           <input
             type="range"
@@ -69,7 +74,7 @@ export default function PreviewSnippetSelector({ fileUrl, value = 0, onChange })
           </button>
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">Chargement de la durée du fichier…</p>
+        <p className="text-xs text-muted-foreground">Impossible de charger la durée du fichier.</p>
       )}
     </div>
   );
