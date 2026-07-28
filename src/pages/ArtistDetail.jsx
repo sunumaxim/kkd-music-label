@@ -16,6 +16,7 @@ import SimilarArtists from '@/components/artist/SimilarArtists';
 import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import FollowButton from '@/components/artist/FollowButton';
+import ArtistStatsBar from '@/components/artist/ArtistStatsBar';
 import CarouselRow from '@/components/home/CarouselRow';
 import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
@@ -110,6 +111,12 @@ export default function ArtistDetail() {
     releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
     videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
 
+  const { data: followers = 0 } = useQuery({
+    queryKey: ['artist-followers-count', artist?.id],
+    queryFn: async () => (await base44.entities.ArtistFollow.filter({ artist_id: artist.id })).length,
+    enabled: !!artist?.id,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -143,52 +150,72 @@ export default function ArtistDetail() {
       <MobileHeader title={artist.name} backPath="/artistes" />
 
       {/* ── HERO ── */}
-      <div className="relative h-72 md:h-[440px] overflow-hidden max-w-full">
-        {artist.photo_url ? (
-          <img src={artist.photo_url} alt={artist.name} className="w-full h-full object-cover object-top" />
+      <div className="relative h-64 md:h-[420px] overflow-hidden max-w-full">
+        {artist.cover_url ? (
+          <img src={artist.cover_url} alt="" className="w-full h-full object-cover object-center" />
+        ) : artist.photo_url ? (
+          <img src={artist.photo_url} alt="" className="w-full h-full object-cover object-center scale-110 blur-md opacity-60" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-card via-secondary to-muted" />
+          <div className="w-full h-full bg-gradient-to-br from-primary/30 via-card to-muted" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
 
         <Link
           to="/artistes"
-          className="hidden md:inline-flex absolute top-6 left-6 items-center gap-2 text-sm text-white/80 hover:text-white bg-black/30 backdrop-blur-sm rounded-full px-4 py-2 transition-colors"
+          className="hidden md:inline-flex absolute top-6 left-6 items-center gap-2 text-sm text-white/80 hover:text-white bg-black/40 backdrop-blur-sm rounded-full px-4 py-2 transition-colors z-10"
         >
           <ArrowLeft size={14} /> Artistes
         </Link>
 
         <button
           onClick={handleShare}
-          className="absolute top-6 right-6 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white text-sm font-medium transition-colors"
+          className="absolute top-6 right-6 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm font-medium transition-colors z-10"
         >
           {copied ? <Check size={14} /> : <Share2 size={14} />}
           {copied ? 'Copié !' : 'Partager'}
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-full">
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-3xl md:text-6xl font-extrabold tracking-tight break-words leading-tight">
-              {artist.name}
-            </h1>
-            {artist.is_verified && <VerifiedBadge size={30} />}
+          <div className="flex items-end gap-4 md:gap-5">
+            {artist.photo_url && (
+              <img
+                src={artist.photo_url}
+                alt={artist.name}
+                className="hidden md:block w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-background shadow-2xl shrink-0"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight break-words leading-tight">
+                  {artist.name}
+                </h1>
+                {artist.is_verified && <VerifiedBadge size={28} />}
+              </div>
+              <div className="flex items-center flex-wrap gap-2 mt-2">
+                {artist.genre && (
+                  <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
+                    {artist.genre}
+                  </span>
+                )}
+                {artist.label && (
+                  <span className="bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full border border-white/20">
+                    {artist.label}
+                  </span>
+                )}
+                {artist.active_since && (
+                  <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
+                )}
+              </div>
+              <FollowButton artistId={artist.id} artistName={artist.name} variant="hero" />
+              <ArtistStatsBar
+                followers={followers}
+                plays={totalPlays}
+                tracks={releases.length}
+                albums={albums.length}
+                videos={videos.length}
+              />
+            </div>
           </div>
-          <div className="flex items-center flex-wrap gap-2 mt-2">
-            {artist.genre && (
-              <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
-                {artist.genre}
-              </span>
-            )}
-            {artist.label && (
-              <span className="bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full border border-white/20">
-                {artist.label}
-              </span>
-            )}
-            {artist.active_since && (
-              <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
-            )}
-          </div>
-          <FollowButton artistId={artist.id} artistName={artist.name} variant="hero" />
         </div>
       </div>
 

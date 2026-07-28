@@ -9,6 +9,12 @@ function fmt(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
+const RATES = [1, 1.25, 1.5, 1.75, 2, 0.75];
+function nextRate(current) {
+  const i = RATES.indexOf(current);
+  return i === -1 ? 1.25 : RATES[(i + 1) % RATES.length];
+}
+
 export default function NowPlayingBar() {
   const player = usePlayer();
   const { current, isPlaying, currentTime, duration, repeatMode, shuffle, volume } = player;
@@ -91,6 +97,13 @@ export default function NowPlayingBar() {
           >
             {repeatMode === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
           </button>
+          <button
+            onClick={() => player.setPlaybackRate(nextRate(player.playbackRate))}
+            className="px-2 py-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground text-[11px] font-mono font-semibold"
+            title="Vitesse de lecture"
+          >
+            {player.playbackRate}×
+          </button>
           <div className="flex items-center gap-1.5 ml-2">
             <Volume2 size={16} className="text-muted-foreground" />
             <input
@@ -100,6 +113,15 @@ export default function NowPlayingBar() {
             />
           </div>
         </div>
+
+        {/* Vitesse (mobile) */}
+        <button
+          onClick={() => player.setPlaybackRate(nextRate(player.playbackRate))}
+          className="md:hidden p-2 text-muted-foreground hover:text-foreground text-[11px] font-mono font-semibold transition-colors"
+          title="Vitesse de lecture"
+        >
+          {player.playbackRate}×
+        </button>
 
         {/* Shuffle (mobile) */}
         <button

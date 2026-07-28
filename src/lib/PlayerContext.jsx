@@ -26,6 +26,7 @@ export function PlayerProvider({ children }) {
   const [volume, setVolume] = useState(1);
   const [repeatMode, setRepeatMode] = useState('off'); // 'off' | 'all' | 'one'
   const [shuffle, setShuffle] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [isBuffering, setIsBuffering] = useState(false);
   const [error, setError] = useState(null);
 
@@ -56,6 +57,11 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (a) a.volume = volume;
   }, [volume]);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a) a.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   const togglePlay = useCallback(() => {
     const a = audioRef.current;
@@ -162,8 +168,8 @@ export function PlayerProvider({ children }) {
   }, []);
 
   const value = {
-    queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, repeatMode, shuffle,
-    playTrack, playQueue, togglePlay, next, prev, seek, retry, setVolume, setRepeatMode, setShuffle, stop,
+    queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, playbackRate, repeatMode, shuffle,
+    playTrack, playQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
   };
 
   return (
