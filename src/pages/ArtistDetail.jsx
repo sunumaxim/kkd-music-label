@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Youtube, Share2, Check, Disc3, Calendar, MapPin, ChevronRight,
-  Play, Eye, Heart, ShoppingCart,
+  Play, Eye, Heart, ShoppingCart, Newspaper,
 } from 'lucide-react';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -28,13 +28,22 @@ function compact(n) {
   return String(n);
 }
 
+const TABS = [
+  { key: 'aperçu', label: 'Aperçu' },
+  { key: 'morceaux', label: 'Morceaux' },
+  { key: 'albums', label: 'Albums' },
+  { key: 'videos', label: 'Vidéos' },
+  { key: 'annonces', label: 'Annonces' },
+  { key: 'evenements', label: 'Événements' },
+];
+
 export default function ArtistDetail() {
   const { id: slugParam } = useParams();
   const navigate = useNavigate();
   const id = extractIdFromSlug(slugParam);
   const player = usePlayer();
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState('musique');
+  const [tab, setTab] = useState('aperçu');
   const [videoFilter, setVideoFilter] = useState('all');
 
   const handleShare = () => {
@@ -85,6 +94,20 @@ export default function ArtistDetail() {
         .slice(0, 6),
   });
 
+  const { data: news = [] } = useQuery({
+    queryKey: ['artist-news', artist?.name],
+    queryFn: () => base44.entities.News.list('-publish_date', 30),
+    enabled: !!artist?.name,
+    select: (data) =>
+      data
+        .filter(
+          (n) =>
+            (n.tags || []).some((t) => t.toLowerCase().includes(artist.name.toLowerCase())) ||
+            `${n.title} ${n.excerpt || ''} ${n.content || ''}`.toLowerCase().includes(artist.name.toLowerCase())
+        )
+        .slice(0, 6),
+  });
+
   const { data: followers = 0 } = useQuery({
     queryKey: ['artist-followers-count', artist?.id],
     queryFn: async () => (await base44.entities.ArtistFollow.filter({ artist_id: artist.id })).length,
@@ -94,11 +117,11 @@ export default function ArtistDetail() {
   const availableVideoTypes = [...new Set(videos.map((v) => v.video_type).filter(Boolean))];
   const filteredVideos = videoFilter === 'all' ? videos : videos.filter((v) => v.video_type === videoFilter);
   const albums = releases.filter((r) => ['album', 'ep', 'projet_special'].includes(r.release_type));
+  const singles = releases.filter((r) => r.release_type === 'single' || !r.release_type);
   const totalPlays =
     releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
     videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
 
-  // Lecture du top tracks via le lecteur global
   const popular = useMemo(
     () =>
       [...releases]
@@ -195,7 +218,6 @@ export default function ArtistDetail() {
 
       {/* ── CORPS ── */}
       <div className="max-w-3xl mx-auto px-4 pb-20">
-        {/* Barre d'actions */}
         <ArtistActionBar
           artist={artist}
           onPlay={playFirst}
@@ -206,15 +228,12 @@ export default function ArtistDetail() {
         />
 
         {/* Onglets */}
-        <div className="flex items-center gap-6 border-b border-border/40 mb-4">
-          {[
-            { key: 'musique', label: 'Musique' },
-            { key: 'evenement', label: 'Événement' },
-          ].map((t) => (
+        <div className="flex items-center gap-5 sm:gap-6 border-b border-border/40 mb-4 overflow-x-auto no-scrollbar">
+          {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`relative pb-3 text-sm font-bold transition-colors ${
+              className={`relative pb-3 text-sm font-bold whitespace-nowrap transition-colors ${
                 tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -224,12 +243,57 @@ export default function ArtistDetail() {
           ))}
         </div>
 
-        {tab === 'musique' && (
+        {/* APERÇU */}
+        {tab === 'aperçu' && (
           <>
-            <ArtistPopularList releases={releases} max={5} />
+            <ArtistPopularList releases={popular} max={5} />
 
-            {albums.length > 0 && (
-              <section className="py-6">
+            {artist.biography && (
+              <section className="py-6 border-t border-border/30">
+                <h2 className="font-heading font-bold text-xl mb-3">Biographie</h2>
+                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line line-clamp-6">{artist.biography}</p>
+              </section>
+            )}
+
+            <div className="py-2">
+              <StreamingLinks
+                spotify={artist.spotify_url}
+                youtube={artist.youtube_url}
+                apple_music={artist.apple_music_url}
+                audiomack={artist.audiomack_url}
+                deezer={artist.deezer_url}
+                soundcloud={artist.soundcloud_url}
+              />
+            </div>
+
+            <section className="py-6 border-t border-border/30">
+              <SimilarArtists genre={artist.genre} artistId={artist.id} />
+            </section>
+          </>
+        )}
+
+        {/* MORCEAUX */}
+        {tab === 'morceaux' && (
+          <>
+            <ArtistPopularList releases={releases} max={releases.length} />
+            <div className="py-6">
+              <StreamingLinks
+                spotify={artist.spotify_url}
+                youtube={artist.youtube_url}
+                apple_music={artist.apple_music_url}
+                audiomack={artist.audiomack_url}
+                deezer={artist.deezer_url}
+                soundcloud={artist.soundcloud_url}
+              />
+            </div>
+          </>
+        )}
+
+        {/* ALBUMS */}
+        {tab === 'albums' && (
+          <section className="py-2">
+            {albums.length > 0 ? (
+              <>
                 <h2 className="font-heading font-bold text-xl mb-3">Discographie</h2>
                 <CarouselRow>
                   {albums.map((r) => (
@@ -253,12 +317,26 @@ export default function ArtistDetail() {
                     </div>
                   ))}
                 </CarouselRow>
-              </section>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Disc3 size={32} className="text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Aucun album publié.</p>
+                {singles.length > 0 && (
+                  <button onClick={() => setTab('morceaux')} className="mt-3 text-primary text-sm hover:underline">
+                    Voir les singles
+                  </button>
+                )}
+              </div>
             )}
+          </section>
+        )}
 
-            {videos.length > 0 && (
-              <section className="py-6">
-                <h2 className="font-heading font-bold text-xl mb-3">Vidéos</h2>
+        {/* VIDÉOS */}
+        {tab === 'videos' && (
+          <section className="py-2">
+            {videos.length > 0 ? (
+              <>
                 {availableVideoTypes.length > 1 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     <button
@@ -323,46 +401,60 @@ export default function ArtistDetail() {
                     );
                   })}
                 </div>
-              </section>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Youtube size={32} className="text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Aucune vidéo disponible.</p>
+              </div>
             )}
-
-            <div className="py-6">
-              <StreamingLinks
-                spotify={artist.spotify_url}
-                youtube={artist.youtube_url}
-                apple_music={artist.apple_music_url}
-                audiomack={artist.audiomack_url}
-                deezer={artist.deezer_url}
-                soundcloud={artist.soundcloud_url}
-              />
-            </div>
-
-            {artist.biography && (
-              <section className="py-6 border-t border-border/30">
-                <h2 className="font-heading font-bold text-xl mb-3">Biographie</h2>
-                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{artist.biography}</p>
-              </section>
-            )}
-
-            {artist.gallery?.length > 0 && (
-              <section className="py-6 border-t border-border/30">
-                <h2 className="font-heading font-bold text-xl mb-3">Galerie</h2>
-                <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
-              </section>
-            )}
-
-            <section className="py-6 border-t border-border/30 space-y-5">
-              <ArtistInfoCard artist={artist} />
-              <ArtistSocialSync artist={artist} />
-            </section>
-
-            <section className="py-6 border-t border-border/30">
-              <SimilarArtists genre={artist.genre} artistId={artist.id} />
-            </section>
-          </>
+          </section>
         )}
 
-        {tab === 'evenement' && (
+        {/* ANNONCES */}
+        {tab === 'annonces' && (
+          <section className="py-2">
+            {news.length > 0 ? (
+              <div className="space-y-3">
+                {news.map((n) => (
+                  <Link
+                    key={n.id}
+                    to={`/actualites/${n.id}`}
+                    className="flex gap-3 bg-card border border-border/40 rounded-2xl p-3 hover:border-primary/40 transition-all group"
+                  >
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-secondary shrink-0">
+                      {n.image_url ? (
+                        <img src={n.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Newspaper size={22} className="text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-primary">{n.category || 'nouveauté'}</span>
+                      <p className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{n.title}</p>
+                      {n.excerpt && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{n.excerpt}</p>}
+                      {n.publish_date && (
+                        <p className="text-[11px] text-muted-foreground/70 mt-1">
+                          {new Date(n.publish_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Newspaper size={32} className="text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Aucune actualité pour cet artiste.</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ÉVÉNEMENTS */}
+        {tab === 'evenements' && (
           <section className="py-2">
             {events.length > 0 ? (
               <>
@@ -416,6 +508,13 @@ export default function ArtistDetail() {
             )}
           </section>
         )}
+
+        {/* À propos (commun) */}
+        <section className="py-6 border-t border-border/30 space-y-5">
+          <ArtistInfoCard artist={artist} />
+          <ArtistSocialSync artist={artist} />
+          {artist.gallery?.length > 0 && <ArtistGallery gallery={artist.gallery} artistName={artist.name} />}
+        </section>
       </div>
     </div>
   );
