@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Titre de l'article"
     },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL propre (ex : /actualites/mon-article) \u2014 auto-g\u00e9n\u00e9r\u00e9 depuis le titre"
+    },
     "content": {
       "type": "string",
       "description": "Contenu principal (markdown)"

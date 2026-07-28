@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Nom de l'artiste"
     },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL propre (ex : /artistes/mon-artiste) \u2014 auto-g\u00e9n\u00e9r\u00e9 depuis le nom"
+    },
     "photo_url": {
       "type": "string",
       "description": "Photo principale de l'artiste"

@@ -12,7 +12,7 @@ import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPl
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
@@ -24,15 +24,22 @@ const EVENT_TYPE_LABELS = {
 
 export default function EventDetail() {
   const { slug: slugParam } = useParams();
-  const id = extractIdFromSlug(slugParam);
+  const slug = slugify(slugParam);
+  const legacyId = slugParam?.includes('--') ? extractIdFromSlug(slugParam) : null;
+  const id = legacyId || slug;
   const [showStream, setShowStream] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event-detail', id],
     queryFn: async () => {
-      const results = await base44.entities.Event.filter({ id });
-      return results[0] || null;
+      if (legacyId) return (await base44.entities.Event.filter({ id: legacyId }))[0] || null;
+      const bySlug = (await base44.entities.Event.filter({ slug }))[0];
+      if (bySlug) return bySlug;
+      const all = await base44.entities.Event.list('-event_date', 500);
+      const found = all.find((e) => slugify(e.title) === slug);
+      if (found) { base44.entities.Event.update(found.id, { slug }).catch(() => {}); return found; }
+      return null;
     },
   });
 
@@ -59,8 +66,8 @@ export default function EventDetail() {
     enabled: !!event?.linked_release_ids?.length,
   });
 
-  const shareUrl = event ? buildShareUrl('/evenements', event.title, event.id) : '';
-  const sharePreviewUrl = event ? buildSharePreviewUrl('event', buildEntitySlug(event.title, event.id), shareUrl) : '';
+  const shareUrl = event ? buildShareUrl('/evenements', event.slug || event.title) : '';
+  const sharePreviewUrl = shareUrl;
 
   if (isLoading) {
     return (
@@ -100,6 +107,16 @@ export default function EventDetail() {
         image={event.image_url}
         url={shareUrl}
         type="event"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          name: event.title,
+          description: event.description,
+          image: event.image_url,
+          startDate: event.event_date,
+          location: { '@type': 'Place', name: event.location, address: event.city },
+          organizer: event.organizer_name ? { '@type': 'Organization', name: event.organizer_name } : undefined,
+        }}
       />
       <MobileHeader title={event.title} backPath="/evenements" />
 

@@ -26,15 +26,22 @@ const TYPE_LABELS = {
 };
 
 export default function ReleaseDetail() {
-  const { slug } = useParams();
-  const id = extractIdFromSlug(slug);
+  const { slug: slugParam } = useParams();
+  const slug = slugify(slugParam);
+  const legacyId = slugParam?.includes('--') ? extractIdFromSlug(slugParam) : null;
+  const id = legacyId || slug;
   const queryClient = useQueryClient();
 
   const { data: release, isLoading } = useQuery({
     queryKey: ['release', id],
     queryFn: async () => {
-      const results = await base44.entities.Release.filter({ id });
-      return results[0] || null;
+      if (legacyId) return (await base44.entities.Release.filter({ id: legacyId }))[0] || null;
+      const bySlug = (await base44.entities.Release.filter({ slug }))[0];
+      if (bySlug) return bySlug;
+      const all = await base44.entities.Release.list('-created_date', 500);
+      const found = all.find((r) => slugify(r.title) === slug);
+      if (found) { base44.entities.Release.update(found.id, { slug }).catch(() => {}); return found; }
+      return null;
     },
   });
 
@@ -67,8 +74,8 @@ export default function ReleaseDetail() {
 
   const streamUrl = release ? (release.spotify_url || release.deezer_url || release.apple_music_url || release.audiomack_url || release.youtube_url) : null;
   const effectivelyPaid = release ? (release.is_for_sale && Number(release.price) > 0) : false;
-  const shareUrl = release ? buildShareUrl('/musique', release.title, release.id) : '';
-  const sharePreviewUrl = release ? buildSharePreviewUrl('release', buildEntitySlug(release.title, release.id), shareUrl) : '';
+  const shareUrl = release ? buildShareUrl('/musique', release.slug || release.title) : '';
+  const sharePreviewUrl = shareUrl;
 
   if (isLoading) {
     return (
@@ -95,6 +102,15 @@ export default function ReleaseDetail() {
         image={release.cover_url}
         url={shareUrl}
         type="music.album"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'MusicAlbum',
+          name: release.title,
+          byArtist: { '@type': 'MusicGroup', name: release.artist_name },
+          image: release.cover_url,
+          url: shareUrl,
+          datePublished: release.release_date,
+        }}
       />
       <MobileHeader title={release.title} backPath="/musique" />
 

@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Titre de l'\u00e9v\u00e9nement"
     },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL propre (ex : /evenements/mon-evenement) \u2014 auto-g\u00e9n\u00e9r\u00e9 depuis le titre"
+    },
     "description": {
       "type": "string",
       "description": "Description"

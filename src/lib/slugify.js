@@ -17,49 +17,48 @@ export function slugify(text) {
 }
 
 /**
- * Build a unique, remarkable entity slug: "mon-titre--<id>"
- * The slugified name gives readability; the id (mixed digits + letters)
- * guarantees uniqueness and lets the detail page fetch the exact record.
+ * Domaine officiel de la plateforme — utilisé pour les canonical / OG / liens de partage.
+ * Les aperçus de partage reposent sur le pré-rendu serveur de Base44 (meta injectées
+ * côté client par PageMeta, capturées dans le snapshot servi aux crawlers).
  */
-export function buildEntitySlug(title, id) {
-  const slug = slugify(title);
-  if (!id) return slug;
-  return `${slug}--${id}`;
+export const SITE_URL = 'https://kkdmusic.com';
+
+/**
+ * Build a clean, human-readable entity slug: "mon-titre" (nom seul, sans code/id).
+ * Le slug est stocké sur l'entité (champ `slug`) pour une résolution fiable.
+ */
+export function buildEntitySlug(nameOrTitle, _id) {
+  return slugify(nameOrTitle);
 }
 
 /**
- * Build a share URL using slug
- * e.g. buildShareUrl('/actualites', 'Mon Article Cool', 'abc123')
- * → https://domain.com/actualites/mon-article-cool--abc123
+ * Build a share URL using a clean slug.
+ * e.g. buildShareUrl('/musique', 'Mon Titre') → https://kkdmusic.com/musique/mon-titre
  */
-export function buildShareUrl(basePath, title, id) {
-  return `${window.location.origin}${basePath}/${buildEntitySlug(title, id)}`;
+export function buildShareUrl(basePath, nameOrTitle) {
+  return `${SITE_URL}${basePath}/${slugify(nameOrTitle)}`;
 }
 
 /**
- * Build a share URL pointing to the backend share-meta endpoint, which serves
- * the actual entity image in Open Graph tags (WhatsApp / Facebook / Twitter
- * previews) and redirects humans to the clean app route.
- * e.g. buildSharePreviewUrl('release', 'mon-titre--abc123')
+ * Build a share URL pointing to the backend share-meta endpoint (legacy fallback).
+ * Prefer buildShareUrl() — Base44 pré-rend les routes et sert les bonnes meta aux crawlers.
  */
 export function buildSharePreviewUrl(type, slug, appUrl) {
-  const base = `${window.location.origin}/functions/shareMeta?type=${encodeURIComponent(type)}&slug=${encodeURIComponent(slug)}`;
+  const base = `${SITE_URL}/functions/shareMeta?type=${encodeURIComponent(type)}&slug=${encodeURIComponent(slug)}`;
   return appUrl ? `${base}&to=${encodeURIComponent(appUrl)}` : base;
 }
 
 /**
- * Extract ID from a slug-based URL param
- * e.g. "mon-article-cool--abc123" → "abc123"
- * Falls back to the param itself (old-style numeric/UUID IDs)
+ * Extract a legacy id from an old-style slug "mon-titre--abc123".
+ * Returns null for clean slugs (new format, name only).
  */
 export function extractIdFromSlug(slugParam) {
-  if (!slugParam) return slugParam;
+  if (!slugParam) return null;
   const clean = String(slugParam).replace(/\/+$/g, '').trim();
-  // Find last '--' separator and extract everything after it
   const idx = clean.lastIndexOf('--');
   if (idx !== -1) {
-    const id = clean.slice(idx + 2).replace(/^-+/, ''); // trim leading dashes
+    const id = clean.slice(idx + 2).replace(/^-+/, '');
     if (id) return id;
   }
-  return clean;
+  return null;
 }

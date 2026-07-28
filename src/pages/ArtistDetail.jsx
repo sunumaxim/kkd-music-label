@@ -19,7 +19,7 @@ import ArtistPopularList from '@/components/artist/ArtistPopularList';
 import CarouselRow from '@/components/home/CarouselRow';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
-import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
 function compact(n) {
   if (!n || n < 0) return '0';
@@ -40,7 +40,9 @@ const TABS = [
 export default function ArtistDetail() {
   const { id: slugParam } = useParams();
   const navigate = useNavigate();
-  const id = extractIdFromSlug(slugParam);
+  const slug = slugify(slugParam);
+  const legacyId = slugParam?.includes('--') ? extractIdFromSlug(slugParam) : null;
+  const id = legacyId || slug;
   const player = usePlayer();
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState('aperçu');
@@ -48,7 +50,7 @@ export default function ArtistDetail() {
 
   const handleShare = () => {
     if (!artist) return;
-    const url = buildSharePreviewUrl('artist', buildEntitySlug(artist.name, artist.id), buildShareUrl('/artistes', artist.name, artist.id));
+    const url = buildShareUrl('/artistes', artist.slug || artist.name);
     if (navigator.share) {
       navigator.share({ title: artist.name, url });
     } else {
@@ -60,8 +62,15 @@ export default function ArtistDetail() {
 
   const { data: artist, isLoading } = useQuery({
     queryKey: ['artist', id],
-    queryFn: () => base44.entities.Artist.filter({ id }),
-    select: (data) => data[0],
+    queryFn: async () => {
+      if (legacyId) return (await base44.entities.Artist.filter({ id: legacyId }))[0] || null;
+      const bySlug = (await base44.entities.Artist.filter({ slug }))[0];
+      if (bySlug) return bySlug;
+      const all = await base44.entities.Artist.list('-created_date', 500);
+      const found = all.find((a) => slugify(a.name) === slug);
+      if (found) { base44.entities.Artist.update(found.id, { slug }).catch(() => {}); return found; }
+      return null;
+    },
   });
 
   const { data: releases = [] } = useQuery({
@@ -173,7 +182,17 @@ export default function ArtistDetail() {
         title={artist.name}
         description={artist.biography?.slice(0, 160) || `${artist.genre || 'Artiste'} sur KKD Music.`}
         image={artist.photo_url}
+        url={buildShareUrl('/artistes', artist.slug || artist.name)}
         type="profile"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'MusicGroup',
+          name: artist.name,
+          image: artist.photo_url,
+          genre: artist.genre,
+          url: buildShareUrl('/artistes', artist.slug || artist.name),
+          sameAs: [artist.spotify_url, artist.youtube_url, artist.apple_music_url, artist.instagram_url, artist.facebook_url, artist.tiktok_url].filter(Boolean),
+        }}
       />
       <MobileHeader title={artist.name} backPath="/artistes" />
 

@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Titre de la sortie"
     },
+    "slug": {
+      "type": "string",
+      "description": "Slug URL propre (ex : /musique/mon-titre) \u2014 auto-g\u00e9n\u00e9r\u00e9 depuis le titre"
+    },
     "artist_name": {
       "type": "string",
       "description": "Nom de l'artiste"

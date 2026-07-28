@@ -22,21 +22,28 @@ const CATEGORY_LABELS = {
 
 export default function ArticleDetail() {
   const { id: slugParam } = useParams();
-  const newsId = extractIdFromSlug(slugParam);
+  const slug = slugify(slugParam);
+  const legacyId = slugParam?.includes('--') ? extractIdFromSlug(slugParam) : null;
+  const newsId = legacyId || slug;
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['news-detail', newsId],
     queryFn: async () => {
-      const results = await base44.entities.News.filter({ id: newsId });
-      return results[0] || null;
+      if (legacyId) return (await base44.entities.News.filter({ id: legacyId }))[0] || null;
+      const bySlug = (await base44.entities.News.filter({ slug }))[0];
+      if (bySlug) return bySlug;
+      const all = await base44.entities.News.list('-publish_date', 500);
+      const found = all.find((n) => slugify(n.title) === slug);
+      if (found) { base44.entities.News.update(found.id, { slug }).catch(() => {}); return found; }
+      return null;
     },
   });
 
   const handleShare = async () => {
     if (!item) return;
-    const url = buildSharePreviewUrl('news', buildEntitySlug(item.title, item.id));
+    const url = buildShareUrl('/actualites', item.slug || item.title);
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -46,8 +53,8 @@ export default function ArticleDetail() {
     queryClient.invalidateQueries({ queryKey: ['news-detail', newsId] });
   };
 
-  const shareUrl = item ? buildShareUrl('/actualites', item.title, item.id) : '';
-  const sharePreviewUrl = item ? buildSharePreviewUrl('news', buildEntitySlug(item.title, item.id), shareUrl) : '';
+  const shareUrl = item ? buildShareUrl('/actualites', item.slug || item.title) : '';
+  const sharePreviewUrl = shareUrl;
 
   if (isLoading) {
     return (
@@ -74,6 +81,17 @@ export default function ArticleDetail() {
         image={item.image_url}
         url={shareUrl}
         type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'NewsArticle',
+          headline: item.title,
+          description: item.excerpt,
+          image: item.image_url,
+          datePublished: item.publish_date,
+          author: { '@type': 'Organization', name: 'KKD Music' },
+          publisher: { '@type': 'Organization', name: 'KKD Music' },
+          mainEntityOfPage: shareUrl,
+        }}
       />
       <MobileHeader title={item.title} backPath="/actualites" />
 

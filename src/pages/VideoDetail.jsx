@@ -11,7 +11,7 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import LikeButton from '@/components/shared/LikeButton';
-import { buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { motion } from 'framer-motion';
 
 function getYouTubeId(url) {
@@ -30,14 +30,21 @@ const VIDEO_TYPE_LABELS = {
 
 export default function VideoDetail() {
   const { id: slugParam } = useParams();
-  const id = extractIdFromSlug(slugParam);
+  const slug = slugify(slugParam);
+  const legacyId = slugParam?.includes('--') ? extractIdFromSlug(slugParam) : null;
+  const id = legacyId || slug;
   const queryClient = useQueryClient();
 
   const { data: video, isLoading } = useQuery({
     queryKey: ['video', id],
     queryFn: async () => {
-      const results = await base44.entities.Video.filter({ id });
-      return results[0] || null;
+      if (legacyId) return (await base44.entities.Video.filter({ id: legacyId }))[0] || null;
+      const bySlug = (await base44.entities.Video.filter({ slug }))[0];
+      if (bySlug) return bySlug;
+      const all = await base44.entities.Video.list('-created_date', 500);
+      const found = all.find((v) => slugify(v.title) === slug);
+      if (found) { base44.entities.Video.update(found.id, { slug }).catch(() => {}); return found; }
+      return null;
     },
     staleTime: 0,
   });
@@ -51,8 +58,8 @@ export default function VideoDetail() {
     enabled: !!video?.artist_name,
   });
 
-  const shareUrl = video ? buildShareUrl('/videos', video.title, video.id) : '';
-  const sharePreviewUrl = video ? buildSharePreviewUrl('video', buildEntitySlug(video.title, video.id), shareUrl) : '';
+  const shareUrl = video ? buildShareUrl('/videos', video.slug || video.title) : '';
+  const sharePreviewUrl = shareUrl;
 
   // Increment views once per session
   useEffect(() => {
@@ -102,6 +109,15 @@ export default function VideoDetail() {
         image={video.thumbnail_url || (getYouTubeId(video.youtube_url) ? `https://img.youtube.com/vi/${getYouTubeId(video.youtube_url)}/maxresdefault.jpg` : null)}
         url={shareUrl}
         type="video.other"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'VideoObject',
+          name: video.title,
+          description: video.description,
+          thumbnailUrl: video.thumbnail_url,
+          uploadDate: video.publish_date,
+          contentUrl: shareUrl,
+        }}
       />
       <MobileHeader title={video.title} backPath="/videos" />
 
