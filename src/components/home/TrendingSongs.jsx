@@ -4,6 +4,7 @@ import { Play, Headphones } from 'lucide-react';
 import SectionHeader from './SectionHeader';
 import { buildEntitySlug } from '@/lib/slugify';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
+import LikeButton from '@/components/shared/LikeButton';
 import { isPlayable } from '@/lib/releaseTracks';
 
 /**
@@ -112,6 +113,9 @@ export default function TrendingSongs({ releases = [], artists = [] }) {
                   </div>
                 )}
               </div>
+              <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} className="shrink-0">
+                <LikeButton targetType="release" targetId={r.id} title={r.title} artistName={r.artist_name} coverUrl={r.cover_url} size={18} />
+              </span>
             </Link>
           ))}
         </div>

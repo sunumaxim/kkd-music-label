@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import HeroSlider from '@/components/home/HeroSlider';
-import RecentlyPlayed from '@/components/home/RecentlyPlayed';
+import LatestReleases from '@/components/home/LatestReleases';
 import TrendingSongs from '@/components/home/TrendingSongs';
 import TopAlbums from '@/components/home/TopAlbums';
+import PopularArtists from '@/components/home/PopularArtists';
+import PlaylistsShelf from '@/components/home/PlaylistsShelf';
+import RecentlyPlayed from '@/components/home/RecentlyPlayed';
 import UpcomingEvents from '@/components/home/UpcomingEvents';
 import LatestVideos from '@/components/home/LatestVideos';
-import TrendingArtists from '@/components/home/TrendingArtists';
 import LatestNews from '@/components/home/LatestNews';
-import PartnersCTA from '@/components/home/PartnersCTA';
 import StudioCarousel from '@/components/home/StudioCarousel';
+import PartnersCTA from '@/components/home/PartnersCTA';
 import SponsoredShelf from '@/components/home/SponsoredShelf';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 
 export default function Home() {
-  const [tab, setTab] = useState('foryou');
   const queryClient = useQueryClient();
 
   const { isRefreshing, pullY, containerRef } = usePullToRefresh(async () => {
@@ -44,11 +45,6 @@ export default function Home() {
     queryFn: () => base44.entities.Event.list('event_date', 6),
   });
 
-  const tabs = [
-    { key: 'foryou', label: 'Pour Toi' },
-    { key: 'trending', label: 'Tendance' },
-  ];
-
   return (
     <div ref={containerRef}>
       {(isRefreshing || pullY > 20) && (
@@ -63,49 +59,32 @@ export default function Home() {
 
       <HeroSlider releases={releases} videos={videos} events={events} news={news} />
 
-      {/* Onglets du feed */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 md:pt-12">
-        <div className="inline-flex p-1 rounded-full bg-secondary/60 border border-border/50">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
-                tab === t.key
-                  ? 'bg-foreground text-background shadow'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <SponsoredShelf />
 
-      {tab === 'foryou' ? (
-        <>
-          <RecentlyPlayed />
-          <TopAlbums releases={releases} />
-          <TrendingSongs releases={releases} artists={artists} />
-          <UpcomingEvents events={events} />
-          <LatestVideos videos={videos} />
-          <TrendingArtists artists={artists} />
-          <LatestNews news={news} />
-          <StudioCarousel />
-          <PartnersCTA />
-        </>
-      ) : (
-        <>
-          <TrendingSongs releases={releases} artists={artists} />
-          <TopAlbums releases={releases} />
-          <TrendingArtists artists={artists} />
-          <UpcomingEvents events={events} />
-          <LatestVideos videos={videos} />
-          <PartnersCTA />
-        </>
-      )}
+      {/* 1. Nouveautés */}
+      <LatestReleases releases={releases} />
+
+      {/* 2. Titres en tendance */}
+      <TrendingSongs releases={releases} artists={artists} />
+
+      {/* 3. Albums récents */}
+      <TopAlbums releases={releases} />
+
+      {/* 4. Artistes populaires */}
+      <PopularArtists artists={artists} />
+
+      {/* 5. Playlists */}
+      <PlaylistsShelf />
+
+      {/* 6. Recommandé pour toi */}
+      <RecentlyPlayed />
+
+      {/* Sections marque */}
+      <UpcomingEvents events={events} />
+      <LatestVideos videos={videos} />
+      <LatestNews news={news} />
+      <StudioCarousel />
+      <PartnersCTA />
     </div>
   );
 }

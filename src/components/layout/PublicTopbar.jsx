@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, LogIn, User } from 'lucide-react';
+import { Search, LogIn, User, Upload, Library, ListMusic, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import NotificationBell from '@/components/shared/NotificationBell';
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 export default function PublicTopbar() {
   const [q, setQ] = useState('');
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['navbar-user'],
@@ -24,6 +29,14 @@ export default function PublicTopbar() {
     e.preventDefault();
     if (q.trim()) navigate(`/recherche?q=${encodeURIComponent(q.trim())}`);
   };
+
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    qc.clear();
+    window.location.href = '/';
+  };
+
+  const initial = (user?.full_name?.[0] || user?.email?.[0] || '?').toUpperCase();
 
   return (
     <header
@@ -47,26 +60,63 @@ export default function PublicTopbar() {
       <div className="flex items-center gap-2 ml-auto">
         {user ? (
           <>
-            <NotificationBell user={user} />
             <Link
-              to={user.role === 'admin' ? '/admin' : '/mon-espace'}
-              className="flex items-center gap-2 px-3 py-2 rounded-full border border-border/50 text-sm hover:border-primary/30 transition-colors"
+              to="/mon-espace"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <User size={13} className="text-primary" />
-              </div>
-              <span className="font-medium max-w-[100px] truncate hidden sm:block">
-                {user.full_name?.split(' ')[0] || user.email}
-              </span>
+              <Upload size={15} /> Publier
             </Link>
+            <NotificationBell user={user} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full border border-border/50 p-0.5 sm:pr-2 hover:border-primary/30 transition-colors">
+                  <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary text-xs font-bold">
+                    {initial}
+                  </div>
+                  <span className="font-medium text-sm max-w-[110px] truncate hidden sm:block">
+                    {user.full_name?.split(' ')[0] || user.email}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/mon-espace" className="flex items-center gap-2"><LayoutDashboard size={15} /> Mon espace</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/mes-achats" className="flex items-center gap-2"><Library size={15} /> Bibliothèque</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/playlists" className="flex items-center gap-2"><ListMusic size={15} /> Mes playlists</Link>
+                </DropdownMenuItem>
+                {user.role === 'admin' && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2"><Settings size={15} /> Administration</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive focus:text-destructive">
+                  <LogOut size={15} /> Déconnexion
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         ) : (
-          <Link
-            to="/login"
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/80 transition-colors"
-          >
-            <LogIn size={15} /> <span className="hidden sm:block">Connexion</span>
-          </Link>
+          <>
+            <Link
+              to="/register"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full border border-border/50 hover:border-primary/40 transition-colors"
+            >
+              <User size={15} /> Devenir artiste
+            </Link>
+            <Link
+              to="/login"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/80 transition-colors"
+            >
+              <LogIn size={15} /> <span className="hidden sm:block">Connexion</span>
+            </Link>
+          </>
         )}
       </div>
     </header>
