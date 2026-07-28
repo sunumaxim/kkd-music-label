@@ -62,6 +62,7 @@ import AdminSocial from './pages/admin/AdminSocial';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminTickets from './pages/admin/AdminTickets';
 import AdminStudios from './pages/admin/AdminStudios.jsx';
+import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 
 const AuthenticatedApp = () => {
@@ -141,6 +142,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/paiements" element={<AdminPayments />} />
           <Route path="/admin/tickets" element={<AdminTickets />} />
           <Route path="/admin/studios" element={<AdminStudios />} />
+          <Route path="/admin/studio-medias" element={<AdminMediaStudio />} />
         </Route>
       </Route>
 

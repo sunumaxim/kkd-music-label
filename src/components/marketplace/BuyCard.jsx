@@ -31,7 +31,21 @@ export default function BuyCard({ item, itemType }) {
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false, enabled: forSale });
   const email = me?.email;
+  const isAdmin = me?.role === 'admin';
   const video = itemType === 'video';
+
+  // Admin : accès libre au contenu payant (URL signée du fichier protégé)
+  const { data: adminFullUrl } = useQuery({
+    queryKey: ['admin-full-url', itemType, item?.id],
+    queryFn: async () => {
+      const uri = item.protected_file_uri || (video ? item.video_file_url : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)));
+      if (!uri) return null;
+      if (uri.startsWith('http')) return uri;
+      const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: uri });
+      return res.signed_url || null;
+    },
+    enabled: forSale && isAdmin,
+  });
 
   const { data: access } = useQuery({
     queryKey: ['my-access', email, item?.id],
@@ -52,6 +66,19 @@ export default function BuyCard({ item, itemType }) {
   });
 
   if (!forSale) return null;
+
+  // ── Accès admin libre ──
+  if (isAdmin && adminFullUrl) {
+    return (
+      <div className="bg-gradient-to-br from-primary/10 to-card border border-primary/30 rounded-2xl p-5 space-y-3">
+        <div className="flex items-center gap-2 text-primary">
+          <ShieldCheck size={16} />
+          <span className="text-[11px] font-mono uppercase tracking-widest">Accès admin — lecture libre</span>
+        </div>
+        <ProtectedPlayer url={adminFullUrl} isVideo={video} title={item.title} />
+      </div>
+    );
+  }
 
   const handleProofUpload = async (e) => {
     const file = e.target.files[0];
