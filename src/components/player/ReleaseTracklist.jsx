@@ -1,7 +1,7 @@
 import React from 'react';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Plus, ListEnd } from 'lucide-react';
 
 /**
  * Liste des pistes d'un album avec lecture individuelle dans le lecteur global.
@@ -17,7 +17,7 @@ export default function ReleaseTracklist({ release }) {
         const isCurrent = player.current?.key === t.key;
         const playing = isCurrent && player.isPlaying;
         return (
-          <div key={t.key} className="flex items-center gap-3 py-2.5 px-1">
+          <div key={t.key} className="flex items-center gap-3 py-2.5 px-1 group">
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -33,6 +33,22 @@ export default function ReleaseTracklist({ release }) {
             <p className={`flex-1 min-w-0 truncate text-sm ${isCurrent ? 'text-primary font-medium' : 'text-foreground'}`}>
               {t.title}
             </p>
+            <button
+              onClick={(e) => { e.preventDefault(); player.playNext(t); }}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-all"
+              title="Lire à la suite"
+              aria-label="Lire à la suite"
+            >
+              <Plus size={15} />
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); player.addToQueue(t); }}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-all"
+              title="Ajouter à la file d'attente"
+              aria-label="Ajouter à la file d'attente"
+            >
+              <ListEnd size={15} />
+            </button>
           </div>
         );
       })}

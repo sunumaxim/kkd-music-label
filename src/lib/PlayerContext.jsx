@@ -178,6 +178,29 @@ export function PlayerProvider({ children }) {
     });
   }, []);
 
+  // Ajoute une ou plusieurs pistes à la fin de la file (sans interrompre la lecture)
+  const addToQueue = useCallback((tracks) => {
+    const arr = Array.isArray(tracks) ? tracks : [tracks];
+    if (!arr.length) return;
+    setQueue((q) => {
+      const wasEmpty = q.length === 0;
+      const nextQ = [...q, ...arr];
+      if (wasEmpty) setCurrentIndex(0);
+      return nextQ;
+    });
+  }, []);
+
+  // Insère une ou plusieurs pistes juste après la piste en cours (lecture « à suivre »)
+  const playNext = useCallback((tracks) => {
+    const arr = Array.isArray(tracks) ? tracks : [tracks];
+    if (!arr.length) return;
+    setQueue((q) => {
+      if (!q.length) { setCurrentIndex(0); return [...arr]; }
+      const insertAt = currentIndex + 1;
+      return [...q.slice(0, insertAt), ...arr, ...q.slice(insertAt)];
+    });
+  }, [currentIndex]);
+
   const stop = useCallback(() => {
     const a = audioRef.current;
     if (a) a.pause();
@@ -186,7 +209,7 @@ export function PlayerProvider({ children }) {
 
   const value = {
     queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, playbackRate, repeatMode, shuffle,
-    playTrack, playQueue, playAt, removeFromQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
+    playTrack, playQueue, playAt, addToQueue, playNext, removeFromQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
   };
 
   return (

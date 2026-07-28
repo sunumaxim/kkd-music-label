@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, MoreVertical } from 'lucide-react';
+import { Play, Pause, ListEnd, Plus } from 'lucide-react';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
 import { buildEntitySlug } from '@/lib/slugify';
@@ -79,13 +79,26 @@ export default function ArtistPopularList({ releases = [], max = 5 }) {
                 </p>
                 <p className="text-xs text-muted-foreground">{streams(r.plays_count)} écoutes</p>
               </div>
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className="p-2 text-muted-foreground hover:text-foreground"
-                aria-label="Plus"
-              >
-                <MoreVertical size={18} />
-              </button>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (hasLocal) player.playNext(tracks[0]); }}
+                  className="p-2 text-muted-foreground hover:text-primary disabled:opacity-30"
+                  disabled={!hasLocal}
+                  title="Lire à la suite"
+                  aria-label="Lire à la suite"
+                >
+                  <Plus size={18} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (hasLocal) player.addToQueue(tracks); }}
+                  className="p-2 text-muted-foreground hover:text-primary disabled:opacity-30"
+                  disabled={!hasLocal}
+                  title="Ajouter à la file d'attente"
+                  aria-label="Ajouter à la file d'attente"
+                >
+                  <ListEnd size={18} />
+                </button>
+              </div>
             </div>
           );
         })}
