@@ -1,28 +1,20 @@
 {
   "name": "KKD Music",
   "short_name": "KKD Music",
-  "description": "KKD Music — Musique Africaine : artistes, sorties, vidéos et événements.",
-  "start_url": "https://music.sunumaxim.com",
-  "scope": "https://music.sunumaxim.com/",
+  "description": "KKD Music — Musique africaine : artistes, sorties, vidéos et événements.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0a",
-  "theme_color": "#e30000",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E53935",
+  "categories": ["music", "entertainment"],
   "lang": "fr",
   "dir": "ltr",
-  "categories": ["music", "entertainment"],
   "icons": [
-    {
-      "src": "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }

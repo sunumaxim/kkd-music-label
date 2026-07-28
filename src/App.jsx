@@ -64,6 +64,7 @@ import AdminTickets from './pages/admin/AdminTickets';
 import AdminStudios from './pages/admin/AdminStudios.jsx';
 import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import SplashScreen from './components/shared/SplashScreen';
+import InstallPrompt from '@/components/shared/InstallPrompt';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -162,6 +163,7 @@ function App() {
           <AuthenticatedApp />
         </Router>
         <Toaster />
+        <InstallPrompt />
       </QueryClientProvider>
     </AuthProvider>
   )
