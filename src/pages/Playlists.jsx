@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ListMusic, Play, Pause, Trash2, X, Plus, Music as MusicIcon, ArrowLeft, LogIn, Heart } from 'lucide-react';
 import { buildEntitySlug } from '@/lib/slugify';
+import QueueLibrary from '@/components/player/QueueLibrary';
 
 function fmtDate(iso) {
   if (!iso) return '';
@@ -23,6 +24,13 @@ export default function Playlists() {
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [tab, setTab] = useState('playlists');
+
+  const TABS = [
+    { key: 'favoris', label: "Coups de cœur" },
+    { key: 'playlists', label: "Playlists" },
+    { key: 'file', label: "File d'attente" },
+  ];
 
   const { data: me, isLoading: meLoading } = useQuery({
     queryKey: ['me'],
@@ -167,20 +175,38 @@ export default function Playlists() {
     );
   }
 
-  // ── Liste des playlists ──
+  // ── Liste des playlists (vue à onglets type Mon Lecteur) ──
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-display font-extrabold text-2xl md:text-3xl">Mes playlists</h1>
-          <p className="text-sm text-muted-foreground">{playlists.length} playlist{playlists.length !== 1 ? 's' : ''}</p>
+          <h1 className="font-display font-extrabold text-2xl md:text-3xl">Mon lecteur</h1>
+          <p className="text-sm text-muted-foreground">Vos coups de cœur, playlists et file d'attente</p>
         </div>
-        <Button onClick={() => setCreating((v) => !v)} className="bg-primary gap-2 rounded-full">
-          <Plus size={16} /> Nouvelle
-        </Button>
+        {tab === 'playlists' && (
+          <Button onClick={() => setCreating((v) => !v)} className="bg-primary gap-2 rounded-full">
+            <Plus size={16} /> Nouvelle
+          </Button>
+        )}
       </div>
 
-      {creating && (
+      {/* Onglets */}
+      <div className="flex items-center gap-5 sm:gap-6 border-b border-border/40 mb-6 overflow-x-auto no-scrollbar">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`relative pb-3 text-sm font-bold whitespace-nowrap transition-colors ${
+              tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {t.label}
+            {tab === t.key && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'playlists' && creating && (
         <div className="bg-card border border-border/50 rounded-2xl p-4 mb-6 space-y-3">
           <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Nom de la playlist" className="text-sm" />
           <Textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Description (facultatif)" rows={2} className="text-sm resize-none" />
@@ -193,70 +219,84 @@ export default function Playlists() {
         </div>
       )}
 
-      {likes.length > 0 && (
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Heart size={18} className="text-primary" fill="currentColor" />
-            <h2 className="font-display font-bold text-lg">Coups de cœur</h2>
-            <span className="text-xs text-muted-foreground">{likes.length}</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
-            {likes.map((lk) => (
-              <Link
-                key={lk.id}
-                to={lk.target_type === 'video' ? `/videos/${lk.target_id}` : `/musique/${buildEntitySlug(lk.target_title, lk.target_id)}`}
-                className="shrink-0 w-28 group"
-              >
-                <div className="relative aspect-square rounded-xl overflow-hidden bg-secondary mb-1.5">
-                  {lk.cover_url ? (
-                    <img src={lk.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center"><MusicIcon size={20} className="text-muted-foreground/40" /></div>
-                  )}
-                  <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-full p-0.5">
-                    <Heart size={12} className="text-primary" fill="currentColor" />
+      {/* Onglet Coups de cœur */}
+      {tab === 'favoris' && (
+        <>
+          {likes.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {likes.map((lk) => (
+                <Link
+                  key={lk.id}
+                  to={lk.target_type === 'video' ? `/videos/${lk.target_id}` : `/musique/${buildEntitySlug(lk.target_title, lk.target_id)}`}
+                  className="group"
+                >
+                  <div className="relative aspect-square rounded-xl overflow-hidden bg-secondary mb-2">
+                    {lk.cover_url ? (
+                      <img src={lk.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><MusicIcon size={24} className="text-muted-foreground/40" /></div>
+                    )}
+                    <div className="absolute top-2 right-2 bg-black/40 rounded-full p-1">
+                      <Heart size={14} className="text-primary" fill="currentColor" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-xs font-heading font-bold truncate">{lk.target_title}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{lk.artist_name}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
+                  <p className="font-heading font-bold text-sm truncate">{lk.target_title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{lk.artist_name}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Heart size={28} className="text-primary/40" />
+              </div>
+              <p className="font-heading font-bold mb-1">Aucun coup de cœur</p>
+              <p className="text-sm text-muted-foreground">Touchez le ❤ sur une sortie ou une vidéo pour la retrouver ici.</p>
+            </div>
+          )}
+        </>
       )}
 
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground py-12 text-center">Chargement…</div>
-      ) : playlists.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <ListMusic size={28} className="text-primary/40" />
-          </div>
-          <p className="font-heading font-bold mb-1">Aucune playlist</p>
-          <p className="text-sm text-muted-foreground">Créez votre première liste ou ajoutez des titres depuis une fiche sortie.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {playlists.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setSelected(p)}
-              className="text-left bg-card border border-border/40 rounded-2xl overflow-hidden hover:border-primary/40 transition-colors group"
-            >
-              <div className="relative aspect-square bg-gradient-to-br from-primary/15 to-secondary flex items-center justify-center overflow-hidden">
-                {p.cover_url ? <img src={p.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <ListMusic size={32} className="text-primary/30" />}
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); playPlaylist(p, 0); }}>
-                  <Play size={16} className="ml-0.5" fill="currentColor" />
-                </div>
+      {/* Onglet Playlists */}
+      {tab === 'playlists' && (
+        <>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground py-12 text-center">Chargement…</div>
+          ) : playlists.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ListMusic size={28} className="text-primary/40" />
               </div>
-              <div className="p-3">
-                <p className="font-heading font-bold text-sm truncate">{p.title}</p>
-                <p className="text-xs text-muted-foreground">{(p.items || []).length} titre{(p.items || []).length !== 1 ? 's' : ''}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+              <p className="font-heading font-bold mb-1">Aucune playlist</p>
+              <p className="text-sm text-muted-foreground">Créez votre première liste via le bouton + ou depuis une musique.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {playlists.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelected(p)}
+                  className="text-left bg-card border border-border/40 rounded-2xl overflow-hidden hover:border-primary/40 transition-colors group"
+                >
+                  <div className="relative aspect-square bg-gradient-to-br from-primary/15 to-secondary flex items-center justify-center overflow-hidden">
+                    {p.cover_url ? <img src={p.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <ListMusic size={32} className="text-primary/30" />}
+                    <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); playPlaylist(p, 0); }}>
+                      <Play size={16} className="ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <p className="font-heading font-bold text-sm truncate">{p.title}</p>
+                    <p className="text-xs text-muted-foreground">{(p.items || []).length} titre{(p.items || []).length !== 1 ? 's' : ''}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
+
+      {/* Onglet File d'attente */}
+      {tab === 'file' && <QueueLibrary />}
     </div>
   );
 }
