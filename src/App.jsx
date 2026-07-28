@@ -37,6 +37,7 @@ import Partnership from './pages/Partnership';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Search from './pages/Search';
+import Explorer from './pages/Explorer';
 import MesAchats from './pages/MesAchats';
 import MesBillets from './pages/MesBillets';
 import ControleAcces from './pages/ControleAcces';
@@ -113,6 +114,7 @@ const AuthenticatedApp = () => {
         <Route path="/controle-acces" element={<ControleAcces />} />
         <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
+        <Route path="/explorer" element={<Explorer />} />
       </Route>
 
       {/* Partner dashboard (protected) */}

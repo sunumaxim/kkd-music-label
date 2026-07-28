@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   Home, Compass, Library, ListMusic, Video, Users, CalendarDays,
-  Newspaper, Handshake, Ticket, ScanLine, LayoutDashboard, ShieldCheck,
+  Newspaper, Handshake, Ticket, ScanLine, LayoutDashboard, ShieldCheck, Music2,
 } from 'lucide-react';
 
 const mainNav = [
   { label: 'Accueil', path: '/', icon: Home },
-  { label: 'Explorer', path: '/musique', icon: Compass },
+  { label: 'Musique', path: '/musique', icon: Music2 },
+  { label: 'Explorer', path: '/explorer', icon: Compass },
   { label: 'Bibliothèque', path: '/mes-achats', icon: Library },
   { label: 'Playlists', path: '/playlists', icon: ListMusic },
 ];
