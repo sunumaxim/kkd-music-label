@@ -64,6 +64,7 @@ async function publishToCatalog(pub) {
     const video = await base44.entities.Video.create({
       title: fullTitle,
       artist_name: artistName,
+      artist_id: artistId,
       youtube_url: pub.streaming_platform === 'youtube' ? pub.streaming_link : '',
       video_file_url: pub.file_url || '',
       thumbnail_url: pub.cover_url || '',
@@ -93,6 +94,7 @@ async function publishToCatalog(pub) {
   const release = await base44.entities.Release.create({
     title: fullTitle,
     artist_name: artistName,
+    artist_id: artistId,
     cover_url: pub.cover_url || '',
     description: pub.description || '',
     release_type: releaseType,

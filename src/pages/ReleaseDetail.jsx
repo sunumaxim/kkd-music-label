@@ -39,9 +39,19 @@ export default function ReleaseDetail() {
   });
 
   const { data: artist } = useQuery({
-    queryKey: ['artist-by-name', release?.artist_name],
-    queryFn: () => base44.entities.Artist.filter({ name: release.artist_name }).then(r => r[0] || null),
-    enabled: !!release?.artist_name,
+    queryKey: ['artist-for-release', release?.artist_id, release?.artist_name],
+    queryFn: async () => {
+      if (release.artist_id) {
+        const r = await base44.entities.Artist.filter({ id: release.artist_id });
+        return r[0] || null;
+      }
+      if (release.artist_name) {
+        const r = await base44.entities.Artist.filter({ name: release.artist_name });
+        return r[0] || null;
+      }
+      return null;
+    },
+    enabled: !!release,
   });
 
   const { data: otherReleases = [] } = useQuery({
@@ -214,6 +224,27 @@ export default function ReleaseDetail() {
           <div className="bg-card border border-border/50 rounded-2xl p-6">
             <p className="text-foreground/85 leading-relaxed">{release.description}</p>
           </div>
+        )}
+
+        {/* Carte artiste ouvrable (façon Spotify) */}
+        {artist && (
+          <Link to={`/artistes/${buildEntitySlug(artist.name, artist.id)}`} className="group block">
+            <div className="bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-4 hover:border-primary/50 transition-colors">
+              {artist.photo_url ? (
+                <img src={artist.photo_url} alt={artist.name} className="w-16 h-16 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                  <User size={22} className="text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-mono uppercase tracking-widest text-primary mb-0.5">Artiste</p>
+                <p className="font-heading font-bold text-lg truncate group-hover:text-primary transition-colors">{artist.name}</p>
+                {artist.genre && <p className="text-xs text-muted-foreground truncate">{artist.genre}</p>}
+              </div>
+              <span className="text-xs text-primary shrink-0 flex items-center gap-1">Voir le profil <ArrowLeft size={13} className="rotate-180" /></span>
+            </div>
+          </Link>
         )}
 
         {/* Autres sorties de l'artiste */}

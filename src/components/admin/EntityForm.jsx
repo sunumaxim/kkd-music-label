@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { X } from 'lucide-react';
 
@@ -12,6 +13,11 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
   const [data, setData] = useState(() => initialData || {});
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  const { data: artists = [] } = useQuery({
+    queryKey: ['entityform-artists'],
+    queryFn: () => base44.entities.Artist.list('name', 500),
+  });
 
   // Reset form when initialData changes (switching between edit targets)
   useEffect(() => {
@@ -179,6 +185,22 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
                 />
                 <p className="text-xs text-muted-foreground">{field.placeholder} · Stockage privé, accessible uniquement après achat.</p>
               </div>
+            )}
+
+            {field.type === 'artist' && (
+              <select
+                value={data[field.key] || ''}
+                onChange={(e) => {
+                  const a = artists.find((x) => x.id === e.target.value);
+                  setData((prev) => ({ ...prev, [field.key]: e.target.value, artist_name: a?.name || prev.artist_name || '' }));
+                  if (!isDirty) { setIsDirty(true); onDirtyChange?.(true); }
+                }}
+                required={field.required}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">— Sélectionner un artiste —</option>
+                {artists.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
             )}
 
             {field.type === 'url' && (

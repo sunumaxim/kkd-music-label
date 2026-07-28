@@ -8,7 +8,7 @@ import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 
 const FIELDS = [
   { key: 'title', label: 'Titre', type: 'text', required: true },
-  { key: 'artist_name', label: 'Artiste', type: 'text', required: true },
+  { key: 'artist_id', label: 'Artiste (catalogue) *', type: 'artist', required: true },
   { key: 'cover_url', label: 'Pochette', type: 'file' },
   { key: 'release_type', label: 'Type', type: 'select', options: [
     { value: 'single', label: 'Single' },
@@ -111,7 +111,10 @@ export default function AdminReleases() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-heading font-bold text-sm truncate">{release.title}</p>
-                <p className="text-xs text-muted-foreground">{release.artist_name} • {release.release_type}</p>
+                <p className="text-xs text-muted-foreground">
+                  {release.artist_name} • {release.release_type}
+                  {!release.artist_id && <span className="ml-2 text-[10px] bg-amber-500/15 text-amber-500 px-1.5 py-0.5 rounded-full">Artiste non lié</span>}
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 <TikTokPublishButton item={release} type="release" />

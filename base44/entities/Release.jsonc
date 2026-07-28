@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Nom de l'artiste"
     },
+    "artist_id": {
+      "type": "string",
+      "description": "Artiste li\u00e9 du catalogue (obligatoire \u00e0 la cr\u00e9ation/\u00e9dition)"
+    },
     "cover_url": {
       "type": "string",
       "description": "Pochette (obligatoire \u00e0 la publication)"

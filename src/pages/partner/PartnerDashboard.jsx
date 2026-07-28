@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -71,6 +71,10 @@ export default function PartnerDashboard() {
     queryKey: ['me'],
     queryFn: () => base44.auth.me(),
   });
+
+  const isPartner = user?.role === 'admin' || user?.role === 'partner';
+  useEffect(() => { if (user && !isPartner) setActiveTab('demandes'); }, [user, isPartner]);
+  const tabs = isPartner ? TABS : TABS.filter((t) => t.id === 'demandes');
 
   const { data: myRequests = [] } = useQuery({
     queryKey: ['my-requests', user?.email],
@@ -178,7 +182,7 @@ export default function PartnerDashboard() {
       <div className="border-b border-border/30 bg-card/30 sticky top-16 z-30">
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex gap-1 overflow-x-auto scrollbar-none">
-            {TABS.map(tab => {
+            {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
@@ -206,6 +210,11 @@ export default function PartnerDashboard() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {!isPartner && user && (
+          <div className="bg-secondary/40 border border-border/50 rounded-xl p-4 mb-6 text-sm text-muted-foreground">
+            Vous êtes connecté en simple utilisateur. Vous pouvez soumettre une <strong>demande de service</strong> ; la soumission de contenu (sorties, vidéos, événements, promotions) est réservée aux artistes, partenaires et contributeurs.
+          </div>
+        )}
 
         {/* ── DASHBOARD TAB ── */}
         {activeTab === 'dashboard' && (

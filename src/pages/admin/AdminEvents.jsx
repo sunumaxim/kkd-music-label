@@ -20,7 +20,7 @@ const FIELDS = [
     { value: 'rencontre', label: 'Rencontre artistique' },
   ]},
   { key: 'event_date', label: 'Date et heure', type: 'datetime' },
-  { key: 'artist_name', label: 'Artiste lié', type: 'text', placeholder: "Nom de l'artiste" },
+  { key: 'artist_id', label: 'Artiste lié (catalogue) *', type: 'artist', required: true },
   { key: 'location', label: 'Lieu', type: 'text', placeholder: 'Ex: Salle Pleyel' },
   { key: 'city', label: 'Ville', type: 'text', placeholder: 'Ex: Paris' },
   { key: 'description', label: 'Description', type: 'textarea' },
@@ -149,7 +149,10 @@ export default function AdminEvents() {
                   {event.published_status === 'refuse' && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Refusé</span>}
                   {event.is_ticketed && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1"><Ticket size={9} /> {Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>}
                 </div>
-                <p className="text-xs text-muted-foreground">{event.event_type} • {event.location} {event.city}{event.organizer_email ? ` • ${event.organizer_email}` : ''}</p>
+                <p className="text-xs text-muted-foreground">
+                  {event.event_type} • {event.location} {event.city}{event.organizer_email ? ` • ${event.organizer_email}` : ''}
+                  {!event.artist_id && <span className="ml-2 text-[10px] bg-amber-500/15 text-amber-500 px-1.5 py-0.5 rounded-full">Artiste non lié</span>}
+                </p>
               </div>
               <div className="flex items-center gap-1">
                 {event.published_status === 'en_attente' && (

@@ -46,8 +46,8 @@ export default function PublishEventForm({ user, onClose }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.event_date) {
-      toast({ title: 'Titre et date requis', variant: 'destructive' });
+    if (!form.title || !form.event_date || !form.artist_id) {
+      toast({ title: 'Titre, date et artiste lié requis', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -119,7 +119,7 @@ export default function PublishEventForm({ user, onClose }) {
           <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>Artiste lié (optionnel)</Label>
+          <Label>Artiste lié *</Label>
           <select
             value={form.artist_id}
             onChange={(e) => {
@@ -127,12 +127,13 @@ export default function PublishEventForm({ user, onClose }) {
               set('artist_id', e.target.value);
               set('artist_name', a?.name || '');
             }}
-            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            required
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
           >
-            <option value="">— Aucun / Autre —</option>
+            <option value="">— Sélectionner un artiste —</option>
             {artists.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <p className="text-[11px] text-muted-foreground">L'événement apparaîtra sur le profil de cet artiste.</p>
+          <p className="text-[11px] text-muted-foreground">L'événement doit être lié à un artiste du catalogue.</p>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label>Description</Label>

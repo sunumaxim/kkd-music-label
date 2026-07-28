@@ -160,7 +160,7 @@ export default function PublishForm({ user, onClose }) {
   const canSubmit =
     form.title.trim() &&
     !!form.cover_url &&
-    (form.artist_id || form.artist_name.trim()) &&
+    (newArtist ? form.artist_name.trim() : !!form.artist_id) &&
     hasContent &&
     (!form.is_for_sale || form.price > 0);
 
