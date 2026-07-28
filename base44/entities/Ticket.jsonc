@@ -61,9 +61,22 @@
       "default": 10,
       "description": "Commission KKD (%) d\u00e9normalis\u00e9e"
     },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "wave",
+        "square"
+      ],
+      "default": "wave",
+      "description": "Moyen de paiement (Wave manuel ou carte Square)"
+    },
     "wave_reference": {
       "type": "string",
-      "description": "R\u00e9f\u00e9rence de transaction Wave"
+      "description": "R\u00e9f\u00e9rence de transaction Wave (paiement Wave manuel)"
+    },
+    "square_order_ref": {
+      "type": "string",
+      "description": "ID du payment link Square (paiement carte)"
     },
     "proof_file_url": {
       "type": "string",
@@ -111,8 +124,7 @@
   },
   "required": [
     "event_id",
-    "buyer_email",
-    "wave_reference"
+    "buyer_email"
   ],
   "rls": {
     "create": {

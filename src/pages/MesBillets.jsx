@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -21,9 +21,32 @@ function downloadPdf(b64, name) {
 
 export default function MesBillets() {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
   const email = me?.email;
   const [downloading, setDownloading] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    if (!email) return;
+    const p = new URLSearchParams(window.location.search);
+    if (!p.get('square') || !p.get('ticket')) return;
+    const ticketId = p.get('ticket');
+    const orderId = p.get('orderId') || '';
+    window.history.replaceState({}, '', '/mes-billets');
+    setVerifying(true);
+    base44.functions.invoke('verifySquarePayment', { ticket_id: ticketId, order_id: orderId })
+      .then((res) => {
+        if (res?.status === 'valide') {
+          toast({ title: 'Paiement confirmé 🎉', description: 'Votre billet est validé.' });
+          qc.invalidateQueries({ queryKey: ['my-tickets', email] });
+        } else {
+          toast({ title: 'Paiement en cours de confirmation', description: 'Votre billet sera validé sous peu.' });
+        }
+      })
+      .catch(() => toast({ title: 'Vérification impossible', variant: 'destructive' }))
+      .finally(() => setVerifying(false));
+  }, [email]);
 
   const download = async (ticket_number) => {
     setDownloading(ticket_number);
