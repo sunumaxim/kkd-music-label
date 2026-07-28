@@ -13,7 +13,7 @@
     --card-foreground: 30 39% 93%;
     --popover: 22 19% 12%;
     --popover-foreground: 30 39% 93%;
-    --primary: 18 77% 53%;
+    --primary: 0 78% 56%;
     --primary-foreground: 20 12% 5%;
     --secondary: 154 63% 33%;
     --secondary-foreground: 0 0% 100%;
@@ -25,7 +25,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 22 16% 20%;
     --input: 22 16% 20%;
-    --ring: 18 77% 53%;
+    --ring: 0 78% 56%;
     --radius: 10px;
     --font-heading: 'Archivo Black', sans-serif;
     --font-body: 'Work Sans', sans-serif;
@@ -36,7 +36,7 @@
     --font-body-line-height: 1.5;
     --sidebar-background: 22 19% 9%;
     --sidebar-foreground: 30 39% 93%;
-    --sidebar-primary: 18 77% 53%;
+    --sidebar-primary: 0 78% 56%;
     --sidebar-primary-foreground: 20 12% 5%;
     --sidebar-accent: 26 18% 15%;
     --sidebar-accent-foreground: 30 39% 93%;
@@ -57,7 +57,7 @@
     --card-foreground: 30 39% 93%;
     --popover: 22 19% 12%;
     --popover-foreground: 30 39% 93%;
-    --primary: 18 77% 53%;
+    --primary: 0 78% 56%;
     --primary-foreground: 20 12% 5%;
     --secondary: 154 63% 33%;
     --secondary-foreground: 0 0% 100%;
@@ -69,10 +69,10 @@
     --destructive-foreground: 0 0% 100%;
     --border: 22 16% 20%;
     --input: 22 16% 20%;
-    --ring: 18 77% 53%;
+    --ring: 0 78% 56%;
     --sidebar-background: 22 19% 9%;
     --sidebar-foreground: 30 39% 93%;
-    --sidebar-primary: 18 77% 53%;
+    --sidebar-primary: 0 78% 56%;
     --sidebar-primary-foreground: 20 12% 5%;
     --sidebar-accent: 26 18% 15%;
     --sidebar-accent-foreground: 30 39% 93%;
@@ -81,7 +81,7 @@
   }
 
   :root {
-    --brand-primary: #E4622B;
+    --brand-primary: #E53935;
     --brand-on-primary: #0E0C0B;
     --brand-secondary: #1F8A5C;
     --brand-accent: #D9A441;
@@ -206,7 +206,7 @@
   /* ===== Card · Sortie musicale ===== */
   .kkd-card-release { width: 100%; background: var(--brand-surface); border: 1px solid var(--brand-border); border-radius: var(--brand-radius-md); overflow: hidden; font-family: var(--brand-font-body); transition: box-shadow .25s ease, transform .25s ease; display: flex; flex-direction: column; height: 100%; }
   .kkd-card-release:hover { box-shadow: var(--brand-shadow-lg); transform: translateY(-3px); }
-  .kkd-card-release-media { position: relative; width: 100%; aspect-ratio: 1/1; background: linear-gradient(135deg,#E4622B 0%,#8A2F1C 55%,#231C18 100%); border-radius: var(--brand-radius-none); overflow: hidden; }
+  .kkd-card-release-media { position: relative; width: 100%; aspect-ratio: 1/1; background: linear-gradient(135deg,#E53935 0%,#8A1C1C 55%,#231C18 100%); border-radius: var(--brand-radius-none); overflow: hidden; }
   .kkd-card-release-media img { width: 100%; height: 100%; object-fit: cover; }
   .kkd-card-release-badge { position: absolute; top: 10px; left: 10px; background: var(--brand-secondary); color: var(--brand-on-primary); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 10px; border-radius: var(--brand-radius-md); z-index: 2; }
   .kkd-card-release-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(14,12,11,0.25); opacity: 0; transition: opacity .25s ease; }
@@ -248,7 +248,7 @@
   /* ===== Card · Artiste ===== */
   .kkd-card-artist { width: 100%; background: var(--brand-surface); border: 1px solid var(--brand-border); border-radius: var(--brand-radius-md); padding: var(--brand-sp-4); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; font-family: var(--brand-font-body); transition: box-shadow .25s ease; height: 100%; }
   .kkd-card-artist:hover { box-shadow: var(--brand-shadow-md); }
-  .kkd-card-artist-avatar { width: 84px; height: 84px; border-radius: var(--brand-radius-full); overflow: hidden; background: conic-gradient(from 200deg,#E4622B,#1F8A5C,#D9A441,#E4622B); }
+  .kkd-card-artist-avatar { width: 84px; height: 84px; border-radius: var(--brand-radius-full); overflow: hidden; background: conic-gradient(from 200deg,#E53935,#1F8A5C,#D9A441,#E53935); }
   .kkd-card-artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .kkd-card-artist-name { margin: 0; display: flex; align-items: center; gap: 6px; font-family: var(--brand-font-heading); font-weight: 900; font-size: 17px; color: var(--brand-text); text-transform: uppercase; }
   .kkd-card-artist-genre { margin: 0; font-size: 12px; color: var(--brand-muted-foreground); }
@@ -269,4 +269,4 @@
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: hsl(22 19% 9%); }
-::-webkit-scrollbar-thumb { background: hsl(18 77% 53%); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: hsl(0 78% 56%); border-radius: 3px; }
