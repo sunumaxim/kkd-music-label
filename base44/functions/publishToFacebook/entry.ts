@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { list, page_id, cover_url, caption, link } = body;
+    const { list, page_id, cover_url, caption, link, video_url } = body;
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('facebook_pages');
 
@@ -44,13 +44,35 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Aucune page Facebook gérée par ce compte.' }, { status: 400 });
     }
 
+    const fullCaption = (caption || '') + (link ? `\n\n${link}` : '');
+    const targetPages = page_id ? pages.filter((p) => p.id === page_id) : pages;
+
+    // ── Publication d'un clip vidéo ──
+    if (video_url) {
+      const results = [];
+      for (const page of targetPages) {
+        try {
+          const fd = new FormData();
+          fd.append('file_url', video_url);
+          fd.append('description', fullCaption);
+          fd.append('access_token', page.access_token);
+          const pres = await fetch(`https://graph.facebook.com/v25.0/${page.id}/videos`, { method: 'POST', body: fd });
+          const pdata = await pres.json();
+          if (pdata.id) results.push({ page: page.name, post_id: pdata.id, kind: 'video' });
+          else results.push({ page: page.name, error: pdata.error?.message || 'Échec vidéo' });
+        } catch (e) {
+          results.push({ page: page.name, error: e.message });
+        }
+      }
+      const ok = results.filter((r) => r.post_id).length;
+      if (!ok) return Response.json({ error: 'Aucune publication vidéo réussie', details: results }, { status: 500 });
+      return Response.json({ success: true, pages: results });
+    }
+
     const imageUrl = await getPublicImageUrl(base44, cover_url);
     if (!imageUrl) {
       return Response.json({ error: 'Aucune image (pochette) disponible pour la publication.' }, { status: 400 });
     }
-
-    const fullCaption = (caption || '') + (link ? `\n\n${link}` : '');
-    const targetPages = page_id ? pages.filter((p) => p.id === page_id) : pages;
 
     const results = [];
     for (const page of targetPages) {

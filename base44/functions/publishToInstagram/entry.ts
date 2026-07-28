@@ -20,7 +20,7 @@ async function getPublicImageUrl(base44, imageUrl) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { content_type, entity_id } = await req.json();
+    const { content_type, entity_id, video_url, caption: bodyCaption } = await req.json();
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('instagram');
 
@@ -35,6 +35,39 @@ Deno.serve(async (req) => {
       return Response.json({
         error: `Compte Instagram Business introuvable : ${meData.error?.message || JSON.stringify(meData)}. Vérifiez que le compte est Business/Creator et lié à une Page.`,
       }, { status: 500 });
+    }
+
+    // ── Publication d'un clip vidéo (Reel) ──
+    if (video_url) {
+      const reelCaption = bodyCaption || '';
+      const createRes = await fetch(`https://graph.instagram.com/v19.0/${igUserId}/media`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ media_type: 'REELS', video_url, caption: reelCaption, access_token: accessToken }),
+      });
+      const created = await createRes.json();
+      if (!created.id) {
+        return Response.json({ error: `Conteneur Reel Instagram échoué : ${created.error?.message || JSON.stringify(created)}` }, { status: 500 });
+      }
+      // Attend la fin du traitement côté Instagram
+      let status = 'IN_PROGRESS';
+      for (let i = 0; i < 24; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        const sres = await fetch(`https://graph.instagram.com/v19.0/${created.id}?fields=status_code&access_token=${accessToken}`);
+        const sd = await sres.json();
+        status = sd.status_code;
+        if (status === 'FINISHED') break;
+        if (status === 'ERROR') return Response.json({ error: 'Traitement vidéo Instagram échoué.' }, { status: 500 });
+      }
+      if (status !== 'FINISHED') return Response.json({ error: 'Délai dépassé : traitement vidéo Instagram.' }, { status: 500 });
+      const publishRes = await fetch(`https://graph.instagram.com/v19.0/${igUserId}/media_publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creation_id: created.id, access_token: accessToken }),
+      });
+      const published = await publishRes.json();
+      if (!published.id) return Response.json({ error: `Publication Reel échouée : ${published.error?.message || JSON.stringify(published)}` }, { status: 500 });
+      return Response.json({ success: true, post_id: published.id, kind: 'reel' });
     }
 
     let imageUrl, caption;

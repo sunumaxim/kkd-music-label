@@ -66,6 +66,9 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
   const [logoImg, setLogoImg] = useState(null);
   const [publishing, setPublishing] = useState(null);
   const [previewing, setPreviewing] = useState(false);
+  const [clipPublicUrl, setClipPublicUrl] = useState(null);
+  const [uploadingClip, setUploadingClip] = useState(false);
+  const [clipExt, setClipExt] = useState('webm');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -139,7 +142,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
 
   const generate = async () => {
     if (!audioUrl) { setError('Aucun fichier audio hébergé sur KKD disponible pour ce contenu.'); return; }
-    setError(''); setBusy(true); setProgress(0); setResultUrl(null);
+    setError(''); setBusy(true); setProgress(0); setResultUrl(null); setClipPublicUrl(null);
     stopPreview();
     const canvas = canvasRef.current;
     const { w, h } = FORMATS[format];
@@ -164,7 +167,9 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
       const canvasStream = canvas.captureStream(30);
       canvasStream.addTrack(dest.stream.getAudioTracks()[0]);
 
-      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus' : 'video/webm';
+      const mimes = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
+      const mime = mimes.find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+      setClipExt(mime.includes('mp4') ? 'mp4' : 'webm');
       const rec = new MediaRecorder(canvasStream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
       const chunks = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -207,7 +212,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
     if (!resultUrl) return;
     const a = document.createElement('a');
     a.href = resultUrl;
-    a.download = `KKD_short_${slug(title)}_${duration}s.webm`;
+    a.download = `KKD_short_${slug(title)}_${duration}s.${clipExt}`;
     document.body.appendChild(a); a.click(); a.remove();
   };
 
@@ -230,6 +235,44 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
       }
     } catch (e) {
       toast({ title: 'Échec publication', description: e.message, variant: 'destructive' });
+    } finally {
+      setPublishing(null);
+    }
+  };
+
+  const ensureClipUploaded = async () => {
+    if (clipPublicUrl) return clipPublicUrl;
+    if (!resultUrl) return null;
+    setUploadingClip(true);
+    try {
+      const blob = await fetch(resultUrl).then((r) => r.blob());
+      const file = new File([blob], `KKD_short_${slug(title)}.${clipExt}`, { type: blob.type || 'video/webm' });
+      const res = await base44.integrations.Core.UploadFile({ file });
+      const url = res.file_url;
+      setClipPublicUrl(url);
+      return url;
+    } finally {
+      setUploadingClip(false);
+    }
+  };
+
+  const publishClip = async (platform) => {
+    if (!resultUrl) return;
+    setPublishing(platform);
+    try {
+      const url = await ensureClipUploaded();
+      if (!url) throw new Error('Hébergement du clip impossible.');
+      if (platform === 'instagram') {
+        const res = await base44.functions.invoke('publishToInstagram', { video_url: url, caption: caption() });
+        if (res.data?.error) throw new Error(res.data.error);
+        toast({ title: 'Reel Instagram publié', description: 'Le clip a été publié sur Instagram.' });
+      } else {
+        const res = await base44.functions.invoke('publishToFacebook', { video_url: url, caption: caption() });
+        if (res.data?.error) throw new Error(res.data.error);
+        toast({ title: 'Vidéo Facebook publiée', description: res.data?.pages?.length ? `${res.data.pages.length} page(s) publiée(s).` : 'Publié.' });
+      }
+    } catch (e) {
+      toast({ title: 'Échec publication du clip', description: e.message, variant: 'destructive' });
     } finally {
       setPublishing(null);
     }
@@ -342,16 +385,28 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
         )}
         <button onClick={() => publish('instagram')} disabled={publishing === 'instagram' || !coverUrl}
           className="inline-flex items-center gap-2 px-4 h-10 rounded-full border border-border text-sm font-semibold hover:border-primary/40 disabled:opacity-50">
-          {publishing === 'instagram' ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />} Publier pochette IG
+          {publishing === 'instagram' ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />} Pochette IG
         </button>
         <button onClick={() => publish('facebook')} disabled={publishing === 'facebook' || !coverUrl}
           className="inline-flex items-center gap-2 px-4 h-10 rounded-full border border-border text-sm font-semibold hover:border-primary/40 disabled:opacity-50">
-          {publishing === 'facebook' ? <Loader2 size={15} className="animate-spin" /> : <Facebook size={15} />} Publier pochette FB
+          {publishing === 'facebook' ? <Loader2 size={15} className="animate-spin" /> : <Facebook size={15} />} Pochette FB
         </button>
+        {resultUrl && (
+          <button onClick={() => publishClip('instagram')} disabled={publishing === 'instagram' || uploadingClip}
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
+            {publishing === 'instagram' || uploadingClip ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />} Publier le clip IG
+          </button>
+        )}
+        {resultUrl && (
+          <button onClick={() => publishClip('facebook')} disabled={publishing === 'facebook' || uploadingClip}
+            className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-secondary text-foreground text-sm font-bold hover:bg-secondary/80 disabled:opacity-50">
+            {publishing === 'facebook' || uploadingClip ? <Loader2 size={15} className="animate-spin" /> : <Facebook size={15} />} Publier le clip FB
+          </button>
+        )}
       </div>
       <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
         {kind === 'video' ? <VideoIcon size={11} /> : <Music2 size={11} />}
-        La publication auto envoie la pochette + lien (le clip vidéo se partage manuellement via le téléchargement).
+        « Publier le clip » héberge le clip puis publie un Reel Instagram / une vidéo Facebook. « Pochette » publie l'image + lien.
       </p>
     </div>
   );
