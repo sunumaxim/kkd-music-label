@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Music2, Video as VideoIcon, Play, Scissors, Loader2, ShieldCheck, Lock } from 'lucide-react';
@@ -104,6 +104,8 @@ function ActionPanel({ item, type }) {
   const paid = item.is_for_sale && Number(item.price) > 0;
   const [fullUrl, setFullUrl] = useState(null);
   const [urlLoading, setUrlLoading] = useState(false);
+  const [trackIdx, setTrackIdx] = useState(0);
+  useEffect(() => { setTrackIdx(0); }, [item.id]);
 
   // Résout l'URL de lecture complète (admin = accès libre, même payant)
   useQuery({
@@ -131,7 +133,8 @@ function ActionPanel({ item, type }) {
 
   const cover = video ? item.thumbnail_url : item.cover_url;
   const tracks = video ? [] : getReleaseTracks(item);
-  const audioForShort = video ? fullUrl : (tracks[0]?.audio_file_url || item.audio_file_url || fullUrl);
+  const selectedTrack = tracks.length > 0 ? tracks[trackIdx] || tracks[0] : null;
+  const audioForShort = video ? fullUrl : (selectedTrack?.audio_file_url || item.audio_file_url || fullUrl);
   const shareLink = video
     ? item.youtube_url || ''
     : (item.spotify_url || item.apple_music_url || item.audiomack_url || item.youtube_url || '');
@@ -146,6 +149,20 @@ function ActionPanel({ item, type }) {
         </div>
         <p className="font-heading font-bold text-sm truncate">{item.title}</p>
         <p className="text-xs text-muted-foreground">{item.artist_name} {paid && <span className="text-yellow-500">· contenu payant (accès admin)</span>}</p>
+        {tracks.length > 1 && (
+          <label className="block mt-2">
+            <span className="text-[10px] font-mono uppercase text-muted-foreground/70">Piste</span>
+            <select
+              value={trackIdx}
+              onChange={(e) => setTrackIdx(Number(e.target.value))}
+              className="mt-1 w-full bg-background border border-border/60 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-primary"
+            >
+              {tracks.map((t, i) => (
+                <option key={i} value={i}>{i + 1}. {t.title || `Piste ${i + 1}`}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="mt-3">
           {urlLoading ? <Loader2 size={16} className="animate-spin text-primary" /> :
            fullUrl ? <ProtectedPlayer url={fullUrl} isVideo={video} title={item.title} /> :
@@ -164,7 +181,7 @@ function ActionPanel({ item, type }) {
         <ShortGenerator
           audioUrl={audioForShort}
           coverUrl={cover}
-          title={item.title}
+          title={selectedTrack ? selectedTrack.title : item.title}
           artistName={item.artist_name}
           kind={video ? 'video' : 'release'}
           shareLink={shareLink}

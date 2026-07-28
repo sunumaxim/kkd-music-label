@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { Download, Loader2, Film, Scissors, AlertTriangle, Instagram, Facebook, Music2, Video as VideoIcon } from 'lucide-react';
+import { Download, Loader2, Film, Scissors, AlertTriangle, Instagram, Facebook, Music2, Video as VideoIcon, Headphones, Pause } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
-const ACCENT = '#E60000';
+const ACCENT = '#E11D2E';
 
 const FORMATS = {
   story: { w: 720, h: 1280, label: 'Story / Reel · 9:16' },
@@ -38,16 +38,26 @@ function slug(s) {
   return String(s || 'promo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'promo';
 }
 
+function fmt(t) {
+  if (!t || !isFinite(t)) return '0:00';
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 /**
- * ShortGenerator — génère un clip court (30s / 60s) côté navigateur en combinant
- * l'audio d'un morceau et la pochette (animation Ken Burns + logo KKD + titre).
- * Résultat téléchargeable (.webm) pour partage manuel sur TikTok / Reels / Stories.
+ * ShortGenerator — génère un clip court (30-60s) côté navigateur en combinant
+ * l'audio d'un morceau (extrait défini par l'admin) et la pochette animée
+ * (Ken Burns + logo KKD + titre). Résultat téléchargeable (.webm) pour TikTok / Reels.
  * Publication auto Instagram / Facebook via la pochette (post image + lien).
  */
 export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, kind = 'release', shareLink = '', entityId = '' }) {
   const canvasRef = useRef(null);
+  const previewAudio = useRef(null);
+  const previewTimer = useRef(null);
   const [format, setFormat] = useState('story');
   const [duration, setDuration] = useState(30);
+  const [start, setStart] = useState(0);
+  const [totalDur, setTotalDur] = useState(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [resultUrl, setResultUrl] = useState(null);
@@ -55,6 +65,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
   const [coverImg, setCoverImg] = useState(null);
   const [logoImg, setLogoImg] = useState(null);
   const [publishing, setPublishing] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,7 +81,26 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
     return () => { active = false; };
   }, []);
 
-  // Aperçu statique sur le canvas
+  // Charge les métadonnées audio pour connaître la durée totale et borner le point de départ
+  useEffect(() => {
+    setStart(0); setResultUrl(null);
+    if (!audioUrl) { setTotalDur(null); return; }
+    let cancelled = false;
+    const a = new Audio();
+    a.crossOrigin = 'anonymous';
+    a.preload = 'metadata';
+    a.src = audioUrl;
+    a.onloadedmetadata = () => { if (!cancelled) setTotalDur(isFinite(a.duration) ? a.duration : null); };
+    a.onerror = () => { if (!cancelled) setTotalDur(null); };
+    return () => { cancelled = true; try { a.src = ''; } catch {} };
+  }, [audioUrl]);
+
+  useEffect(() => () => { clearTimeout(previewTimer.current); try { previewAudio.current?.pause(); } catch {} }, []);
+
+  // Borde le départ si la durée augmente au-delà de la fin
+  const maxStart = totalDur ? Math.max(0, Math.floor(totalDur - duration)) : 0;
+  useEffect(() => { if (start > maxStart) setStart(maxStart); }, [maxStart, start]);
+
   const drawPreview = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -82,9 +112,35 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
 
   useEffect(() => { if (!busy) drawPreview(); }, [drawPreview, busy]);
 
+  const previewExcerpt = async () => {
+    if (!audioUrl) { setError('Aucun fichier audio hébergé sur KKD.'); return; }
+    try {
+      if (!previewAudio.current) {
+        previewAudio.current = new Audio();
+        previewAudio.current.crossOrigin = 'anonymous';
+      }
+      const a = previewAudio.current;
+      a.src = audioUrl;
+      a.currentTime = start;
+      await a.play();
+      setPreviewing(true);
+      clearTimeout(previewTimer.current);
+      previewTimer.current = setTimeout(() => { try { a.pause(); } catch {} setPreviewing(false); }, duration * 1000);
+    } catch (e) {
+      setError('Lecture de l\'extrait impossible (CORS / format).');
+    }
+  };
+
+  const stopPreview = () => {
+    try { previewAudio.current?.pause(); } catch {}
+    clearTimeout(previewTimer.current);
+    setPreviewing(false);
+  };
+
   const generate = async () => {
     if (!audioUrl) { setError('Aucun fichier audio hébergé sur KKD disponible pour ce contenu.'); return; }
     setError(''); setBusy(true); setProgress(0); setResultUrl(null);
+    stopPreview();
     const canvas = canvasRef.current;
     const { w, h } = FORMATS[format];
     canvas.width = w; canvas.height = h;
@@ -114,19 +170,23 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       rec.start();
 
-      audioEl.currentTime = 0;
+      // Se positionne au point de départ choisi
+      audioEl.currentTime = start;
+      await new Promise((res) => {
+        const onSeeked = () => { audioEl.removeEventListener('seeked', onSeeked); res(); };
+        audioEl.addEventListener('seeked', onSeeked);
+        setTimeout(res, 600);
+      });
       await audioEl.play();
 
-      const start = performance.now();
+      const t0 = performance.now();
       const tick = () => {
-        const elapsed = (performance.now() - start) / 1000;
+        const elapsed = (performance.now() - t0) / 1000;
         const p = Math.min(1, elapsed / duration);
         setProgress(Math.round(p * 100));
         renderFrame(ctx, w, h, coverImg, logoImg, title, artistName, kind, p, elapsed);
         if (p < 1) requestAnimationFrame(tick);
-        else {
-          audioEl.pause(); rec.stop();
-        }
+        else { audioEl.pause(); rec.stop(); }
       };
       requestAnimationFrame(tick);
 
@@ -136,7 +196,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
       const blob = new Blob(chunks, { type: 'video/webm' });
       setResultUrl(URL.createObjectURL(blob));
       setBusy(false);
-      toast({ title: 'Short généré', description: `${duration}s — téléchargez et partagez.` });
+      toast({ title: 'Clip généré', description: `${duration}s à partir de ${fmt(start)} — téléchargez et partagez.` });
     } catch (e) {
       setError(e.message || 'Génération échouée. L\'audio doit être hébergé sur KKD (CORS).');
       setBusy(false);
@@ -161,7 +221,6 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
     try {
       if (platform === 'instagram') {
         const res = await base44.functions.invoke('publishToInstagram', { content_type: kind, entity_id: entityId });
-        // publishToInstagram requires entity_id; for ad-hoc, fall back to direct image post below
         if (res.data?.error) throw new Error(res.data.error);
         toast({ title: 'Publié sur Instagram', description: 'La pochette a été postée.' });
       } else if (platform === 'facebook') {
@@ -180,36 +239,67 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Scissors size={16} className="text-primary" />
-        <h3 className="font-heading font-bold text-base">Générer un short {duration}s</h3>
+        <h3 className="font-heading font-bold text-base">Générer un clip réseau social</h3>
       </div>
       <p className="text-xs text-muted-foreground">
-        Coupe l'audio à {duration}s, l'associe à la pochette animée (logo KKD + titre). Téléchargez le clip puis partagez-le sur TikTok / Reels / Stories.
+        Choisissez l'extrait (point de départ + durée 30-60s), générez un clip animé pochette + audio, puis téléchargez ou publiez.
       </p>
 
-      {/* Contrôles */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[11px] font-mono uppercase text-muted-foreground/70">Format</label>
-          <div className="flex gap-2 mt-1">
-            {Object.entries(FORMATS).map(([key, f]) => (
-              <button key={key} type="button" onClick={() => setFormat(key)}
-                className={`flex-1 px-2 py-2 rounded-lg text-[11px] font-semibold border transition-colors ${format === key ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
-                {f.label}
-              </button>
-            ))}
-          </div>
+      {/* Format */}
+      <div>
+        <label className="text-[11px] font-mono uppercase text-muted-foreground/70">Format</label>
+        <div className="flex gap-2 mt-1">
+          {Object.entries(FORMATS).map(([key, f]) => (
+            <button key={key} type="button" onClick={() => setFormat(key)}
+              className={`flex-1 px-2 py-2 rounded-lg text-[11px] font-semibold border transition-colors ${format === key ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
+              {f.label}
+            </button>
+          ))}
         </div>
-        <div>
-          <label className="text-[11px] font-mono uppercase text-muted-foreground/70">Durée</label>
-          <div className="flex gap-2 mt-1">
-            {[30, 60].map((d) => (
-              <button key={d} type="button" onClick={() => setDuration(d)}
-                className={`flex-1 px-2 py-2 rounded-lg text-[11px] font-semibold border transition-colors ${duration === d ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
-                {d}s
-              </button>
-            ))}
-          </div>
+      </div>
+
+      {/* Point de départ */}
+      <div className="bg-secondary/40 rounded-xl p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-mono uppercase text-muted-foreground/70">Point de départ de l'extrait</label>
+          <span className="text-[11px] font-mono text-primary">{fmt(start)} → {fmt(start + duration)}</span>
         </div>
+        <input
+          type="range" min={0} max={maxStart} step={1} value={start}
+          onChange={(e) => setStart(Number(e.target.value))}
+          disabled={!totalDur}
+          className="w-full accent-[#E11D2E]"
+        />
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>0:00</span>
+          <span>{totalDur ? `Piste : ${fmt(totalDur)}` : 'Durée de la piste inconnue'}</span>
+        </div>
+        <button
+          type="button"
+          onClick={previewing ? stopPreview : previewExcerpt}
+          disabled={!audioUrl}
+          className="inline-flex items-center gap-2 px-3 h-8 rounded-full border border-border text-[12px] font-semibold hover:border-primary/40 disabled:opacity-50"
+        >
+          {previewing ? <><Pause size={13} /> Arrêter</> : <><Headphones size={13} /> Écouter l'extrait</>}
+        </button>
+      </div>
+
+      {/* Durée */}
+      <div>
+        <label className="text-[11px] font-mono uppercase text-muted-foreground/70">Durée ({duration}s)</label>
+        <div className="flex gap-2 mt-1 mb-2">
+          {[30, 45, 60].map((d) => (
+            <button key={d} type="button" onClick={() => setDuration(d)}
+              className={`flex-1 px-2 py-2 rounded-lg text-[11px] font-semibold border transition-colors ${duration === d ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}>
+              {d}s
+            </button>
+          ))}
+        </div>
+        <input
+          type="range" min={30} max={60} step={1} value={duration}
+          onChange={(e) => setDuration(Number(e.target.value))}
+          className="w-full accent-[#E11D2E]"
+        />
       </div>
 
       {/* Aperçu / résultat */}
@@ -242,7 +332,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
         <button onClick={generate} disabled={busy}
           className="inline-flex items-center gap-2 px-4 h-10 rounded-full bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Film size={15} />}
-          {busy ? 'Génération…' : 'Générer le short'}
+          {busy ? 'Génération…' : 'Générer le clip'}
         </button>
         {resultUrl && (
           <button onClick={download}
@@ -261,7 +351,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
       </div>
       <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
         {kind === 'video' ? <VideoIcon size={11} /> : <Music2 size={11} />}
-        La publication auto envoie la pochette + lien (le short vidéo se partage manuellement via le téléchargement).
+        La publication auto envoie la pochette + lien (le clip vidéo se partage manuellement via le téléchargement).
       </p>
     </div>
   );
@@ -271,7 +361,6 @@ function renderFrame(ctx, w, h, coverImg, logoImg, title, artistName, kind, p, e
   ctx.fillStyle = '#050505';
   ctx.fillRect(0, 0, w, h);
 
-  // Cover avec zoom doux (Ken Burns)
   if (coverImg) {
     const scale = 1 + p * 0.08;
     const cw = coverImg.width, ch = coverImg.height;
@@ -284,18 +373,15 @@ function renderFrame(ctx, w, h, coverImg, logoImg, title, artistName, kind, p, e
     ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   }
 
-  // Overlay dégradé bas
   const og = ctx.createLinearGradient(0, h * 0.45, 0, h);
   og.addColorStop(0, 'rgba(0,0,0,0)'); og.addColorStop(1, 'rgba(0,0,0,0.92)');
   ctx.fillStyle = og; ctx.fillRect(0, h * 0.45, w, h * 0.55);
-  // Overlay haut
   const tg = ctx.createLinearGradient(0, 0, 0, h * 0.22);
   tg.addColorStop(0, 'rgba(0,0,0,0.55)'); tg.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = tg; ctx.fillRect(0, 0, w, h * 0.22);
 
   const pad = Math.round(w * 0.06);
 
-  // Logo KKD haut gauche
   if (logoImg) {
     const lh = Math.round(h * 0.05);
     const lw = (logoImg.width * lh) / logoImg.height;
@@ -307,13 +393,11 @@ function renderFrame(ctx, w, h, coverImg, logoImg, title, artistName, kind, p, e
     ctx.fillText('KKD MUSIC', pad, pad + Math.round(h * 0.04));
   }
 
-  // Tag
   ctx.font = `bold ${Math.round(h * 0.022)}px Inter, sans-serif`;
   ctx.fillStyle = ACCENT;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.fillText(kind === 'video' ? '● NOUVEAU CLIP' : '● NOUVELLE SORTIE', pad, pad + Math.round(h * 0.085));
 
-  // Texte bas
   const baseY = h - pad;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.font = `600 ${Math.round(h * 0.028)}px Inter, sans-serif`;
@@ -327,7 +411,6 @@ function renderFrame(ctx, w, h, coverImg, logoImg, title, artistName, kind, p, e
   const titleBottom = baseY - Math.round(h * 0.045);
   lines.forEach((ln, i) => ctx.fillText(ln, pad, titleBottom - (lines.length - 1 - i) * lineH));
 
-  // Barre de progression
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.fillRect(0, h - 4, w, 4);
   ctx.fillStyle = ACCENT;
