@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePlayer } from '@/lib/PlayerContext';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Shuffle, Volume2, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Shuffle, Volume2, X, AlertCircle, Loader2 } from 'lucide-react';
 
 function fmt(s) {
   if (!s || !isFinite(s)) return '0:00';
@@ -45,10 +45,19 @@ export default function NowPlayingBar() {
             <SkipBack size={18} />
           </button>
           <button
-            onClick={player.togglePlay}
+            onClick={player.error ? player.retry : player.togglePlay}
             className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/80 transition-colors shrink-0"
+            title={player.error ? 'Réessayer la lecture' : ''}
           >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+            {player.error ? (
+              <AlertCircle size={18} />
+            ) : player.isBuffering ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : isPlaying ? (
+              <Pause size={18} />
+            ) : (
+              <Play size={18} className="ml-0.5" />
+            )}
           </button>
           <button onClick={player.next} className="inline-flex p-2 text-muted-foreground hover:text-foreground transition-colors">
             <SkipForward size={18} />

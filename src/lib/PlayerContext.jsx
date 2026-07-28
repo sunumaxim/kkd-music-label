@@ -26,6 +26,8 @@ export function PlayerProvider({ children }) {
   const [volume, setVolume] = useState(1);
   const [repeatMode, setRepeatMode] = useState('off'); // 'off' | 'all' | 'one'
   const [shuffle, setShuffle] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [error, setError] = useState(null);
 
   const current = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
 
@@ -44,8 +46,10 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (!a || !current) return;
     setCurrentTime(0);
+    setError(null);
+    setIsBuffering(true);
     const p = a.play();
-    if (p && typeof p.catch === 'function') p.catch(() => {});
+    if (p && typeof p.catch === 'function') p.catch(() => { setError('Lecture impossible'); setIsBuffering(false); });
   }, [currentIndex, current?.audio_url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -84,6 +88,16 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (a) { a.currentTime = t; setCurrentTime(t); }
   }, []);
+
+  const retry = useCallback(() => {
+    const a = audioRef.current;
+    if (!a || !current) return;
+    setError(null);
+    setIsBuffering(true);
+    a.load();
+    const p = a.play();
+    if (p && p.catch) p.catch(() => { setError('Lecture impossible'); setIsBuffering(false); });
+  }, [current]);
 
   const handleEnded = useCallback(() => {
     if (repeatMode === 'one') {
@@ -148,8 +162,8 @@ export function PlayerProvider({ children }) {
   }, []);
 
   const value = {
-    queue, currentIndex, current, isPlaying, currentTime, duration, volume, repeatMode, shuffle,
-    playTrack, playQueue, togglePlay, next, prev, seek, setVolume, setRepeatMode, setShuffle, stop,
+    queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, repeatMode, shuffle,
+    playTrack, playQueue, togglePlay, next, prev, seek, retry, setVolume, setRepeatMode, setShuffle, stop,
   };
 
   return (
@@ -164,6 +178,11 @@ export function PlayerProvider({ children }) {
         onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onWaiting={() => setIsBuffering(true)}
+        onPlaying={() => setIsBuffering(false)}
+        onCanPlay={() => setIsBuffering(false)}
+        onStalled={() => setIsBuffering(true)}
+        onError={() => { setError('Lecture impossible'); setIsBuffering(false); setIsPlaying(false); }}
         onEnded={handleEnded}
       />
     </PlayerContext.Provider>

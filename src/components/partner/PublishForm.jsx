@@ -38,7 +38,10 @@ export default function PublishForm({ user, onClose }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [contentType, setContentType] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploads, setUploads] = useState({ cover: false, file: false, photo: false, tracks: {} });
+  const isUploading = uploads.cover || uploads.file || uploads.photo || Object.values(uploads.tracks).some(Boolean);
+  const setUpload = (key, val) => setUploads((prev) => ({ ...prev, [key]: val }));
+  const setTrackUpload = (idx, val) => setUploads((prev) => ({ ...prev, tracks: { ...prev.tracks, [idx]: val } }));
   const [done, setDone] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
   const [newArtist, setNewArtist] = useState(false);
@@ -73,7 +76,7 @@ export default function PublishForm({ user, onClose }) {
 
   const handleFileUpload = async (file) => {
     if (!file) return;
-    setUploading(true);
+    setUpload('file', true);
     try {
       if (form.is_for_sale) {
         const res = await base44.integrations.Core.UploadPrivateFile({ file });
@@ -87,13 +90,13 @@ export default function PublishForm({ user, onClose }) {
     } catch (err) {
       toast({ title: 'Échec du téléversement audio', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
-      setUploading(false);
+      setUpload('file', false);
     }
   };
 
   const handleCoverUpload = async (file) => {
     if (!file) return;
-    setUploading(true);
+    setUpload('cover', true);
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('cover_url', res.file_url);
@@ -101,21 +104,21 @@ export default function PublishForm({ user, onClose }) {
     } catch (err) {
       toast({ title: 'Échec de la pochette', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
-      setUploading(false);
+      setUpload('cover', false);
     }
   };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploading(true);
+    setUpload('photo', true);
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('new_artist_photo_url', res.file_url);
     } catch (err) {
       toast({ title: 'Échec de la photo', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
-      setUploading(false);
+      setUpload('photo', false);
     }
   };
 
@@ -125,7 +128,7 @@ export default function PublishForm({ user, onClose }) {
   const handleTrackUpload = async (idx, e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setUploading(true);
+    setTrackUpload(idx, true);
     try {
       const res = await base44.integrations.Core.UploadFile({ file });
       set('tracks', form.tracks.map((t, i) => (i === idx ? { ...t, audio_file_url: res.file_url } : t)));
@@ -133,7 +136,7 @@ export default function PublishForm({ user, onClose }) {
     } catch (err) {
       toast({ title: 'Échec de la piste', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
-      setUploading(false);
+      setTrackUpload(idx, false);
     }
   };
 
@@ -272,7 +275,7 @@ export default function PublishForm({ user, onClose }) {
         </div>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); if (canSubmit && !uploading) setStep(3); }} className="space-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); if (canSubmit && !isUploading) setStep(3); }} className="space-y-5">
         {/* Titre */}
         <div>
           <Label className="text-xs mb-1.5 block">Titre *</Label>
@@ -306,7 +309,7 @@ export default function PublishForm({ user, onClose }) {
                 <Label className="text-xs mb-1.5 block">Photo (optionnel)</Label>
                 <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors">
                   <Upload size={14} />
-                  {uploading ? 'Envoi…' : form.new_artist_photo_url ? 'Photo chargée ✓' : 'Choisir une photo'}
+                  {uploads.photo ? 'Envoi…' : form.new_artist_photo_url ? 'Photo chargée ✓' : 'Choisir une photo'}
                   <input type="file" className="hidden" onChange={handlePhotoUpload} accept="image/*" />
                 </label>
               </div>
@@ -359,7 +362,7 @@ export default function PublishForm({ user, onClose }) {
                 <Input value={t.title} onChange={(e) => setTrackTitle(idx, e.target.value)} placeholder={`Piste ${idx + 1} — titre`} className="text-sm sm:w-44" />
                 <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors shrink-0">
                   <Upload size={14} />
-                  {uploading ? 'Envoi…' : t.audio_file_url ? 'Audio ✓' : 'Audio'}
+                  {uploads.tracks[idx] ? 'Envoi…' : t.audio_file_url ? 'Audio ✓' : 'Audio'}
                   <input type="file" className="hidden" onChange={(e) => handleTrackUpload(idx, e)} accept="audio/*" />
                 </label>
                 <button type="button" onClick={() => removeTrack(idx)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 sm:self-center">
@@ -378,7 +381,7 @@ export default function PublishForm({ user, onClose }) {
               kind={isVideo ? 'video' : 'audio'}
               accept={isVideo ? 'video/*' : 'audio/*'}
               value={form.file_url}
-              uploading={uploading}
+              uploading={uploads.file}
               isPrivate={form.is_for_sale}
               onUpload={handleFileUpload}
               onClear={() => set('file_url', '')}
@@ -396,7 +399,7 @@ export default function PublishForm({ user, onClose }) {
                     <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
                     <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 30s puis achat.</p>
                   </div>
-                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} disabled={uploading} />
+                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} disabled={isUploading} />
                 </div>
                 {form.is_for_sale && (
                   <>
@@ -458,7 +461,7 @@ export default function PublishForm({ user, onClose }) {
           kind="image"
           accept="image/*"
           value={form.cover_url}
-          uploading={uploading}
+          uploading={uploads.cover}
           onUpload={handleCoverUpload}
           onClear={() => set('cover_url', '')}
         />
@@ -466,7 +469,7 @@ export default function PublishForm({ user, onClose }) {
         <div className="pt-2">
           <Button
             type="button"
-            disabled={uploading || !canSubmit}
+            disabled={isUploading || !canSubmit}
             onClick={() => setStep(3)}
             className="w-full h-12 font-bold text-base"
           >
