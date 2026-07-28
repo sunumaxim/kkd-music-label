@@ -18,16 +18,25 @@ export default function NotificationBell({ user }) {
 
   const fetchNotifs = async () => {
     if (!user?.email) return;
-    const data = await base44.entities.Notification.filter({ user_email: user.email }, '-created_date', 20);
-    setNotifs(data);
+    try {
+      const data = await base44.entities.Notification.filter({ user_email: user.email }, '-created_date', 20);
+      setNotifs(data);
+    } catch (e) {
+      // Ignore transient errors (e.g. rate limit) — will retry on next event
+    }
   };
 
   useEffect(() => {
+    let timer;
+    const debouncedFetch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(fetchNotifs, 800);
+    };
     fetchNotifs();
     const unsubscribe = base44.entities.Notification.subscribe((event) => {
-      if (event.data?.user_email === user?.email) fetchNotifs();
+      if (event.data?.user_email === user?.email) debouncedFetch();
     });
-    return unsubscribe;
+    return () => { unsubscribe(); clearTimeout(timer); };
   }, [user?.email]);
 
   // Fermer au clic extérieur
@@ -43,7 +52,9 @@ export default function NotificationBell({ user }) {
     const unreadNotifs = notifs.filter(n => !n.is_read);
     // Optimistic: mark all as read immediately
     setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
-    await Promise.all(unreadNotifs.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
+    try {
+      await Promise.all(unreadNotifs.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
+    } catch (e) { /* best effort */ }
   };
 
   const markRead = async (notif) => {
