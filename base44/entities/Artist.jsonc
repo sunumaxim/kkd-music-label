@@ -134,6 +134,11 @@
       "type": "number",
       "default": 0,
       "description": "Ordre d'affichage"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
     }
   },
   "required": [
