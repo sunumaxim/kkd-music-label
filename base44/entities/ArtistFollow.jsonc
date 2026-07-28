@@ -17,6 +17,11 @@
     "artist_name": {
       "type": "string",
       "description": "Nom de l'artiste suivi (d\u00e9norm\u00e9, pour affichage rapide)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
     }
   },
   "required": [

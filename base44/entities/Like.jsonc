@@ -29,6 +29,11 @@
     "cover_url": {
       "type": "string",
       "description": "Pochette / miniature (d\u00e9normalis\u00e9e)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
     }
   },
   "required": [
