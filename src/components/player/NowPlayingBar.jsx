@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePlayer } from '@/lib/PlayerContext';
-import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Shuffle, Volume2, X, AlertCircle, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Shuffle, Volume2, X, AlertCircle, Loader2, ListMusic } from 'lucide-react';
+import QueuePanel from '@/components/player/QueuePanel';
 
 function fmt(s) {
   if (!s || !isFinite(s)) return '0:00';
@@ -17,12 +18,15 @@ function nextRate(current) {
 
 export default function NowPlayingBar() {
   const player = usePlayer();
+  const [queueOpen, setQueueOpen] = useState(false);
   const { current, isPlaying, currentTime, duration, repeatMode, shuffle, volume } = player;
   if (!current) return null;
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
+    <>
+    <QueuePanel open={queueOpen} onClose={() => setQueueOpen(false)} />
     <div className="fixed bottom-14 md:bottom-0 left-0 md:left-60 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border/40 shadow-2xl select-none">
       {/* Ligne de progression (mobile) */}
       <div className="md:hidden h-0.5 bg-secondary/60 cursor-pointer"
@@ -81,8 +85,15 @@ export default function NowPlayingBar() {
           </div>
         </div>
 
-        {/* Droite — répétition / aléatoire / volume (desktop) */}
+        {/* Droite — file d'attente / répétition / aléatoire / volume (desktop) */}
         <div className="hidden md:flex items-center gap-1 w-56 justify-end">
+          <button
+            onClick={() => setQueueOpen((v) => !v)}
+            className="p-2 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+            title="File d'attente"
+          >
+            <ListMusic size={16} />
+          </button>
           <button
             onClick={() => player.setShuffle(!shuffle)}
             className={`p-2 rounded-md hover:bg-secondary transition-colors ${shuffle ? 'text-primary' : 'text-muted-foreground'}`}
@@ -114,6 +125,20 @@ export default function NowPlayingBar() {
           </div>
         </div>
 
+        {/* File d'attente (mobile) */}
+        <button
+          onClick={() => setQueueOpen(true)}
+          className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors relative"
+          title="File d'attente"
+        >
+          <ListMusic size={18} />
+          {player.queue.length > 1 && (
+            <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[9px] font-bold rounded-full px-1 leading-none py-0.5">
+              {player.queue.length}
+            </span>
+          )}
+        </button>
+
         {/* Vitesse (mobile) */}
         <button
           onClick={() => player.setPlaybackRate(nextRate(player.playbackRate))}
@@ -138,5 +163,6 @@ export default function NowPlayingBar() {
         </button>
       </div>
     </div>
+    </>
   );
 }

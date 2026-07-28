@@ -161,6 +161,23 @@ export function PlayerProvider({ children }) {
     setCurrentIndex(Math.max(0, Math.min(startIndex, tracks.length - 1)));
   }, []);
 
+  const playAt = useCallback((index) => {
+    if (index < 0 || index >= queue.length) return;
+    setCurrentIndex(index);
+  }, [queue.length]);
+
+  const removeFromQueue = useCallback((index) => {
+    setQueue((q) => {
+      const next = q.filter((_, i) => i !== index);
+      setCurrentIndex((ci) => {
+        if (index < ci) return ci - 1;
+        if (index === ci) return Math.min(ci, next.length - 1);
+        return ci;
+      });
+      return next;
+    });
+  }, []);
+
   const stop = useCallback(() => {
     const a = audioRef.current;
     if (a) a.pause();
@@ -169,7 +186,7 @@ export function PlayerProvider({ children }) {
 
   const value = {
     queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, playbackRate, repeatMode, shuffle,
-    playTrack, playQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
+    playTrack, playQueue, playAt, removeFromQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
   };
 
   return (
