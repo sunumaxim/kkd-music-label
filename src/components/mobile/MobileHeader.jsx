@@ -13,9 +13,11 @@ export default function MobileHeader({ title, backPath }) {
   const handleBack = () => {
     if (backPath) {
       navigate(backPath);
-    } else {
-      navigate(-1);
+      return;
     }
+    // Si on est arrivé directement sur la page (historique vide), retour à l'accueil
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
   };
 
   return (
