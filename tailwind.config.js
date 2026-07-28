@@ -67,6 +67,12 @@ module.exports = {
   			display: ['var(--font-display)'],
   			mono: ['var(--font-mono)']
   		},
+		fontWeight: {
+  			regular: '400',
+  			medium: '500',
+  			bold: '700',
+  			black: '900'
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: {

@@ -60,8 +60,8 @@ export default function PublicSidebar() {
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-60 bg-card border-r border-border/20 z-40">
       <div className="px-5 py-5">
-        <Link to="/" className="font-display font-extrabold text-xl tracking-tight leading-none">
-          KKD<span className="text-primary">MUSIC</span>
+        <Link to="/">
+          <img src="https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png" alt="KKDmusic" height={28} style={{ height: 28, width: 'auto' }} draggable={false} />
         </Link>
       </div>
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">

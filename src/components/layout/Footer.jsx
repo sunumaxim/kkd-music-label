@@ -6,12 +6,11 @@ const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a0
 export default function Footer() {
   return (
     <footer className="bg-background border-t border-border/30">
-      {/* Big brand text */}
-      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 bg-[#203b65]">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-5xl md:text-8xl tracking-tighter from-primary via-red-600 to-primary bg-clip-text text-transparent font-medium">KKD MUSIC
-
-          </h2>
+      {/* Big brand mark */}
+      <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 bg-card">
+        <div className="text-center mb-12 flex flex-col items-center">
+          <img src="https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png" alt="KKDmusic" style={{ height: 56, width: 'auto' }} />
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">La scène ouest-africaine, en direct de chez vous.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 hidden">

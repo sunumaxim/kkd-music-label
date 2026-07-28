@@ -49,21 +49,29 @@ export default function SplashScreen({ onDone }) {
           {/* Overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
 
-          {/* Centered logo text */}
-          <div className="relative z-10 text-center">
-            <motion.h1
+          {/* Centered logo */}
+          <div className="relative z-10 text-center flex flex-col items-center">
+            <motion.img
+              src="https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png"
+              alt="KKDmusic"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.7 }}
-              className="font-display text-6xl md:text-8xl font-extrabold text-white tracking-tight"
-            >
-              KKD<span className="text-primary"> MUSIC</span>
-            </motion.h1>
+              style={{ height: 72, width: 'auto' }}
+            />
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.5 }}
-              className="text-white/50 text-xs font-mono uppercase tracking-widest mt-3"
+              className="text-white/55 text-xs uppercase tracking-widest mt-4"
+            >
+              La scène ouest-africaine, en direct de chez vous.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.4, duration: 0.5 }}
+              className="text-white/40 text-[10px] uppercase tracking-widest mt-2"
             >
               Touchez pour continuer
             </motion.p>
