@@ -68,21 +68,25 @@ export default function FollowButton({ artistId, artistName, variant = 'hero' })
   const btnCls =
     variant === 'hero'
       ? 'inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold shadow-lg hover:bg-primary/90 disabled:opacity-60'
+      : variant === 'pill'
+      ? 'inline-flex items-center gap-2 px-5 py-1.5 rounded-full border border-border text-foreground text-sm font-semibold hover:border-foreground/60 disabled:opacity-60'
       : 'inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-60';
 
   const countCls =
     variant === 'hero' ? 'text-white/80' : 'text-muted-foreground';
 
   return (
-    <div className="flex items-center gap-3 mt-3">
+    <div className={`flex items-center gap-3 ${variant === 'pill' ? '' : 'mt-3'}`}>
       <button onClick={toggle} disabled={toggling} className={btnCls}>
         {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
         {isFollowing ? 'Abonné' : 'Suivre'}
       </button>
-      <span className={`inline-flex items-center gap-1 text-xs font-medium ${countCls}`}>
-        <Users size={13} />
-        {count} abonné{count > 1 ? 's' : ''}
-      </span>
+      {variant !== 'pill' && (
+        <span className={`inline-flex items-center gap-1 text-xs font-medium ${countCls}`}>
+          <Users size={13} />
+          {count} abonné{count > 1 ? 's' : ''}
+        </span>
+      )}
     </div>
   );
 }

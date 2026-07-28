@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  ArrowLeft, Youtube, Instagram, Facebook, BadgeCheck, Share2, Check, Play,
-  Disc3, Calendar, MapPin, ExternalLink, Eye, Heart, ShoppingCart,
+  ArrowLeft, Youtube, Share2, Check, Disc3, Calendar, MapPin, ChevronRight,
+  Play, Eye, Heart, ShoppingCart,
 } from 'lucide-react';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
@@ -13,46 +13,28 @@ import ArtistSocialSync from '@/components/artist/ArtistSocialSync';
 import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import SimilarArtists from '@/components/artist/SimilarArtists';
-import ArtistPopularTracks from '@/components/artist/ArtistPopularTracks';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
-import FollowButton from '@/components/artist/FollowButton';
-import ArtistStatsBar from '@/components/artist/ArtistStatsBar';
+import ArtistActionBar from '@/components/artist/ArtistActionBar';
+import ArtistPopularList from '@/components/artist/ArtistPopularList';
 import CarouselRow from '@/components/home/CarouselRow';
+import { usePlayer } from '@/lib/PlayerContext';
+import { getReleaseTracks } from '@/lib/releaseTracks';
 import { buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 
-const VIDEO_TYPE_LABELS = {
-  clip_officiel: 'Clip officiel',
-  teaser: 'Teaser',
-  interview: 'Interview',
-  making_of: 'Making-of',
-  replay_live: 'Replay live',
-};
-
-const VIDEO_TYPE_COLORS = {
-  clip_officiel: 'bg-primary/10 text-primary',
-  teaser: 'bg-blue-500/10 text-blue-400',
-  interview: 'bg-purple-500/10 text-purple-400',
-  making_of: 'bg-orange-500/10 text-orange-400',
-};
-
-function SectionHeader({ icon: Icon, title, count }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="font-heading font-bold text-lg flex items-center gap-2">
-        {Icon && <Icon size={18} className="text-primary" />}
-        {title}
-      </h2>
-      {count !== undefined && (
-        <span className="text-xs font-mono text-muted-foreground/60">{count}</span>
-      )}
-    </div>
-  );
+function compact(n) {
+  if (!n || n < 0) return '0';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;
+  return String(n);
 }
 
 export default function ArtistDetail() {
   const { id: slugParam } = useParams();
+  const navigate = useNavigate();
   const id = extractIdFromSlug(slugParam);
+  const player = usePlayer();
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState('musique');
   const [videoFilter, setVideoFilter] = useState('all');
 
   const handleShare = () => {
@@ -103,19 +85,47 @@ export default function ArtistDetail() {
         .slice(0, 6),
   });
 
-  const availableVideoTypes = [...new Set(videos.map((v) => v.video_type).filter(Boolean))];
-  const filteredVideos = videoFilter === 'all' ? videos : videos.filter((v) => v.video_type === videoFilter);
-
-  const albums = releases.filter((r) => ['album', 'ep', 'projet_special'].includes(r.release_type));
-  const totalPlays =
-    releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
-    videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
-
   const { data: followers = 0 } = useQuery({
     queryKey: ['artist-followers-count', artist?.id],
     queryFn: async () => (await base44.entities.ArtistFollow.filter({ artist_id: artist.id })).length,
     enabled: !!artist?.id,
   });
+
+  const availableVideoTypes = [...new Set(videos.map((v) => v.video_type).filter(Boolean))];
+  const filteredVideos = videoFilter === 'all' ? videos : videos.filter((v) => v.video_type === videoFilter);
+  const albums = releases.filter((r) => ['album', 'ep', 'projet_special'].includes(r.release_type));
+  const totalPlays =
+    releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
+    videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
+
+  // Lecture du top tracks via le lecteur global
+  const popular = useMemo(
+    () =>
+      [...releases]
+        .sort((a, b) => (b.plays_count || 0) + (b.likes_count || 0) - ((a.plays_count || 0) + (a.likes_count || 0)))
+        .slice(0, 10),
+    [releases]
+  );
+  const firstPlayable = popular.find((r) => getReleaseTracks(r).length);
+  const firstTracks = firstPlayable ? getReleaseTracks(firstPlayable) : [];
+  const firstIsCurrent = firstTracks.some((t) => t.key === player.current?.key);
+  const firstPlaying = firstIsCurrent && player.isPlaying;
+
+  const playFirst = () => {
+    if (!firstTracks.length) return;
+    if (firstIsCurrent) player.togglePlay();
+    else player.playQueue(firstTracks, 0);
+  };
+  const shufflePlay = () => {
+    const queue = popular.flatMap(getReleaseTracks);
+    if (!queue.length) return;
+    player.playQueue([...queue].sort(() => Math.random() - 0.5), 0);
+  };
+
+  const getYoutubeId = (url) => {
+    const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
+    return match ? match[1] : null;
+  };
 
   if (isLoading) {
     return (
@@ -134,11 +144,6 @@ export default function ArtistDetail() {
     );
   }
 
-  const getYoutubeId = (url) => {
-    const match = url?.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
-    return match ? match[1] : null;
-  };
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <PageMeta
@@ -150,15 +155,15 @@ export default function ArtistDetail() {
       <MobileHeader title={artist.name} backPath="/artistes" />
 
       {/* ── HERO ── */}
-      <div className="relative h-64 md:h-[420px] overflow-hidden max-w-full">
+      <div className="relative h-64 md:h-[420px] overflow-hidden">
         {artist.cover_url ? (
           <img src={artist.cover_url} alt="" className="w-full h-full object-cover object-center" />
         ) : artist.photo_url ? (
-          <img src={artist.photo_url} alt="" className="w-full h-full object-cover object-center scale-110 blur-md opacity-60" />
+          <img src={artist.photo_url} alt="" className="w-full h-full object-cover object-center scale-110 blur-md opacity-70" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/30 via-card to-muted" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
 
         <Link
           to="/artistes"
@@ -175,248 +180,242 @@ export default function ArtistDetail() {
           {copied ? 'Copié !' : 'Partager'}
         </button>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-full">
-          <div className="flex items-end gap-4 md:gap-5">
-            {artist.photo_url && (
-              <img
-                src={artist.photo_url}
-                alt={artist.name}
-                className="hidden md:block w-32 h-32 lg:w-40 lg:h-40 rounded-full object-cover border-4 border-background shadow-2xl shrink-0"
-              />
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight break-words leading-tight">
-                  {artist.name}
-                </h1>
-                {artist.is_verified && <VerifiedBadge size={28} />}
-              </div>
-              <div className="flex items-center flex-wrap gap-2 mt-2">
-                {artist.genre && (
-                  <span className="bg-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/30">
-                    {artist.genre}
-                  </span>
-                )}
-                {artist.label && (
-                  <span className="bg-white/10 text-white/80 text-xs px-3 py-1 rounded-full border border-white/20">
-                    {artist.label}
-                  </span>
-                )}
-                {artist.active_since && (
-                  <span className="text-white/60 text-xs">Actif depuis {artist.active_since}</span>
-                )}
-              </div>
-              <FollowButton artistId={artist.id} artistName={artist.name} variant="hero" />
-              <ArtistStatsBar
-                followers={followers}
-                plays={totalPlays}
-                tracks={releases.length}
-                albums={albums.length}
-                videos={videos.length}
-              />
-            </div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 max-w-full">
+          <div className="flex items-center gap-2">
+            <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight break-words leading-tight">
+              {artist.name}
+            </h1>
+            {artist.is_verified && <VerifiedBadge size={26} />}
           </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {compact(followers)} abonné{followers > 1 ? 's' : ''} · {compact(totalPlays)} écoutes
+          </p>
         </div>
       </div>
 
       {/* ── CORPS ── */}
-      <div className="max-w-3xl mx-auto px-4 pb-16">
+      <div className="max-w-3xl mx-auto px-4 pb-20">
+        {/* Barre d'actions */}
+        <ArtistActionBar
+          artist={artist}
+          onPlay={playFirst}
+          onShuffle={shufflePlay}
+          isPlaying={firstPlaying}
+          canPlay={firstTracks.length > 0}
+          onMore={() => navigate('/mon-espace')}
+        />
 
-        {/* Chanson populaire + actions */}
-        <ArtistPopularTracks releases={releases} artist={artist} totalPlays={totalPlays} />
-
-        {/* Albums */}
-        {albums.length > 0 && (
-          <section className="py-6 border-t border-border/30">
-            <SectionHeader icon={Disc3} title="Albums" count={albums.length} />
-            <CarouselRow>
-              {albums.map((r) => (
-                <div key={r.id} className="snap-start shrink-0 w-44 md:w-48">
-                  <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="group block">
-                    <div className="relative aspect-square rounded-xl overflow-hidden bg-card mb-2 shadow-lg shadow-black/20">
-                      {r.cover_url ? (
-                        <img
-                          src={r.cover_url}
-                          alt={r.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Disc3 size={32} className="text-primary/25" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="font-heading font-bold text-sm truncate">{r.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {r.release_type === 'ep' ? 'EP' : r.release_type === 'projet_special' ? 'Projet spécial' : 'Album'}
-                      {r.release_date ? ` • ${new Date(r.release_date).getFullYear()}` : ''}
-                    </p>
-                  </Link>
-                </div>
-              ))}
-            </CarouselRow>
-          </section>
-        )}
-
-        {/* Streaming plateformes */}
-        <div className="py-6 border-t border-border/30">
-          <StreamingLinks
-            spotify={artist.spotify_url}
-            youtube={artist.youtube_url}
-            apple_music={artist.apple_music_url}
-            audiomack={artist.audiomack_url}
-            deezer={artist.deezer_url}
-            soundcloud={artist.soundcloud_url}
-          />
+        {/* Onglets */}
+        <div className="flex items-center gap-6 border-b border-border/40 mb-4">
+          {[
+            { key: 'musique', label: 'Musique' },
+            { key: 'evenement', label: 'Événement' },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`relative pb-3 text-sm font-bold transition-colors ${
+                tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t.label}
+              {tab === t.key && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
+            </button>
+          ))}
         </div>
 
-        {/* Vidéos */}
-        {videos.length > 0 && (
-          <section className="py-6 border-t border-border/30">
-            <SectionHeader icon={Youtube} title="Vidéos" count={videos.length} />
+        {tab === 'musique' && (
+          <>
+            <ArtistPopularList releases={releases} max={5} />
 
-            {availableVideoTypes.length > 1 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                <button
-                  onClick={() => setVideoFilter('all')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    videoFilter === 'all'
-                      ? 'bg-primary text-white border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/40'
-                  }`}
-                >
-                  Tous ({videos.length})
-                </button>
-                {availableVideoTypes.map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setVideoFilter(type)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      videoFilter === type
-                        ? 'bg-primary text-white border-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/40'
-                    }`}
-                  >
-                    {VIDEO_TYPE_LABELS[type] || type} ({videos.filter((v) => v.video_type === type).length})
-                  </button>
-                ))}
-              </div>
+            {albums.length > 0 && (
+              <section className="py-6">
+                <h2 className="font-heading font-bold text-xl mb-3">Discographie</h2>
+                <CarouselRow>
+                  {albums.map((r) => (
+                    <div key={r.id} className="snap-start shrink-0 w-44 md:w-48">
+                      <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="group block">
+                        <div className="relative aspect-square rounded-xl overflow-hidden bg-card mb-2 shadow-lg shadow-black/20">
+                          {r.cover_url ? (
+                            <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Disc3 size={32} className="text-primary/25" />
+                            </div>
+                          )}
+                        </div>
+                        <p className="font-heading font-bold text-sm truncate">{r.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {r.release_type === 'ep' ? 'EP' : r.release_type === 'projet_special' ? 'Projet spécial' : 'Album'}
+                          {r.release_date ? ` • ${new Date(r.release_date).getFullYear()}` : ''}
+                        </p>
+                      </Link>
+                    </div>
+                  ))}
+                </CarouselRow>
+              </section>
             )}
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              {filteredVideos.map((v) => {
-                const videoId = getYoutubeId(v.youtube_url);
-                const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
-                return (
-                  <Link
-                    key={v.id}
-                    to={`/videos/${v.id}`}
-                    className="bg-card border border-border/40 rounded-2xl overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all"
-                  >
-                    <div className="relative aspect-video bg-secondary overflow-hidden">
-                      {thumb ? (
-                        <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Youtube size={32} className="text-muted-foreground/20" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                          <Play size={18} className="text-white ml-1" fill="white" />
-                        </div>
-                      </div>
-                      {v.video_type && (
-                        <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${VIDEO_TYPE_COLORS[v.video_type] || 'bg-secondary text-foreground'}`}>
-                          {VIDEO_TYPE_LABELS[v.video_type]}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-3 min-w-0">
-                      <p className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{v.title}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                        <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
-                        <span className="flex items-center gap-1"><Heart size={11} className="text-primary/70" /> {v.likes_count || 0}</span>
-                        {(v.sales_count || 0) > 0 && (
-                          <span className="flex items-center gap-1"><ShoppingCart size={11} className="text-primary/70" /> {v.sales_count}</span>
-                        )}
-                        {v.publish_date && (
-                          <span className="ml-auto">{new Date(v.publish_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}</span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Concerts & événements */}
-        {events.length > 0 && (
-          <section className="py-6 border-t border-border/30">
-            <SectionHeader icon={Calendar} title="Prochains événements" count={events.length} />
-            <div className="space-y-3">
-              {events.map((e) => (
-                <Link
-                  key={e.id}
-                  to={`/evenements/${buildEntitySlug(e.title, e.id)}`}
-                  className="flex items-center gap-3 sm:gap-4 bg-card border border-border/40 rounded-2xl p-3 sm:p-4 hover:border-primary/40 transition-all group"
-                >
-                  {e.event_date && (
-                    <div className="text-center bg-primary/10 border border-primary/20 rounded-xl p-2.5 sm:p-3 shrink-0 min-w-[56px]">
-                      <p className="text-[10px] font-mono text-primary/70 uppercase">
-                        {new Date(e.event_date).toLocaleDateString('fr-FR', { month: 'short' })}
-                      </p>
-                      <p className="text-xl sm:text-2xl font-display font-extrabold text-primary leading-none">
-                        {new Date(e.event_date).getDate()}
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors truncate">{e.title}</p>
-                    {(e.city || e.location) && (
-                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
-                        <MapPin size={11} className="shrink-0" />
-                        <span className="truncate">{[e.city, e.location].filter(Boolean).join(' · ')}</span>
-                      </p>
-                    )}
+            {videos.length > 0 && (
+              <section className="py-6">
+                <h2 className="font-heading font-bold text-xl mb-3">Vidéos</h2>
+                {availableVideoTypes.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      onClick={() => setVideoFilter('all')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                        videoFilter === 'all' ? 'bg-primary text-white border-primary' : 'border-border text-muted-foreground hover:border-primary/40'
+                      }`}
+                    >
+                      Tous ({videos.length})
+                    </button>
+                    {availableVideoTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setVideoFilter(type)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                          videoFilter === type ? 'bg-primary text-white border-primary' : 'border-border text-muted-foreground hover:border-primary/40'
+                        }`}
+                      >
+                        {type.replace('_', ' ')} ({videos.filter((v) => v.video_type === type).length})
+                      </button>
+                    ))}
                   </div>
-                  <ArrowLeft size={14} className="text-muted-foreground rotate-180 shrink-0" />
+                )}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {filteredVideos.map((v) => {
+                    const videoId = getYoutubeId(v.youtube_url);
+                    const thumb = v.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null);
+                    return (
+                      <Link
+                        key={v.id}
+                        to={`/videos/${v.id}`}
+                        className="bg-card border border-border/40 rounded-2xl overflow-hidden group hover:border-primary/40 hover:shadow-md transition-all"
+                      >
+                        <div className="relative aspect-video bg-secondary overflow-hidden">
+                          {thumb ? (
+                            <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Youtube size={32} className="text-muted-foreground/20" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                              <Play size={18} className="text-white ml-1" fill="white" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="p-3 min-w-0">
+                          <p className="font-heading font-bold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">{v.title}</p>
+                          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
+                            <span className="flex items-center gap-1"><Heart size={11} className="text-primary/70" /> {v.likes_count || 0}</span>
+                            {(v.sales_count || 0) > 0 && (
+                              <span className="flex items-center gap-1"><ShoppingCart size={11} className="text-primary/70" /> {v.sales_count}</span>
+                            )}
+                            {v.publish_date && (
+                              <span className="ml-auto">{new Date(v.publish_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' })}</span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            <div className="py-6">
+              <StreamingLinks
+                spotify={artist.spotify_url}
+                youtube={artist.youtube_url}
+                apple_music={artist.apple_music_url}
+                audiomack={artist.audiomack_url}
+                deezer={artist.deezer_url}
+                soundcloud={artist.soundcloud_url}
+              />
+            </div>
+
+            {artist.biography && (
+              <section className="py-6 border-t border-border/30">
+                <h2 className="font-heading font-bold text-xl mb-3">Biographie</h2>
+                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{artist.biography}</p>
+              </section>
+            )}
+
+            {artist.gallery?.length > 0 && (
+              <section className="py-6 border-t border-border/30">
+                <h2 className="font-heading font-bold text-xl mb-3">Galerie</h2>
+                <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
+              </section>
+            )}
+
+            <section className="py-6 border-t border-border/30 space-y-5">
+              <ArtistInfoCard artist={artist} />
+              <ArtistSocialSync artist={artist} />
+            </section>
+
+            <section className="py-6 border-t border-border/30">
+              <SimilarArtists genre={artist.genre} artistId={artist.id} />
+            </section>
+          </>
+        )}
+
+        {tab === 'evenement' && (
+          <section className="py-2">
+            {events.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {events.map((e) => (
+                    <Link
+                      key={e.id}
+                      to={`/evenements/${buildEntitySlug(e.title, e.id)}`}
+                      className="flex items-center gap-3 sm:gap-4 bg-card border border-border/40 rounded-2xl p-3 sm:p-4 hover:border-primary/40 transition-all group"
+                    >
+                      {e.event_date && (
+                        <div className="text-center bg-secondary border border-border/40 rounded-xl p-2.5 sm:p-3 shrink-0 min-w-[56px]">
+                          <p className="text-[10px] font-mono text-muted-foreground uppercase">
+                            {new Date(e.event_date).toLocaleDateString('fr-FR', { month: 'short' })}
+                          </p>
+                          <p className="text-xl sm:text-2xl font-display font-extrabold text-primary leading-none">
+                            {new Date(e.event_date).getDate()}
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-heading font-bold text-sm group-hover:text-primary transition-colors truncate">{e.title}</p>
+                        {(e.city || e.location) && (
+                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
+                            <MapPin size={11} className="shrink-0" />
+                            <span className="truncate">{[e.city, e.location].filter(Boolean).join(' · ')}</span>
+                          </p>
+                        )}
+                        {e.event_date && (
+                          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                            {new Date(e.event_date).toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight size={18} className="text-muted-foreground shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+                <Link
+                  to="/evenements"
+                  className="mt-5 inline-flex items-center justify-center w-full px-4 py-2.5 rounded-full border border-border text-sm font-semibold hover:border-foreground/60 transition-colors"
+                >
+                  Voir tous les événements
                 </Link>
-              ))}
-            </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Calendar size={32} className="text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Aucun événement à venir.</p>
+              </div>
+            )}
           </section>
         )}
-
-        {/* Biographie */}
-        {artist.biography && (
-          <section className="py-6 border-t border-border/30">
-            <SectionHeader title="Biographie" />
-            <div className="bg-card border border-border/40 rounded-2xl p-5">
-              <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{artist.biography}</p>
-            </div>
-          </section>
-        )}
-
-        {/* Galerie */}
-        {artist.gallery?.length > 0 && (
-          <section className="py-6 border-t border-border/30">
-            <SectionHeader title="Galerie" />
-            <ArtistGallery gallery={artist.gallery} artistName={artist.name} />
-          </section>
-        )}
-
-        {/* Infos & sync réseaux */}
-        <section className="py-6 border-t border-border/30 space-y-5">
-          <ArtistInfoCard artist={artist} />
-          <ArtistSocialSync artist={artist} />
-        </section>
-
-        {/* Recommandations */}
-        <section className="py-6 border-t border-border/30">
-          <SimilarArtists genre={artist.genre} artistId={artist.id} />
-        </section>
       </div>
     </div>
   );
