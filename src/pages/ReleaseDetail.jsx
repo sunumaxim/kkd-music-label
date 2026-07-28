@@ -13,6 +13,7 @@ import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
+import LikeButton from '@/components/shared/LikeButton';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
 import { extractIdFromSlug, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, slugify } from '@/lib/slugify';
@@ -145,7 +146,10 @@ export default function ReleaseDetail() {
                 <span className="flex items-center gap-1.5"><ShoppingCart size={14} className="text-primary" /> {release.sales_count} {release.is_for_sale && release.release_date && new Date(release.release_date) > new Date() ? 'précommande(s)' : 'achat(s)'}</span>
               )}
             </div>
-            <ShareBar title={`${release.title} — ${release.artist_name}`} url={sharePreviewUrl} />
+            <div className="flex items-center gap-3">
+              <LikeButton targetType="release" targetId={release.id} title={release.title} artistName={release.artist_name} coverUrl={release.cover_url} size={22} />
+              <ShareBar title={`${release.title} — ${release.artist_name}`} url={sharePreviewUrl} />
+            </div>
           </div>
         </div>
       </div>

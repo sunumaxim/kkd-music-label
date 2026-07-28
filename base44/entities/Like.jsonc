@@ -1,0 +1,74 @@
+{
+  "name": "Like",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email du propri\u00e9taire du like"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "release",
+        "video"
+      ],
+      "description": "Type de contenu lik\u00e9"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID du contenu lik\u00e9"
+    },
+    "target_title": {
+      "type": "string",
+      "description": "Titre (d\u00e9normalis\u00e9, pour affichage biblioth\u00e8que)"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Artiste (d\u00e9normalis\u00e9)"
+    },
+    "cover_url": {
+      "type": "string",
+      "description": "Pochette / miniature (d\u00e9normalis\u00e9e)"
+    }
+  },
+  "required": [
+    "user_email",
+    "target_type",
+    "target_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

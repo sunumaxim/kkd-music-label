@@ -7,7 +7,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ListMusic, Play, Pause, Trash2, X, Plus, Music as MusicIcon, ArrowLeft, LogIn } from 'lucide-react';
+import { ListMusic, Play, Pause, Trash2, X, Plus, Music as MusicIcon, ArrowLeft, LogIn, Heart } from 'lucide-react';
+import { buildEntitySlug } from '@/lib/slugify';
 
 function fmtDate(iso) {
   if (!iso) return '';
@@ -32,6 +33,12 @@ export default function Playlists() {
   const { data: playlists = [], isLoading } = useQuery({
     queryKey: ['my-playlists'],
     queryFn: () => base44.entities.Playlist.list('-updated_date', 100),
+    enabled: !!me,
+  });
+
+  const { data: likes = [] } = useQuery({
+    queryKey: ['my-likes'],
+    queryFn: () => base44.entities.Like.list('-created_date', 100),
     enabled: !!me,
   });
 
@@ -184,6 +191,38 @@ export default function Playlists() {
             <Button variant="outline" onClick={() => setCreating(false)}>Annuler</Button>
           </div>
         </div>
+      )}
+
+      {likes.length > 0 && (
+        <section className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Heart size={18} className="text-primary" fill="currentColor" />
+            <h2 className="font-display font-bold text-lg">Coups de cœur</h2>
+            <span className="text-xs text-muted-foreground">{likes.length}</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+            {likes.map((lk) => (
+              <Link
+                key={lk.id}
+                to={lk.target_type === 'video' ? `/videos/${lk.target_id}` : `/musique/${buildEntitySlug(lk.target_title, lk.target_id)}`}
+                className="shrink-0 w-28 group"
+              >
+                <div className="relative aspect-square rounded-xl overflow-hidden bg-secondary mb-1.5">
+                  {lk.cover_url ? (
+                    <img src={lk.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center"><MusicIcon size={20} className="text-muted-foreground/40" /></div>
+                  )}
+                  <div className="absolute top-1.5 right-1.5 bg-black/40 rounded-full p-0.5">
+                    <Heart size={12} className="text-primary" fill="currentColor" />
+                  </div>
+                </div>
+                <p className="text-xs font-heading font-bold truncate">{lk.target_title}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{lk.artist_name}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       {isLoading ? (

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
+import LikeButton from '@/components/shared/LikeButton';
 import { buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
 import { motion } from 'framer-motion';
 
@@ -199,7 +200,10 @@ export default function VideoDetail() {
             {/* Share block */}
             <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
               <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Partager cette vidéo</p>
-              <ShareBar title={video.title} url={sharePreviewUrl} />
+              <div className="flex items-center gap-3">
+                <LikeButton targetType="video" targetId={video.id} title={video.title} artistName={video.artist_name} coverUrl={video.thumbnail_url} size={22} />
+                <ShareBar title={video.title} url={sharePreviewUrl} />
+              </div>
               {video.youtube_url && (
                 <a href={video.youtube_url} target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 transition-colors mt-1">
