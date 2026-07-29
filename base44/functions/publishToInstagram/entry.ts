@@ -17,10 +17,26 @@ async function getPublicImageUrl(base44, imageUrl) {
   return imageUrl;
 }
 
+// Récupère un enregistrement : utilise les données de l'automatisation si présentes, sinon fetch par ID
+async function getRecord(base44, entityName, autoData, entityId) {
+  if (autoData) return autoData;
+  try { return await base44.asServiceRole.entities[entityName].get(entityId); } catch { return null; }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { content_type, entity_id, video_url, caption: bodyCaption } = await req.json();
+    const body = await req.json();
+    let { content_type, entity_id, video_url, caption: bodyCaption } = body;
+
+    // Payload d'automatisation entité : { event: { entity_name, entity_id }, data, old_data }
+    let autoData = null;
+    if (!content_type && body.event?.entity_name) {
+      const map = { Video: 'video', News: 'news', Release: 'release', Event: 'event', Broadcast: 'broadcast' };
+      content_type = map[body.event.entity_name];
+      entity_id = entity_id || body.event.entity_id;
+      autoData = body.data;
+    }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('instagram');
 
@@ -73,8 +89,7 @@ Deno.serve(async (req) => {
     let imageUrl, caption;
 
     if (content_type === 'broadcast') {
-      const bs = await base44.asServiceRole.entities.Broadcast.filter({ id: entity_id });
-      const b = bs[0];
+      const b = await getRecord(base44, 'Broadcast', autoData, entity_id);
       if (!b) return Response.json({ error: 'Direct introuvable' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, b.background_image_url);
       if (!imageUrl && b.linked_event_id) {
@@ -83,8 +98,7 @@ Deno.serve(async (req) => {
       }
       caption = `🔴 ${b.title}\n\n${b.description || ''}\n\n${b.stream_url ? `▶️ Regarder le direct : ${b.stream_url}\n\n` : ''}#KKDmusic #live #concert`;
     } else if (content_type === 'release') {
-      const releases = await base44.asServiceRole.entities.Release.filter({ id: entity_id });
-      const r = releases[0];
+      const r = await getRecord(base44, 'Release', autoData, entity_id);
       if (!r) return Response.json({ error: 'Release not found' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, r.cover_url);
       const streamLink = r.spotify_url || r.apple_music_url || r.audiomack_url || r.youtube_url || '';
@@ -93,8 +107,7 @@ Deno.serve(async (req) => {
         (streamLink ? `🎧 Écouter : ${streamLink}\n\n` : '') +
         `#KKDmusic #NouveautéMusicale #${(r.artist_name || 'Music').replace(/\s+/g, '')} #${r.release_type || 'Music'}`;
     } else if (content_type === 'event') {
-      const events = await base44.asServiceRole.entities.Event.filter({ id: entity_id });
-      const e = events[0];
+      const e = await getRecord(base44, 'Event', autoData, entity_id);
       if (!e) return Response.json({ error: 'Event not found' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, e.image_url);
       const dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -105,16 +118,14 @@ Deno.serve(async (req) => {
         (e.ticket_url ? `\n🎟️ Billets : ${e.ticket_url}\n` : '') +
         `\n#KKDmusic #Concert #${(e.city || 'Événement').replace(/\s+/g, '')}`;
     } else if (content_type === 'news') {
-      const newsList = await base44.asServiceRole.entities.News.filter({ id: entity_id });
-      const n = newsList[0];
+      const n = await getRecord(base44, 'News', autoData, entity_id);
       if (!n) return Response.json({ error: 'News not found' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, n.image_url);
       caption = `📰 ${n.title}\n\n` +
         (n.excerpt || (n.content && n.content.slice(0, 200)) || '') +
         `\n\n#KKDmusic #Actualité #Music`;
     } else if (content_type === 'video') {
-      const videos = await base44.asServiceRole.entities.Video.filter({ id: entity_id });
-      const v = videos[0];
+      const v = await getRecord(base44, 'Video', autoData, entity_id);
       if (!v) return Response.json({ error: 'Video not found' }, { status: 404 });
       imageUrl = await getPublicImageUrl(base44, v.thumbnail_url);
       if (!imageUrl && v.youtube_url) {
