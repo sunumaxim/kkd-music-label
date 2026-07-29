@@ -65,6 +65,7 @@ import AdminStudios from './pages/admin/AdminStudios.jsx';
 import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
+import PublishHost from '@/components/shared/PublishHost';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -161,6 +162,7 @@ function App() {
         <SplashScreen onDone={() => setSplashDone(true)} />
         <Router>
           <AuthenticatedApp />
+          <PublishHost />
         </Router>
         <Toaster />
         <InstallPrompt />

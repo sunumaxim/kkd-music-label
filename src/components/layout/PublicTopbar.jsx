@@ -60,12 +60,12 @@ export default function PublicTopbar() {
       <div className="flex items-center gap-2 ml-auto">
         {user ? (
           <>
-            <Link
-              to="/mon-espace"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish'))}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               <Upload size={15} /> Publier
-            </Link>
+            </button>
             <NotificationBell user={user} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -335,14 +335,14 @@ export default function PartnerDashboard() {
 
             {/* Actions rapides */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button onClick={() => setShowPublishForm(true)}
-                className="flex items-center gap-4 p-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary/60 transition-all group active:scale-[0.99]">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors shrink-0">
-                  <Plus size={24} className="text-primary" />
+              <button onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish'))}
+                className="flex items-center gap-4 p-5 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all group active:scale-[0.99] shadow-md">
+                <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center group-hover:bg-primary-foreground/25 transition-colors shrink-0">
+                  <Plus size={26} strokeWidth={2.5} />
                 </div>
                 <div className="text-left">
-                  <p className="font-display font-extrabold text-base text-primary">Publier mon contenu</p>
-                  <p className="text-sm text-muted-foreground">Sortie, album, clip, playlist…</p>
+                  <p className="font-display font-extrabold text-base">Publier</p>
+                  <p className="text-sm text-primary-foreground/80">Son, clip — simple et rapide</p>
                 </div>
               </button>
 
