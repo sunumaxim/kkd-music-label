@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import SectionHeader from './SectionHeader';
 import CarouselRow from './CarouselRow';
+import { slugify } from '@/lib/slugify';
 
 export default function TrendingArtists({ artists }) {
   if (!artists || artists.length === 0) return null;
@@ -23,7 +24,7 @@ export default function TrendingArtists({ artists }) {
               transition={{ delay: Math.min(i * 0.04, 0.3) }}
               className="snap-start shrink-0 w-32 md:w-40"
             >
-              <Link to={`/artistes/${a.id}`} className="group flex flex-col items-center text-center">
+              <Link to={`/artistes/${a.slug || slugify(a.name)}`} className="group flex flex-col items-center text-center">
                 <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden mb-3 ring-2 ring-transparent group-hover:ring-primary/50 transition-all">
                   {a.photo_url ? (
                     <img src={a.photo_url} alt={a.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />

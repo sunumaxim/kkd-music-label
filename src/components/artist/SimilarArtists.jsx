@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Sparkles } from 'lucide-react';
+import { slugify } from '@/lib/slugify';
 
 /**
  * Recommandations d'artistes similaires (même genre musical).
@@ -35,7 +36,7 @@ export default function SimilarArtists({ genre, artistId }) {
         {similar.map((a) => (
           <Link
             key={a.id}
-            to={`/artistes/${a.id}`}
+            to={`/artistes/${a.slug || slugify(a.name)}`}
             className="flex-none w-32 sm:w-36 bg-card border border-border/40 rounded-2xl overflow-hidden group hover:border-primary/40 transition-all"
           >
             <div className="aspect-square overflow-hidden">

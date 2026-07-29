@@ -2,10 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import FollowButton from '@/components/artist/FollowButton';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import { slugify } from '@/lib/slugify';
 
 export default function ArtistCard({ artist: a }) {
   return (
-    <Link to={`/artistes/${a.id}`} className="block h-full">
+    <Link to={`/artistes/${a.slug || slugify(a.name)}`} className="block h-full">
       <article className="kkd-card-artist">
         <div className="kkd-card-artist-avatar">
           {a.photo_url && <img src={a.photo_url} alt={a.name} loading="lazy" />}

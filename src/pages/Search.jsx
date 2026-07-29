@@ -70,7 +70,7 @@ export default function SearchPage() {
         {data?.artists.length > 0 && (
           <Section title="Artistes">
             {data.artists.map((a) => (
-              <Link key={a.id} to={`/artistes/${a.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/60 transition-colors">
+              <Link key={a.id} to={`/artistes/${a.slug || slugify(a.name)}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/60 transition-colors">
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-secondary shrink-0">
                   {a.photo_url && <img src={a.photo_url} alt="" className="w-full h-full object-cover" />}
                 </div>

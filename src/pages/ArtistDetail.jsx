@@ -69,6 +69,11 @@ export default function ArtistDetail() {
       const all = await base44.entities.Artist.list('-created_date', 500);
       const found = all.find((a) => slugify(a.name) === slug);
       if (found) { base44.entities.Artist.update(found.id, { slug }).catch(() => {}); return found; }
+      // Fallback : lien legacy brut par ID (ex : /artistes/<id>)
+      try {
+        const byId = await base44.entities.Artist.get(slugParam);
+        if (byId) return byId;
+      } catch (_) {}
       return null;
     },
   });

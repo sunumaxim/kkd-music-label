@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { slugify } from '@/lib/slugify';
 
 export default function FeaturedArtists({ artists }) {
   if (!artists || artists.length === 0) return null;
@@ -30,7 +31,7 @@ export default function FeaturedArtists({ artists }) {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
             >
-              <Link to={`/artistes/${artist.id}`} className="group block">
+              <Link to={`/artistes/${artist.slug || slugify(artist.name)}`} className="group block">
                 <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-card mb-3">
                   {artist.photo_url ? (
                     <img

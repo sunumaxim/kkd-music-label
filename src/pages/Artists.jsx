@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, X } from 'lucide-react';
+import { slugify } from '@/lib/slugify';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 
 export default function Artists() {
@@ -59,7 +60,7 @@ export default function Artists() {
                       isPlaying ? 'border-primary/60' : 'border-transparent hover:border-border/50'
                     }`}>
                       {/* Photo */}
-                      <Link to={`/artistes/${artist.id}`} className="block">
+                      <Link to={`/artistes/${artist.slug || slugify(artist.name)}`} className="block">
                         <div className="relative aspect-[3/4] overflow-hidden bg-card">
                           {artist.photo_url ? (
                             <img
@@ -99,7 +100,7 @@ export default function Artists() {
                             {isPlaying ? 'En écoute...' : 'Écouter'}
                           </button>
                           <Link
-                            to={`/artistes/${artist.id}`}
+                            to={`/artistes/${artist.slug || slugify(artist.name)}`}
                             className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5"
                           >
                             Profil
