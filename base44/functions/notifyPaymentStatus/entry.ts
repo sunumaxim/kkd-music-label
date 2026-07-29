@@ -18,7 +18,7 @@ const STATUS_CONFIG = {
     title: "Paiement non validé",
     headline: "Paiement non validé",
     notifType: "warning",
-    link: "/mon-espace",
+    link: "/mes-achats",
     bodyFn: (p) =>
       `Votre paiement pour <strong>"${p.item_title}"</strong> n'a pas pu être validé. Contactez l'équipe KKD Music pour plus d'informations.`,
   },

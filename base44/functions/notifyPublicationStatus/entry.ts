@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       subject: cfg.title,
       headline: cfg.headline,
       body: cfg.bodyFn(data),
-      cta: { label: 'Voir mon espace partenaire', url: `${SITE_URL}/mon-espace` },
+      cta: { label: 'Voir mes publications', url: `${SITE_URL}/mon-espace?tab=publications` },
       extra: extraBlock,
     });
 
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         title: cfg.headline,
         message: cfg.bodyFn(data).replace(/<[^>]+>/g, '').substring(0, 200),
         type: cfg.notifType,
-        link: '/mon-espace',
+        link: '/mon-espace?tab=publications',
         is_read: false,
       }),
       base44.asServiceRole.integrations.Core.SendEmail({

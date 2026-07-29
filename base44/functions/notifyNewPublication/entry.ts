@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         <tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};color:#777;">Plateforme</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};color:#ddd;font-weight:600;text-align:right;">${platform}</td></tr>
         ${data.artist_name ? `<tr><td style="padding:8px 0;color:#777;">Artiste</td><td style="padding:8px 0;color:#ddd;font-weight:600;text-align:right;">${data.artist_name}</td></tr>` : ''}
       </table>`,
-      cta: { label: 'Voir mon espace partenaire', url: `${SITE_URL}/mon-espace` },
+      cta: { label: 'Voir mes publications', url: `${SITE_URL}/mon-espace?tab=publications` },
     });
 
     await base44.asServiceRole.integrations.Core.SendEmail({
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       title: '📬 Publication reçue !',
       message: `Votre publication "${data.title}" a bien été soumise. Notre équipe vous répondra prochainement.`,
       type: 'info',
-      link: '/mon-espace',
+      link: '/mon-espace?tab=publications',
       is_read: false,
     });
 

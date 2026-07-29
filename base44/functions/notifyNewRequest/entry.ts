@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       headline: 'Votre demande a été reçue !',
       body: `Bonjour <strong>${data.full_name}</strong>,<br><br>Nous avons bien reçu votre demande de <strong>${requestType}</strong>. Notre équipe l'examine et vous contactera dans les meilleurs délais.<br><br>Voici le récapitulatif de votre demande :`,
       extra: infoBlock + (data.description ? `<div style="margin-top:16px;background:#1a1a1a;border-left:3px solid ${PRIMARY};border-radius:6px;padding:14px 18px;font-size:14px;color:#ddd;line-height:1.6;">${data.description}</div>` : ''),
-      cta: { label: 'Suivre ma demande', url: `${SITE_URL}/mon-espace` },
+      cta: { label: 'Suivre ma demande', url: `${SITE_URL}/mon-espace?tab=demandes` },
     });
 
     // Notif in-app
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       title: '📩 Demande bien reçue !',
       message: `Votre demande de ${requestType} a été enregistrée. Nous reviendrons vers vous très prochainement.`,
       type: 'info',
-      link: '/mon-espace',
+      link: '/mon-espace?tab=demandes',
       is_read: false,
     });
 

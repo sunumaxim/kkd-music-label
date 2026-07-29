@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
@@ -60,7 +60,8 @@ const TABS = [
 ];
 
 export default function PartnerDashboard() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [showPublishForm, setShowPublishForm] = useState(false);
   const [showPublishEventForm, setShowPublishEventForm] = useState(false);
   const [showAccessForm, setShowAccessForm] = useState(false);
@@ -74,6 +75,19 @@ export default function PartnerDashboard() {
 
   const isPartner = user?.role === 'admin' || user?.role === 'partner';
   useEffect(() => { if (user && !isPartner) setActiveTab('demandes'); }, [user, isPartner]);
+
+  // Synchronise l'onglet actif avec ?tab= (redirections depuis les notifications)
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (!t) return;
+    const allowed = isPartner ? TABS.map(x => x.id) : ['demandes'];
+    if (allowed.includes(t) && t !== activeTab) setActiveTab(t);
+  }, [searchParams, isPartner]);
+
+  const changeTab = (tab) => {
+    setActiveTab(tab);
+    setSearchParams(tab === 'dashboard' ? {} : { tab }, { replace: true });
+  };
   const tabs = isPartner ? TABS : TABS.filter((t) => t.id === 'demandes');
 
   const { data: myRequests = [] } = useQuery({
@@ -187,7 +201,7 @@ export default function PartnerDashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => changeTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'

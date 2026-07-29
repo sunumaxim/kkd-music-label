@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       subject: cfg.title,
       headline: cfg.headline,
       body: cfg.bodyFn(data),
-      cta: { label: "Voir mon espace partenaire", url: `${SITE_URL}/mon-espace` },
+      cta: { label: "Accéder à mon espace artiste", url: `${SITE_URL}/mon-espace?tab=artiste` },
       extra: notesBlock,
     });
 
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       title: cfg.headline,
       message: stripHtml(cfg.bodyFn(data)),
       type: cfg.notifType,
-      link: "/mon-espace",
+      link: "/mon-espace?tab=artiste",
       subject: `KKD Music — ${cfg.title}`,
       body: htmlBody,
     });
