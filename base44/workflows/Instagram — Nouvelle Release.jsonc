@@ -1,0 +1,36 @@
+{
+  "name": "Instagram \u2014 Nouvelle Release",
+  "description": "",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Release"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "instagram_nouvelle_release",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "publishToInstagram",
+            "args": {
+              "content_type": "release"
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

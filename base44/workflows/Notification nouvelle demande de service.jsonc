@@ -1,0 +1,34 @@
+{
+  "name": "Notification nouvelle demande de service",
+  "description": "Envoie un email de confirmation au demandeur + alerte les admins quand une nouvelle demande de service est soumise",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "ServiceRequest"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "notification_nouvelle_demande_de_service",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notifyNewRequest",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

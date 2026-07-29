@@ -1,0 +1,36 @@
+{
+  "name": "Instagram \u2014 Nouvel \u00c9v\u00e9nement",
+  "description": "",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Event"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "instagram_nouvel_v_nement",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "publishToInstagram",
+            "args": {
+              "content_type": "event"
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

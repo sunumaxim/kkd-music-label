@@ -1,0 +1,34 @@
+{
+  "name": "Notification changement statut demande",
+  "description": "",
+  "trigger": {
+    "condition": "${ (.trigger.changed_fields | index(\"status\") != null) }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "update"
+      ],
+      "entity_name": "ServiceRequest"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "notification_changement_statut_demande",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "onRequestStatusChange",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
