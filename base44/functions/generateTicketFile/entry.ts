@@ -48,15 +48,22 @@ async function fetchImage(url) {
   } catch (_) { return null; }
 }
 
-function fmtDate(d) {
-  try { return new Date(d).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }); } catch (_) { return ''; }
+function fmtDateParts(d) {
+  try {
+    const date = new Date(d);
+    const days = ['DIMANCHE','LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI'];
+    const months = ['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEP','OCT','NOV','DÉC'];
+    return {
+      dayName: days[date.getDay()],
+      day: String(date.getDate()).padStart(2,'0'),
+      month: months[date.getMonth()],
+      year: date.getFullYear(),
+      time: String(date.getHours()).padStart(2,'0') + 'H' + String(date.getMinutes()).padStart(2,'0'),
+      shortDate: `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+    };
+  } catch(_) { return null; }
 }
 
-function fmtDateShort(d) {
-  try { return new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (_) { return ''; }
-}
-
-// Génère la valeur du code-barres : date + heure + minute + KKD + SM
 function generateBarcodeValue(ticket) {
   const d = new Date(ticket.validated_date || ticket.created_date || Date.now());
   const y = d.getUTCFullYear();
@@ -67,12 +74,9 @@ function generateBarcodeValue(ticket) {
   return `${y}${m}${day}${h}${min}KKDSM`;
 }
 
-// Dessine un code-barres visuel (pattern Code 128-like)
 function drawBarcode(doc, x, y, w, h, value) {
   const bars = [];
-  // Start guard
   bars.push({ w: 2, black: true }); bars.push({ w: 1, black: false });
-  // Data
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i);
     for (let j = 0; j < 4; j++) {
@@ -80,13 +84,11 @@ function drawBarcode(doc, x, y, w, h, value) {
       bars.push({ w: width, black: j % 2 === 0 });
     }
   }
-  // Stop guard
   bars.push({ w: 1, black: false }); bars.push({ w: 2, black: true });
-
   const totalUnits = bars.reduce((s, b) => s + b.w, 0);
   const unitW = w / totalUnits;
   let cx = x;
-  doc.setFillColor(255, 255, 255); doc.rect(x, y, w, h, 'F');
+  doc.setFillColor(255, 255, 255); doc.rect(x - 2, y - 2, w + 4, h + 4, 'F');
   for (const bar of bars) {
     if (bar.black) {
       doc.setFillColor(20, 18, 16);
@@ -94,6 +96,47 @@ function drawBarcode(doc, x, y, w, h, value) {
     }
     cx += bar.w * unitW;
   }
+}
+
+// ── Simple vector icons ──
+function drawIconCalendar(doc, x, y, s, c) {
+  doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(1);
+  doc.roundedRect(x, y + s * 0.22, s, s * 0.78, 1, 1, 'S');
+  doc.line(x + s * 0.22, y, x + s * 0.22, y + s * 0.28);
+  doc.line(x + s * 0.78, y, x + s * 0.78, y + s * 0.28);
+  doc.line(x, y + s * 0.32, x + s, y + s * 0.32);
+}
+function drawIconClock(doc, x, y, s, c) {
+  doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(1);
+  doc.circle(x + s / 2, y + s / 2, s / 2 - 0.5, 'S');
+  doc.line(x + s / 2, y + s / 2, x + s / 2, y + s * 0.18);
+  doc.line(x + s / 2, y + s / 2, x + s * 0.78, y + s / 2);
+}
+function drawIconPin(doc, x, y, s, c) {
+  doc.setFillColor(c[0], c[1], c[2]);
+  const cx = x + s / 2, cy = y + s * 0.35, r = s * 0.32;
+  doc.circle(cx, cy, r, 'F');
+  doc.triangle(cx - r * 0.7, cy + r * 0.7, cx + r * 0.7, cy + r * 0.7, cx, y + s, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.circle(cx, cy, r * 0.38, 'F');
+}
+
+function drawCertifiedStamp(doc, cx, cy, r) {
+  doc.setDrawColor(229, 57, 53);
+  doc.setFillColor(255, 255, 255);
+  doc.setLineWidth(1.5);
+  doc.circle(cx, cy, r, 'F');
+  doc.circle(cx, cy, r, 'S');
+  doc.setLineWidth(0.4);
+  doc.circle(cx, cy, r - 2.5, 'S');
+  doc.setTextColor(229, 57, 53);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.5);
+  doc.text('★ ARTISTE ★', cx, cy - 5, { align: 'center' });
+  doc.setFontSize(6.5);
+  doc.text('KKDmusic', cx, cy + 1, { align: 'center' });
+  doc.setFontSize(4.5);
+  doc.text('CERTIFIÉ', cx, cy + 7, { align: 'center' });
 }
 
 Deno.serve(async (req) => {
@@ -110,138 +153,303 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
     const ev = events[0];
 
+    // Fetch artist photo (priority: artist photo_url > artist cover_url > event poster)
+    let artistPhotoUrl = null;
+    let artistName = ev?.artist_name || ticket.artist_name || '';
+    let artistVerified = false;
+    if (ev?.artist_id) {
+      try {
+        const artists = await base44.asServiceRole.entities.Artist.filter({ id: ev.artist_id });
+        if (artists[0]) {
+          artistPhotoUrl = artists[0].photo_url || artists[0].cover_url;
+          artistName = artists[0].name || artistName;
+          artistVerified = !!artists[0].is_verified;
+        }
+      } catch (_) {}
+    }
+
     const base = (app_url || '').replace(/\/+$/, '');
     const qrData = `${base}/billet/${encodeURIComponent(ticket_number)}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&ecc=H&margin=0&data=${encodeURIComponent(qrData)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&margin=0&data=${encodeURIComponent(qrData)}`;
 
-    const [logo, poster, qr] = await Promise.all([
+    const [logo, artistPhoto, eventPoster, qr] = await Promise.all([
       fetchImage(LOGO_URL),
+      fetchImage(artistPhotoUrl),
       fetchImage(ev?.image_url || ticket.event_image_url),
       fetchImage(qrUrl),
     ]);
 
-    // ═══ Design professionnel du billet ═══
-    const W = 400, H = 740;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [W, H] });
+    const bgImage = artistPhoto || eventPoster;
+    const dp = fmtDateParts(ev?.event_date || ticket.event_date);
+    const barcodeValue = generateBarcodeValue(ticket);
 
-    // Fond sombre
-    doc.setFillColor(18, 16, 14); doc.rect(0, 0, W, H, 'F');
+    const eventTypeMap = { concert: 'CONCERT', festival: 'FESTIVAL', showcase: 'SHOWCASE', rencontre: 'RENCONTRE' };
+    const eventTypeLabel = eventTypeMap[ev?.event_type] || 'CONCERT';
 
-    // Bandes rouges haut/bas
-    doc.setFillColor(229, 57, 53); doc.rect(0, 0, W, 7, 'F'); doc.rect(0, H - 7, W, 7, 'F');
+    // ═══ Layout constants ═══
+    const W = 780, H = 460;
+    const FOOTER_H = 52;
+    const TICKET_H = H - FOOTER_H;
+    const MAIN_W = 540;
+    const SIDE_W = W - MAIN_W;
+    const R = 10;
+    const RED = [229, 57, 53];
 
-    // ── En-tête ──
-    if (logo) { try { doc.addImage(logo.data, logo.fmt, 22, 22, 38, 38); } catch (_) {} }
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
-    doc.text('KKD MUSIC', 70, 38);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(180, 175, 170);
-    doc.text('BILLET OFFICIEL  ·  SunuMaxim GROUP', 70, 52);
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [W, H] });
 
-    // Séparateur
-    doc.setDrawColor(229, 57, 53); doc.setLineWidth(1.5);
-    doc.line(22, 70, W - 22, 70);
+    // White base
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, W, H, 'F');
 
-    // ── Affiche ──
-    let py = 82;
-    const pw = W - 44, ph = 170;
-    if (poster) { try { doc.addImage(poster.data, poster.fmt, 22, py, pw, ph); } catch (_) {} }
-    else { doc.setFillColor(40, 36, 32); doc.rect(22, py, pw, ph, 'F'); }
-    py += ph + 16;
+    // ═══════════════════════════════════════
+    // MAIN SECTION (left — black bg + artist image)
+    // ═══════════════════════════════════════
+    doc.setFillColor(6, 6, 6);
+    doc.roundedRect(0, 0, MAIN_W, TICKET_H, R, R, 'F');
 
-    // ── Titre événement ──
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
-    const titleLines = doc.splitTextToSize(String(ticket.event_title || 'Evenement'), W - 44);
-    doc.text(titleLines, 22, py);
-    py += titleLines.length * 24;
-
-    // Artiste
-    if (ev?.artist_name || ticket.artist_name) {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(229, 57, 53);
-      doc.text(String(ev?.artist_name || ticket.artist_name), 22, py); py += 17;
+    // Artist image as background (clipped to rounded rect)
+    if (bgImage) {
+      try {
+        doc.saveGraphicsState();
+        doc.roundedRect(0, 0, MAIN_W, TICKET_H, R, R);
+        doc.clip();
+        doc.discardPath();
+        doc.addImage(bgImage.data, bgImage.fmt, 0, 0, MAIN_W, TICKET_H, undefined, 'FAST');
+        doc.restoreGraphicsState();
+      } catch (_) {
+        try { doc.addImage(bgImage.data, bgImage.fmt, 0, 0, MAIN_W, TICKET_H, undefined, 'FAST'); } catch (_2) {}
+      }
     }
 
-    // Date + lieu
-    doc.setTextColor(190, 185, 180); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    if (ev?.event_date || ticket.event_date) {
-      doc.text(fmtDate(ev?.event_date || ticket.event_date), 22, py, { maxWidth: W - 44 }); py += 14;
+    // Dark overlay for text readability
+    let overlayApplied = false;
+    try {
+      doc.setGState(new doc.GState({ opacity: 0.55 }));
+      doc.setFillColor(5, 5, 5);
+      doc.rect(0, 0, MAIN_W, TICKET_H, 'F');
+      doc.setGState(new doc.GState({ opacity: 1 }));
+      overlayApplied = true;
+    } catch (_) {}
+    if (!overlayApplied && !bgImage) {
+      doc.setFillColor(6, 6, 6);
+      doc.rect(0, 0, MAIN_W, TICKET_H, 'F');
     }
-    if (ev?.location || ev?.city) {
-      const locStr = [ev?.city, ev?.location].filter(Boolean).join(' — ');
-      doc.text(locStr, 22, py, { maxWidth: W - 44 }); py += 14;
-    }
-    py += 8;
 
-    // ── QR code + infos ──
-    const qrSize = 120;
-    const qrX = 22;
-    // Fond blanc arrondi pour le QR
-    doc.setFillColor(255, 255, 255); doc.roundedRect(qrX - 5, py - 5, qrSize + 10, qrSize + 10, 6, 6, 'F');
-    if (qr) { try { doc.addImage(qr.data, qr.fmt, qrX, py, qrSize, qrSize); } catch (_) {} }
-    // Logo au centre du QR
+    // Red top stripe
+    doc.setFillColor(RED[0], RED[1], RED[2]);
+    doc.rect(0, 0, MAIN_W, 4, 'F');
+
+    // ── Logo + PRÉSENTE ──
+    const padL = 28;
+    let logoW = 30, logoH = 30;
+    if (logo) { try { doc.addImage(logo.data, logo.fmt, padL, 18, logoW, logoH); } catch (_) {} }
+    const textX = padL + (logo ? logoW + 8 : 0);
+    doc.setTextColor(RED[0], RED[1], RED[2]);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(19);
+    doc.text('KKD', textX, 34);
+    doc.setTextColor(255, 255, 255);
+    doc.text('music', textX + 33, 34);
+    doc.setTextColor(170, 170, 170);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text('PRÉSENTE', textX, 46);
+
+    // ── Title area ──
+    let y = 118;
+    doc.setTextColor(RED[0], RED[1], RED[2]);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(eventTypeLabel, padL, y);
+
+    y += 30;
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(34);
+    const artistUpper = (artistName || ticket.event_title || 'ÉVÉNEMENT').toUpperCase();
+    const nameLines = doc.splitTextToSize(artistUpper, MAIN_W - padL * 2);
+    doc.text(nameLines.slice(0, 2), padL, y);
+    y += nameLines.length > 1 ? 38 : 22;
+
+    doc.setTextColor(RED[0], RED[1], RED[2]);
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(20);
+    doc.text('En Live', padL, y);
+
+    // ── Date / Time / Location ──
+    y = 252;
+    if (dp) {
+      drawIconCalendar(doc, padL, y - 10, 11, RED);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+      doc.text(`${dp.dayName} / ${dp.day} ${dp.month} ${dp.year}`, padL + 16, y);
+      drawIconClock(doc, padL, y + 4, 11, RED);
+      doc.setTextColor(210, 210, 210);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      doc.text(dp.time, padL + 16, y + 14);
+
+      const rx = 280;
+      drawIconPin(doc, rx, y - 10, 11, RED);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+      const locStr = [ev?.location, ev?.city].filter(Boolean).join(' — ').toUpperCase() || 'LIEU À CONFIRMER';
+      const locLines = doc.splitTextToSize(locStr, MAIN_W - rx - padL);
+      doc.text(locLines.slice(0, 2), rx + 16, y);
+    }
+
+    // ── Disclaimer ──
+    doc.setTextColor(150, 150, 150);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text('BILLET VALIDE POUR UNE SEULE ENTRÉE', padL, 298);
+
+    // ── Bottom bar (3 sections) ──
+    const barY = 314, barH = 70;
+    try {
+      doc.setGState(new doc.GState({ opacity: 0.65 }));
+      doc.setFillColor(0, 0, 0);
+      doc.rect(0, barY, MAIN_W, barH, 'F');
+      doc.setGState(new doc.GState({ opacity: 1 }));
+    } catch (_) {
+      doc.setFillColor(0, 0, 0);
+      doc.rect(0, barY, MAIN_W, barH, 'F');
+    }
+
+    doc.setDrawColor(50, 50, 50); doc.setLineWidth(0.5);
+    const s1 = MAIN_W / 3, s2 = MAIN_W * 2 / 3;
+    doc.line(s1, barY + 10, s1, barY + barH - 10);
+    doc.line(s2, barY + 10, s2, barY + barH - 10);
+
+    // CATÉGORIE
+    doc.setTextColor(140, 140, 140); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text('CATÉGORIE', s1 / 2, barY + 24, { align: 'center' });
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('STANDARD', s1 / 2, barY + 46, { align: 'center' });
+
+    // PRIX
+    doc.setTextColor(140, 140, 140); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text('PRIX', (s1 + s2) / 2, barY + 24, { align: 'center' });
+    const priceStr = Number(ticket.amount || 0).toLocaleString('fr-FR');
+    doc.setTextColor(RED[0], RED[1], RED[2]); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text(priceStr, (s1 + s2) / 2 - 8, barY + 46, { align: 'center' });
+    doc.setTextColor(255, 255, 255); doc.setFontSize(8);
+    doc.text('FCFA', (s1 + s2) / 2 + priceStr.length * 3.5 + 2, barY + 46, { align: 'left' });
+
+    // N° TICKET
+    doc.setTextColor(140, 140, 140); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.text('N° TICKET', (s2 + MAIN_W) / 2, barY + 24, { align: 'center' });
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(String(ticket.ticket_number || ''), (s2 + MAIN_W) / 2, barY + 44, { align: 'center' });
+
+    // ── Certified stamp ──
+    drawCertifiedStamp(doc, MAIN_W - 42, barY - 28, 24);
+
+    // ═══════════════════════════════════════
+    // SIDEBAR (right — light gray)
+    // ═══════════════════════════════════════
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(MAIN_W, 0, SIDE_W, TICKET_H, R, R, 'F');
+
+    // Perforation dashed line
+    doc.setDrawColor(170, 170, 170); doc.setLineWidth(0.5);
+    doc.setLineDashPattern([3, 3], 0);
+    doc.line(MAIN_W, 12, MAIN_W, TICKET_H - 36);
+    doc.setLineDashPattern([], 0);
+
+    const sx = MAIN_W + 14;
+    const sw = SIDE_W - 28;
+    let sy = 18;
+
+    // Red pill "TICKET OFFICIEL"
+    doc.setFillColor(RED[0], RED[1], RED[2]);
+    doc.roundedRect(sx, sy, sw, 18, 9, 9, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+    doc.text('TICKET OFFICIEL', MAIN_W + SIDE_W / 2, sy + 12.5, { align: 'center' });
+    sy += 28;
+
+    // Info list
+    const infoItems = [
+      { label: 'N° TICKET', value: String(ticket.ticket_number || '') },
+      { label: 'NOM', value: (ticket.buyer_name || '—').toUpperCase() },
+      { label: 'TÉLÉPHONE', value: ticket.buyer_phone || '—' },
+      { label: 'DATE', value: dp ? `${dp.day} ${dp.month} ${dp.year}` : '—' },
+      { label: 'HEURE', value: dp ? dp.time : '—' },
+      { label: 'LIEU', value: (ev?.location || ev?.city || '—').toUpperCase() },
+    ];
+
+    for (const item of infoItems) {
+      doc.setTextColor(125, 125, 125); doc.setFont('helvetica', 'normal'); doc.setFontSize(6);
+      doc.text(item.label, sx, sy);
+      doc.setTextColor(20, 20, 20); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+      const lines = doc.splitTextToSize(item.value, sw);
+      doc.text(lines.slice(0, 2), sx, sy + 10);
+      sy += 10 + Math.min(lines.length, 2) * 9 + 4;
+    }
+
+    // QR code
+    sy = 222;
+    const qrSize = 68;
+    const qrX = MAIN_W + (SIDE_W - qrSize) / 2;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(qrX - 4, sy - 4, qrSize + 8, qrSize + 8, 4, 4, 'F');
+    if (qr) { try { doc.addImage(qr.data, qr.fmt, qrX, sy, qrSize, qrSize); } catch (_) {} }
     if (logo) {
-      const c = 30;
-      doc.setFillColor(255, 255, 255); doc.rect(qrX + qrSize / 2 - c / 2 - 1, py + qrSize / 2 - c / 2 - 1, c + 2, c + 2, 'F');
-      try { doc.addImage(logo.data, logo.fmt, qrX + qrSize / 2 - c / 2, py + qrSize / 2 - c / 2, c, c); } catch (_) {}
+      const c = 16;
+      doc.setFillColor(255, 255, 255);
+      doc.rect(qrX + qrSize / 2 - c / 2 - 1, sy + qrSize / 2 - c / 2 - 1, c + 2, c + 2, 'F');
+      try { doc.addImage(logo.data, logo.fmt, qrX + qrSize / 2 - c / 2, sy + qrSize / 2 - c / 2, c, c); } catch (_) {}
     }
+    sy += qrSize + 8;
 
-    // Infos à droite du QR
-    const ix = qrX + qrSize + 18;
-    const iw = W - ix - 22;
-    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text('AU NOM DE', ix, py + 8);
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    const nameLines = doc.splitTextToSize(String(ticket.buyer_name || '—'), iw);
-    doc.text(nameLines.slice(0, 2), ix, py + 22);
+    // "SCANNER POUR VÉRIFIER" button
+    doc.setFillColor(20, 20, 20);
+    doc.roundedRect(sx, sy, sw, 15, 4, 4, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+    doc.text('SCANNER POUR VÉRIFIER', MAIN_W + SIDE_W / 2, sy + 10, { align: 'center' });
+    sy += 22;
 
-    let infoY = py + 22 + (Math.min(nameLines.length, 2) * 14);
-    if (ticket.buyer_phone) {
-      doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-      doc.text('TÉLÉPHONE', ix, infoY);
-      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-      doc.text(String(ticket.buyer_phone), ix, infoY + 12);
-      infoY += 22;
-    }
-    if (ticket.buyer_location) {
-      doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-      doc.text('LIEU', ix, infoY);
-      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-      const locLines = doc.splitTextToSize(String(ticket.buyer_location), iw);
-      doc.text(locLines.slice(0, 2), ix, infoY + 12);
-      infoY += 22 + ((Math.min(locLines.length, 2) - 1) * 12);
-    }
+    // Barcode
+    drawBarcode(doc, sx, sy, sw, 24, barcodeValue);
+    sy += 26;
+    doc.setTextColor(70, 70, 70);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6);
+    doc.text(barcodeValue, MAIN_W + SIDE_W / 2, sy + 2, { align: 'center' });
 
-    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text('PRIX', ix, infoY);
-    doc.setTextColor(229, 57, 53); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-    doc.text(`${Number(ticket.amount || 0).toLocaleString('fr-FR')} FCFA`, ix, infoY + 14);
-    infoY += 28;
+    // Red social footer bar
+    doc.setFillColor(RED[0], RED[1], RED[2]);
+    doc.rect(MAIN_W, TICKET_H - 22, SIDE_W, 22, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+    doc.text('@KKDmusic', MAIN_W + 12, TICKET_H - 8);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+    doc.text('kkdmusic.com', MAIN_W + SIDE_W - 12, TICKET_H - 8, { align: 'right' });
 
-    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text('N° BILLET', ix, infoY);
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text(String(ticket.ticket_number || ''), ix, infoY + 12, { maxWidth: iw });
+    // ═══════════════════════════════════════
+    // GLOBAL FOOTER (bottom black bar)
+    // ═══════════════════════════════════════
+    doc.setFillColor(6, 6, 6);
+    doc.rect(0, TICKET_H, W, FOOTER_H, 'F');
 
-    py += qrSize + 22;
+    const footerItems = [
+      { title: 'PAIEMENT SÉCURISÉ', sub: '100% Sécurisé' },
+      { title: 'TICKET MOBILE', sub: 'Accès facile' },
+      { title: 'SUPPORT 24/7', sub: 'Assistance dédiée' },
+      { title: 'NON TRANSFÉRABLE', sub: 'Sécurité garantie' },
+    ];
+    const itemW = W / 4;
+    footerItems.forEach((item, i) => {
+      const cx = itemW * i + itemW / 2;
+      const fy = TICKET_H + FOOTER_H / 2;
+      // Small red dot/icon placeholder
+      doc.setFillColor(RED[0], RED[1], RED[2]);
+      doc.circle(cx - 58, fy - 1, 5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      doc.text(item.title, cx - 48, fy - 2);
+      doc.setTextColor(145, 145, 145);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
+      doc.text(item.sub, cx - 48, fy + 7);
+    });
 
-    // ── Code-barres ──
-    const bcValue = generateBarcodeValue(ticket);
-    const bcW = W - 44, bcH = 48;
-    doc.setFillColor(255, 255, 255); doc.roundedRect(20, py - 3, bcW + 4, bcH + 16, 4, 4, 'F');
-    drawBarcode(doc, 22, py, bcW, bcH, bcValue);
-    py += bcH + 4;
-    doc.setTextColor(40, 36, 32); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    doc.text(bcValue, W / 2, py, { align: 'center' });
-    py += 16;
-
-    // ── Pied de page ──
-    doc.setDrawColor(60, 55, 50); doc.setLineWidth(0.5);
-    doc.line(22, py, W - 22, py);
-    py += 13;
-    doc.setTextColor(150, 145, 140); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-    doc.text("Presentez ce billet a l'entree", W / 2, py, { align: 'center' });
-    py += 11;
-    doc.setTextColor(120, 115, 110);
-    doc.text('KKD Music  —  SunuMaxim GROUP  —  kkdmusic.com', W / 2, py, { align: 'center' });
+    // Red bottom line
+    doc.setFillColor(RED[0], RED[1], RED[2]);
+    doc.rect(0, H - 3, W, 3, 'F');
 
     const ab = doc.output('arraybuffer');
     return Response.json({ pdf: bufToB64(ab), filename: `billet-${ticket_number}.pdf` });
