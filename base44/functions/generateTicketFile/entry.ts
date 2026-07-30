@@ -193,15 +193,33 @@ Deno.serve(async (req) => {
     const nameLines = doc.splitTextToSize(String(ticket.buyer_name || '—'), iw);
     doc.text(nameLines.slice(0, 2), ix, py + 22);
 
-    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text('PRIX', ix, py + 48);
-    doc.setTextColor(229, 57, 53); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-    doc.text(`${Number(ticket.amount || 0).toLocaleString('fr-FR')} FCFA`, ix, py + 62);
+    let infoY = py + 22 + (Math.min(nameLines.length, 2) * 14);
+    if (ticket.buyer_phone) {
+      doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+      doc.text('TÉLÉPHONE', ix, infoY);
+      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.text(String(ticket.buyer_phone), ix, infoY + 12);
+      infoY += 22;
+    }
+    if (ticket.buyer_location) {
+      doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+      doc.text('LIEU', ix, infoY);
+      doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      const locLines = doc.splitTextToSize(String(ticket.buyer_location), iw);
+      doc.text(locLines.slice(0, 2), ix, infoY + 12);
+      infoY += 22 + ((Math.min(locLines.length, 2) - 1) * 12);
+    }
 
     doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text('N° BILLET', ix, py + 78);
+    doc.text('PRIX', ix, infoY);
+    doc.setTextColor(229, 57, 53); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text(`${Number(ticket.amount || 0).toLocaleString('fr-FR')} FCFA`, ix, infoY + 14);
+    infoY += 28;
+
+    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('N° BILLET', ix, infoY);
     doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
-    doc.text(String(ticket.ticket_number || ''), ix, py + 90, { maxWidth: iw });
+    doc.text(String(ticket.ticket_number || ''), ix, infoY + 12, { maxWidth: iw });
 
     py += qrSize + 22;
 

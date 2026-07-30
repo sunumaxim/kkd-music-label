@@ -50,9 +50,9 @@ export default function ControleAcces() {
   const [ticketSearchQuery, setTicketSearchQuery] = useState('');
   const [ticketSearchResults, setTicketSearchResults] = useState([]);
   const [searchingTickets, setSearchingTickets] = useState(false);
-  const [newTicket, setNewTicket] = useState({ buyer_name: '', buyer_email: '', buyer_phone: '', amount: '' });
+  const [newTicket, setNewTicket] = useState({ buyer_name: '', buyer_email: '', buyer_phone: '', buyer_location: '', amount: '', quantity: 1 });
   const [creatingTicket, setCreatingTicket] = useState(false);
-  const [lastCreatedTicket, setLastCreatedTicket] = useState(null);
+  const [lastCreatedTickets, setLastCreatedTickets] = useState(null);
   const [downloadingTicket, setDownloadingTicket] = useState(null);
   const resultTimerRef = useRef(null);
 
@@ -186,7 +186,7 @@ export default function ControleAcces() {
 
   // ── Création manuelle de billet (achat externe) ──
   const createTicket = async () => {
-    if (!newTicket.buyer_email.trim() || !selected) return;
+    if (!newTicket.buyer_name.trim() || !newTicket.buyer_phone.trim() || !newTicket.buyer_location.trim() || !selected) return;
     setCreatingTicket(true);
     try {
       const res = await base44.functions.invoke('createManualTicket', {
@@ -194,13 +194,15 @@ export default function ControleAcces() {
         buyer_name: newTicket.buyer_name,
         buyer_email: newTicket.buyer_email,
         buyer_phone: newTicket.buyer_phone,
+        buyer_location: newTicket.buyer_location,
         amount: Number(newTicket.amount) || selected.ticket_price || 0,
+        quantity: Number(newTicket.quantity) || 1,
       });
-      const ticket = res?.ticket || res?.data?.ticket;
-      if (ticket) {
-        setLastCreatedTicket(ticket);
-        setNewTicket({ buyer_name: '', buyer_email: '', buyer_phone: '', amount: '' });
-        toast({ title: 'Billet créé ✅', description: ticket.ticket_number });
+      const tickets = res?.tickets || res?.data?.tickets || (res?.ticket ? [res.ticket] : []);
+      if (tickets.length > 0) {
+        setLastCreatedTickets(tickets);
+        setNewTicket({ buyer_name: '', buyer_email: '', buyer_phone: '', buyer_location: '', amount: '', quantity: 1 });
+        toast({ title: `${tickets.length} billet(s) créé(s) ✅`, description: tickets.length === 1 ? tickets[0].ticket_number : `${tickets.length} billets générés` });
         qc.invalidateQueries({ queryKey: ['event-tickets', selectedId] });
       }
     } catch (e) {
@@ -233,17 +235,32 @@ export default function ControleAcces() {
 
   // ── Recherche de billets (global, tous événements) ──
   const searchTickets = async () => {
-    const q = ticketSearchQuery.trim();
+    const q = ticketSearchQuery.trim().toLowerCase();
     if (q.length < 2) return;
     setSearchingTickets(true);
     try {
       // Recherche par numéro de billet
       const byNumber = await base44.entities.Ticket.filter({ ticket_number: q });
       let results = byNumber;
-      // Recherche par email acheteur si pas trouvé par numéro
+      // Recherche par email acheteur
       if (results.length === 0) {
         const byEmail = await base44.entities.Ticket.filter({ buyer_email: q });
         results = byEmail;
+      }
+      // Recherche par téléphone
+      if (results.length === 0) {
+        const byPhone = await base44.entities.Ticket.filter({ buyer_phone: q });
+        results = byPhone;
+      }
+      // Recherche par nom (si pas de match exact, on récupère un lot et on filtre localement)
+      if (results.length === 0) {
+        const allTickets = await base44.entities.Ticket.list('-created_date', 200);
+        results = allTickets.filter((t) =>
+          (t.buyer_name || '').toLowerCase().includes(q) ||
+          (t.buyer_email || '').toLowerCase().includes(q) ||
+          (t.buyer_phone || '').toLowerCase().includes(q) ||
+          (t.ticket_number || '').toLowerCase().includes(q)
+        );
       }
       setTicketSearchResults(results);
     } catch (e) {
@@ -494,12 +511,12 @@ export default function ControleAcces() {
               </button>
               {showTicketSearch && (
                 <div className="px-3 pb-3 space-y-3">
-                  <p className="text-[11px] text-muted-foreground">Recherchez par numéro de billet ou email de l'acheteur, sur tous les événements.</p>
+                  <p className="text-[11px] text-muted-foreground">Recherchez par nom, email, téléphone ou numéro de billet, sur tous les événements.</p>
                   <div className="flex gap-2">
                     <Input
                       value={ticketSearchQuery}
                       onChange={(e) => setTicketSearchQuery(e.target.value)}
-                      placeholder="N° billet ou email"
+                      placeholder="Nom, email, téléphone ou n° billet"
                       onKeyDown={(e) => { if (e.key === 'Enter') searchTickets(); }}
                     />
                     <Button size="sm" variant="outline" disabled={searchingTickets || ticketSearchQuery.trim().length < 2} onClick={searchTickets} className="gap-1.5 shrink-0">
@@ -515,7 +532,8 @@ export default function ControleAcces() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-heading font-bold text-xs truncate">{t.buyer_name || '—'}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{t.event_title} · {t.ticket_number}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{t.buyer_phone || '—'} · {t.buyer_location || ''}</p>
+                            <p className="text-[10px] text-muted-foreground/60 truncate">{t.event_title} · {t.ticket_number}</p>
                           </div>
                           {t.status === 'valide' && (
                             <Button size="sm" variant="ghost" onClick={() => downloadTicketPdf(t.ticket_number)} disabled={downloadingTicket === t.ticket_number} className="h-7 px-2 text-xs gap-1 shrink-0">
@@ -535,7 +553,7 @@ export default function ControleAcces() {
 
             {/* ═══ Créer un billet (achat externe) ═══ */}
             <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
-              <button onClick={() => { setShowCreateTicket(!showCreateTicket); if (showCreateTicket) setLastCreatedTicket(null); }} className="w-full flex items-center justify-between p-3 text-sm font-medium">
+              <button onClick={() => { setShowCreateTicket(!showCreateTicket); if (showCreateTicket) setLastCreatedTickets(null); }} className="w-full flex items-center justify-between p-3 text-sm font-medium">
                 <span className="flex items-center gap-2">
                   <TicketIcon size={15} className="text-muted-foreground" /> Créer un billet
                 </span>
@@ -543,25 +561,53 @@ export default function ControleAcces() {
               </button>
               {showCreateTicket && (
                 <div className="px-3 pb-3 space-y-2.5">
-                  <p className="text-[11px] text-muted-foreground">Pour les achats effectués à part (espèces, Wave, etc.). Le billet est généré avec un QR code unique et immédiatement valide.</p>
-                  <Input placeholder="Nom de l'acheteur" value={newTicket.buyer_name} onChange={(e) => setNewTicket({ ...newTicket, buyer_name: e.target.value })} />
-                  <Input placeholder="Email de l'acheteur" type="email" value={newTicket.buyer_email} onChange={(e) => setNewTicket({ ...newTicket, buyer_email: e.target.value })} />
-                  <Input placeholder="Téléphone (optionnel)" value={newTicket.buyer_phone} onChange={(e) => setNewTicket({ ...newTicket, buyer_phone: e.target.value })} />
-                  <Input placeholder={`Montant FCFA (défaut: ${Number(selected.ticket_price || 0).toLocaleString('fr-FR')})`} type="number" value={newTicket.amount} onChange={(e) => setNewTicket({ ...newTicket, amount: e.target.value })} />
-                  <Button size="sm" disabled={!newTicket.buyer_email.trim() || creatingTicket} onClick={createTicket} className="gap-2 w-full">
-                    {creatingTicket ? <Loader2 size={14} className="animate-spin" /> : <TicketIcon size={14} />} Créer le billet
+                  <p className="text-[11px] text-muted-foreground">Pour les achats effectués à part (espèces, Wave, etc.). Les billets sont générés avec un QR code unique et immédiatement valides.</p>
+                  <div>
+                    <Input placeholder="Nom et prénom *" value={newTicket.buyer_name} onChange={(e) => setNewTicket({ ...newTicket, buyer_name: e.target.value })} />
+                  </div>
+                  <div>
+                    <Input placeholder="Téléphone *" value={newTicket.buyer_phone} onChange={(e) => setNewTicket({ ...newTicket, buyer_phone: e.target.value })} />
+                  </div>
+                  <div>
+                    <Input placeholder="Ville ou village *" value={newTicket.buyer_location} onChange={(e) => setNewTicket({ ...newTicket, buyer_location: e.target.value })} />
+                  </div>
+                  <div>
+                    <Input placeholder="Email (optionnel)" type="email" value={newTicket.buyer_email} onChange={(e) => setNewTicket({ ...newTicket, buyer_email: e.target.value })} />
+                    <p className="text-[10px] text-muted-foreground mt-1">Si fourni, l'acheteur retrouvera ses billets dans « Mes Billets » après connexion.</p>
+                  </div>
+                  <div className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2">
+                    <span className="text-xs text-muted-foreground">Prix du billet</span>
+                    <span className="font-bold text-sm">{Number(newTicket.amount || selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
+                  </div>
+                  <Input placeholder={`Prix personnalisé (défaut: ${Number(selected.ticket_price || 0).toLocaleString('fr-FR')})`} type="number" value={newTicket.amount} onChange={(e) => setNewTicket({ ...newTicket, amount: e.target.value })} />
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Nombre de billets</label>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" type="button" onClick={() => setNewTicket({ ...newTicket, quantity: Math.max(1, (Number(newTicket.quantity) || 1) - 1) })} className="h-8 w-8 p-0">−</Button>
+                      <Input type="number" min={1} max={50} value={newTicket.quantity} onChange={(e) => setNewTicket({ ...newTicket, quantity: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} className="text-center w-16" />
+                      <Button size="sm" variant="outline" type="button" onClick={() => setNewTicket({ ...newTicket, quantity: Math.min(50, (Number(newTicket.quantity) || 1) + 1) })} className="h-8 w-8 p-0">+</Button>
+                      <span className="text-xs text-muted-foreground ml-1">× {Number(newTicket.amount || selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                  </div>
+                  <Button size="sm" disabled={!newTicket.buyer_name.trim() || !newTicket.buyer_phone.trim() || !newTicket.buyer_location.trim() || creatingTicket} onClick={createTicket} className="gap-2 w-full">
+                    {creatingTicket ? <Loader2 size={14} className="animate-spin" /> : <TicketIcon size={14} />} Créer {Number(newTicket.quantity) > 1 ? `${newTicket.quantity} billets` : 'le billet'}
                   </Button>
-                  {lastCreatedTicket && (
+                  {lastCreatedTickets && lastCreatedTickets.length > 0 && (
                     <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 space-y-2">
                       <div className="flex items-center gap-1.5">
                         <CheckCircle2 size={14} className="text-emerald-500" />
-                        <p className="text-xs font-bold text-emerald-600">Billet créé : {lastCreatedTicket.ticket_number}</p>
+                        <p className="text-xs font-bold text-emerald-600">{lastCreatedTickets.length} billet(s) créé(s) ✅</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{lastCreatedTicket.buyer_name || '—'} · {lastCreatedTicket.buyer_email}</p>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => downloadTicketPdf(lastCreatedTicket.ticket_number)} disabled={downloadingTicket === lastCreatedTicket.ticket_number} className="gap-1.5 text-xs">
-                          {downloadingTicket === lastCreatedTicket.ticket_number ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} Télécharger PDF
-                        </Button>
+                      <p className="text-xs text-muted-foreground">{lastCreatedTickets[0].buyer_name} · {lastCreatedTickets[0].buyer_phone} · {lastCreatedTickets[0].buyer_location || '—'}</p>
+                      <div className="space-y-1.5">
+                        {lastCreatedTickets.map((t) => (
+                          <div key={t.id} className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-muted-foreground flex-1 truncate">{t.ticket_number}</span>
+                            <Button size="sm" variant="outline" onClick={() => downloadTicketPdf(t.ticket_number)} disabled={downloadingTicket === t.ticket_number} className="h-7 px-2 text-xs gap-1 shrink-0">
+                              {downloadingTicket === t.ticket_number ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} PDF
+                            </Button>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

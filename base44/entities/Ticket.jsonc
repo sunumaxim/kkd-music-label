@@ -37,7 +37,7 @@
     },
     "buyer_email": {
       "type": "string",
-      "description": "Email de l'acheteur"
+      "description": "Email de l'acheteur (optionnel \u2014 si fourni, le billet est visible dans 'Mes Billets' apr\u00e8s connexion)"
     },
     "buyer_name": {
       "type": "string",
@@ -46,6 +46,10 @@
     "buyer_phone": {
       "type": "string",
       "description": "T\u00e9l\u00e9phone de l'acheteur"
+    },
+    "buyer_location": {
+      "type": "string",
+      "description": "Ville ou village de l'acheteur"
     },
     "ticket_number": {
       "type": "string",
@@ -174,8 +178,7 @@
     }
   },
   "required": [
-    "event_id",
-    "buyer_email"
+    "event_id"
   ],
   "rls": {
     "create": {
