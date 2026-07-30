@@ -23,6 +23,7 @@ import PartnerPromoVideo from '@/components/promo/PartnerPromoVideo';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import ArtistEarnings from '@/components/partner/ArtistEarnings';
+import PartnerOverview from '@/components/partner/PartnerOverview';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -327,99 +328,23 @@ export default function PartnerDashboard() {
               </div>
             )}
 
-            {/* Stats rapides */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                 { label: 'Publications', count: myPublications.length, sub: `${pendingPubs} en attente`, color: 'border-primary/20' },
-                 { label: 'Demandes', count: myRequests.length, sub: `${acceptedReqs} acceptées`, color: 'border-border/50' },
-                 { label: 'Mon Artiste', count: linkedArtistId ? 1 : 0, sub: linkedArtistId ? 'Profil lié' : 'Non lié', color: 'border-border/50' },
-                 { label: 'Revenus net', count: `${netEarnings.toLocaleString('fr-FR')}`, sub: 'FCFA · après commission', color: 'border-primary/20', isText: true },
-               ].map(s => (
-                <div key={s.label} className={`bg-card border ${s.color} rounded-xl p-4`}>
-                  <p className={`font-display font-extrabold ${s.isText ? 'text-xl' : 'text-3xl'}`}>{s.count}</p>
-                  <p className="text-xs font-medium mt-0.5">{s.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{s.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Performance de l'artiste */}
-            {linkedArtistName && (
-              <div className="space-y-3">
-                <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Performance globale</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                   {[
-                     { label: 'Écoutes', value: totalPlays.toLocaleString('fr-FR'), icon: Headphones },
-                     { label: 'Vues vidéos', value: totalVideoViews.toLocaleString('fr-FR'), icon: Eye },
-                     { label: "J'aime", value: (totalLikes + totalVideoLikes).toLocaleString('fr-FR'), icon: Heart },
-                     { label: 'Ventes', value: (totalSales + totalVideoSales).toLocaleString('fr-FR'), icon: ShoppingCart },
-                     { label: 'Billets', value: totalTicketsSold.toLocaleString('fr-FR'), icon: Ticket },
-                     { label: 'Revenus net', value: `${netEarnings.toLocaleString('fr-FR')} F`, icon: Wallet },
-                   ].map((s) => {
-                    const Ic = s.icon;
-                    return (
-                      <div key={s.label} className="bg-card border border-border/50 rounded-xl p-4">
-                         <Ic size={15} className="text-primary mb-1" />
-                        <p className="font-display text-xl sm:text-2xl font-extrabold">{s.value}</p>
-                         <p className="text-xs text-muted-foreground">{s.label}</p>
-                       </div>
-                    );
-                  })}
-                </div>
-                {artistReleases.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-widest pt-1">Sorties musique</p>
-                    {artistReleases.slice(0, 5).map((r) => (
-                      <div key={r.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center gap-3">
-                        {r.cover_url ? (
-                          <img src={r.cover_url} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                            <Music size={13} className="text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-heading font-bold text-sm truncate">{r.title}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {r.is_for_sale ? 'Payant' : 'Gratuit'} · {r.release_type}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
-                          <span className="flex items-center gap-1"><Headphones size={11} /> {r.plays_count || 0}</span>
-                          <span className="flex items-center gap-1"><ShoppingCart size={11} /> {r.sales_count || 0}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {artistVideos.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-widest pt-1">Vidéos / Clips</p>
-                    {artistVideos.slice(0, 5).map((v) => (
-                      <div key={v.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center gap-3">
-                        {v.thumbnail_url ? (
-                          <img src={v.thumbnail_url} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                            <VideoIcon size={13} className="text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-heading font-bold text-sm truncate">{v.title}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {v.is_for_sale ? 'Payant' : 'Gratuit'} · {v.video_type}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
-                          <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
-                          <span className="flex items-center gap-1"><ShoppingCart size={11} /> {v.sales_count || 0}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <PartnerOverview
+              linkedArtistName={linkedArtistName}
+              artistReleases={artistReleases}
+              artistVideos={artistVideos}
+              myPublications={myPublications}
+              grossEarnings={grossEarnings}
+              netEarnings={netEarnings}
+              totalPlays={totalPlays}
+              totalVideoViews={totalVideoViews}
+              totalLikes={totalLikes}
+              totalVideoLikes={totalVideoLikes}
+              totalSales={totalSales}
+              totalVideoSales={totalVideoSales}
+              totalTicketsSold={totalTicketsSold}
+              pendingPubs={pendingPubs}
+              onNavigateTab={changeTab}
+            />
 
             {/* Actions rapides */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -459,34 +384,6 @@ export default function PartnerDashboard() {
               )}
             </div>
 
-            {/* Récentes publications */}
-            {myPublications.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Dernières publications</p>
-                  <button onClick={() => setActiveTab('publications')} className="text-xs text-primary hover:underline flex items-center gap-1">
-                    Voir tout <ArrowRight size={11} />
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {myPublications.slice(0, 3).map(pub => {
-                    const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
-                    return (
-                      <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Music size={14} className="text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-heading font-bold text-sm truncate">{pub.title}</p>
-                          <p className="text-[11px] text-muted-foreground">{pub.artist_name}</p>
-                        </div>
-                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
