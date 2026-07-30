@@ -17,7 +17,7 @@
     },
     "event_image_url": {
       "type": "string",
-      "description": "Affiche de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9, pour le QR/le billet)"
+      "description": "Affiche de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
     },
     "artist_name": {
       "type": "string",
@@ -33,7 +33,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Gestionnaires d'acc\u00e8s (d\u00e9normalis\u00e9)"
+      "description": "Contr\u00f4leurs d'acc\u00e8s autoris\u00e9s (d\u00e9normalis\u00e9)"
     },
     "buyer_email": {
       "type": "string",
@@ -68,15 +68,15 @@
         "square"
       ],
       "default": "wave",
-      "description": "Moyen de paiement (Wave manuel ou carte Square)"
+      "description": "Moyen de paiement"
     },
     "wave_reference": {
       "type": "string",
-      "description": "R\u00e9f\u00e9rence de transaction Wave (paiement Wave manuel)"
+      "description": "R\u00e9f\u00e9rence de transaction Wave"
     },
     "square_order_ref": {
       "type": "string",
-      "description": "ID du payment link Square (paiement carte)"
+      "description": "ID du payment link Square"
     },
     "proof_file_url": {
       "type": "string",
@@ -101,16 +101,67 @@
     "checked_in": {
       "type": "boolean",
       "default": false,
-      "description": "Entr\u00e9e valid\u00e9e le jour J"
+      "description": "Actuellement \u00e0 l'int\u00e9rieur de l'\u00e9v\u00e9nement"
     },
     "checked_in_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Date du check-in"
+      "description": "Heure de la derni\u00e8re entr\u00e9e"
     },
     "checked_in_by": {
       "type": "string",
-      "description": "Email de la personne ayant valid\u00e9 l'entr\u00e9e"
+      "description": "Email du contr\u00f4leur ayant valid\u00e9 l'entr\u00e9e"
+    },
+    "checked_out": {
+      "type": "boolean",
+      "default": false,
+      "description": "A quitt\u00e9 l'\u00e9v\u00e9nement"
+    },
+    "checked_out_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Heure de la derni\u00e8re sortie"
+    },
+    "checked_out_by": {
+      "type": "string",
+      "description": "Email du contr\u00f4leur ayant valid\u00e9 la sortie"
+    },
+    "entry_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre total d'entr\u00e9es (inclut les r\u00e9-entr\u00e9es)"
+    },
+    "exit_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Nombre total de sorties"
+    },
+    "access_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "exit"
+            ],
+            "description": "Type de mouvement"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Horodatage"
+          },
+          "by": {
+            "type": "string",
+            "description": "Email du contr\u00f4leur"
+          }
+        }
+      },
+      "default": [],
+      "description": "Historique complet des entr\u00e9es/sorties"
     },
     "description": {
       "type": "string",
@@ -140,6 +191,9 @@
         },
         {
           "data.organizer_email": "{{user.email}}"
+        },
+        {
+          "data.managers": "{{user.email}}"
         },
         {
           "user_condition": {
