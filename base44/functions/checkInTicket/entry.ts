@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { isUserLinkedToArtist } from '../../shared/artistAccess.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -19,19 +20,24 @@ Deno.serve(async (req) => {
     if (!ticket) return Response.json({ error: 'Ticket introuvable' }, { status: 404 });
     if (ticket.status !== 'valide') return Response.json({ error: 'Ticket non validé' }, { status: 400 });
 
-    // Autorisation : admin, organisateur ou contrôleur
+    // Autorisation : admin, organisateur, contrôleur, ou artiste lié
     const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
     const ev = events[0];
     const isAdmin = user.role === 'admin';
     const isOrg = !!ev && ev.organizer_email === user.email;
     const isMgr = !!ev && Array.isArray(ev.managers) && ev.managers.includes(user.email);
-    if (!isAdmin && !isOrg && !isMgr) return Response.json({ error: 'Non autorisé' }, { status: 403 });
+    let isArtist = false;
+    if (!isAdmin && !isOrg && !isMgr && ev?.artist_id) {
+      isArtist = await isUserLinkedToArtist(base44, ev.artist_id, user.email);
+    }
+    if (!isAdmin && !isOrg && !isMgr && !isArtist) {
+      return Response.json({ error: 'Non autorisé' }, { status: 403 });
+    }
 
     const now = new Date().toISOString();
     const log = Array.isArray(ticket.access_log) ? ticket.access_log : [];
 
     if (action === 'exit') {
-      // ── Sortie ──
       if (!ticket.checked_in) {
         return Response.json({ error: 'Personne non présente', ticket, not_present: true }, { status: 400 });
       }
@@ -48,7 +54,7 @@ Deno.serve(async (req) => {
       return Response.json({ ticket: { ...ticket, ...updated }, action: 'exit' });
     }
 
-    // ── Entrée (par défaut) ──
+    // Entrée (par défaut)
     if (ticket.checked_in) {
       return Response.json({ ticket, already: true });
     }

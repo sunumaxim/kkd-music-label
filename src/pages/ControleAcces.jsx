@@ -54,15 +54,38 @@ export default function ControleAcces() {
     queryKey: ['events-all'],
     queryFn: () => base44.entities.Event.list('-event_date', 200),
   });
+
+  // Liens artiste de l'utilisateur (invitation ou accès approuvé)
+  const { data: myInvites = [] } = useQuery({
+    queryKey: ['my-invites-controle', email],
+    queryFn: () => base44.entities.ArtistInvite.filter({ email }),
+    enabled: !!email,
+  });
+  const { data: myAccessReqs = [] } = useQuery({
+    queryKey: ['my-access-reqs-controle', email],
+    queryFn: () => base44.entities.ArtistAccessRequest.filter({ user_email: email }),
+    enabled: !!email,
+  });
+  const myArtistIds = [
+    ...myInvites.filter((i) => i.status === 'actif' || i.status === 'invite').map((i) => i.artist_id),
+    ...myAccessReqs.filter((r) => r.status === 'approuve').map((r) => r.artist_id),
+  ];
+
   const myEvents = allEvents.filter(
-    (e) => e.organizer_email === email || (Array.isArray(e.managers) && e.managers.includes(email))
+    (e) =>
+      e.organizer_email === email ||
+      (Array.isArray(e.managers) && e.managers.includes(email)) ||
+      (e.artist_id && myArtistIds.includes(e.artist_id))
   );
 
   const selected = myEvents.find((e) => e.id === selectedId) || null;
 
   const { data: tickets = [], isLoading: loadingTickets } = useQuery({
     queryKey: ['event-tickets', selectedId],
-    queryFn: () => base44.entities.Ticket.filter({ event_id: selectedId }, '-created_date'),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getEventTickets', { event_id: selectedId });
+      return res?.tickets || res?.data?.tickets || [];
+    },
     enabled: !!selectedId,
   });
 
@@ -129,21 +152,19 @@ export default function ControleAcces() {
 
   const addManager = async () => {
     if (!newMgr.trim() || !selected) return;
-    const list = Array.from(new Set([...(selected.managers || []), newMgr.trim()]));
     try {
-      await base44.entities.Event.update(selected.id, { managers: list });
+      await base44.functions.invoke('updateEventManagers', { event_id: selected.id, action: 'add', email: newMgr.trim() });
       qc.invalidateQueries({ queryKey: ['events-all'] });
       setNewMgr('');
       toast({ title: 'Contrôleur ajouté', description: newMgr.trim() });
-    } catch (e) { toast({ title: 'Erreur', description: e.message, variant: 'destructive' }); }
+    } catch (e) { toast({ title: 'Erreur', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
   const removeManager = async (m) => {
     if (!selected) return;
-    const list = (selected.managers || []).filter((x) => x !== m);
     try {
-      await base44.entities.Event.update(selected.id, { managers: list });
+      await base44.functions.invoke('updateEventManagers', { event_id: selected.id, action: 'remove', email: m });
       qc.invalidateQueries({ queryKey: ['events-all'] });
-    } catch (e) { toast({ title: 'Erreur', description: e.message, variant: 'destructive' }); }
+    } catch (e) { toast({ title: 'Erreur', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
   return (
