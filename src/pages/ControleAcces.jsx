@@ -80,6 +80,14 @@ export default function ControleAcces() {
 
   const selected = myEvents.find((e) => e.id === selectedId) || null;
 
+  // Reconnaissance rapide du lien entre l'utilisateur et l'événement sélectionné
+  const accessRole = selected
+    ? selected.organizer_email === email ? 'Organisateur'
+      : (Array.isArray(selected.managers) && selected.managers.includes(email)) ? 'Contrôleur'
+      : (selected.artist_id && myArtistIds.includes(selected.artist_id)) ? 'Artiste lié'
+      : null
+    : null;
+
   const { data: tickets = [], isLoading: loadingTickets } = useQuery({
     queryKey: ['event-tickets', selectedId],
     queryFn: async () => {
@@ -196,7 +204,12 @@ export default function ControleAcces() {
                     {e.event_date ? format(new Date(e.event_date), 'dd MMM yyyy HH:mm', { locale: fr }) : ''} · {e.tickets_sold || 0} billets
                   </p>
                 </div>
-                <ScanLine size={18} className="text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {e.organizer_email === email && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Org.</span>}
+                  {Array.isArray(e.managers) && e.managers.includes(email) && e.organizer_email !== email && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium">Contr.</span>}
+                  {e.artist_id && myArtistIds.includes(e.artist_id) && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Artiste</span>}
+                  <ScanLine size={18} className="text-muted-foreground" />
+                </div>
               </button>
             ))}
           </div>
@@ -214,6 +227,20 @@ export default function ControleAcces() {
                 </p>
               )}
             </div>
+
+            {/* ═══ Badge de reconnaissance d'accès ═══ */}
+            {email && accessRole && (
+              <div className="flex items-center gap-2 text-xs bg-card border border-border/50 rounded-xl px-3 py-2">
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium ${
+                  accessRole === 'Organisateur' ? 'bg-primary/10 text-primary' :
+                  accessRole === 'Contrôleur' ? 'bg-blue-500/10 text-blue-500' :
+                  'bg-emerald-500/10 text-emerald-600'
+                }`}>
+                  <CheckCircle2 size={12} /> {accessRole}
+                </span>
+                <span className="text-muted-foreground truncate">{email}</span>
+              </div>
+            )}
 
             {/* ═══ Stats ═══ */}
             <div className="grid grid-cols-4 gap-2">
