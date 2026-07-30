@@ -22,6 +22,7 @@ const EMPTY = {
   instagram_url: '', instagram_username: '',
   tiktok_url: '', tiktok_username: '',
   facebook_url: '',
+  wave_number: '', payout_phone: '',
   is_featured: false, is_verified: false, order: 0,
 };
 
@@ -253,6 +254,21 @@ export default function AdminArtists() {
               <div>
                 <Label className="text-xs mb-1 block">Site officiel</Label>
                 <Input type="url" value={form.website_url || ''} onChange={e => set('website_url', e.target.value)} placeholder="https://..." className="text-sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Paiement ── */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Informations de paiement</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1 block">Numéro Wave</Label>
+                <Input value={form.wave_number || ''} onChange={e => set('wave_number', e.target.value)} placeholder="76 123 45 67" className="text-sm font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Téléphone (Orange Money / virement)</Label>
+                <Input value={form.payout_phone || ''} onChange={e => set('payout_phone', e.target.value)} placeholder="77 000 00 00" className="text-sm font-mono" />
               </div>
             </div>
           </div>

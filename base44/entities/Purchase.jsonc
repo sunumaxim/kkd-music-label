@@ -29,12 +29,12 @@
     "amount": {
       "type": "number",
       "default": 0,
-      "description": "Montant pay\u00e9 en euros"
+      "description": "Montant pay\u00e9 en FCFA"
     },
     "currency": {
       "type": "string",
-      "default": "eur",
-      "description": "Devise"
+      "default": "XOF",
+      "description": "Devise (XOF = Franc CFA)"
     },
     "stripe_session_id": {
       "type": "string",

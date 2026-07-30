@@ -113,7 +113,7 @@
     "price": {
       "type": "number",
       "default": 0,
-      "description": "Prix de vente en euros (0 = non vendu)"
+      "description": "Prix de vente en FCFA (0 = non vendu)"
     },
     "preview_start": {
       "type": "number",

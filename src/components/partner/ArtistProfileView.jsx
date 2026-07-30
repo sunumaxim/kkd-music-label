@@ -119,6 +119,27 @@ export default function ArtistProfileView({ artistId }) {
         </div>
       )}
 
+      {/* Informations de paiement */}
+      {(artist.wave_number || artist.payout_phone) && (
+        <div className="bg-card border border-border/50 rounded-xl p-5">
+          <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-widest mb-3">Informations de paiement</p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            {artist.wave_number && (
+              <div>
+                <p className="text-[11px] text-muted-foreground">Numéro Wave</p>
+                <p className="font-mono font-medium">{artist.wave_number}</p>
+              </div>
+            )}
+            {artist.payout_phone && (
+              <div>
+                <p className="text-[11px] text-muted-foreground">Téléphone (Orange Money)</p>
+                <p className="font-mono font-medium">{artist.payout_phone}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Playlist player (Spotify) */}
       {releasesWithSpotify.length > 0 && (
         <PlaylistPlayer releases={releases} artistName={artist.name} />

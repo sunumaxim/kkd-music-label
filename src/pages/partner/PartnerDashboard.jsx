@@ -6,7 +6,7 @@ import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
   User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
-  Headphones, Heart, ShoppingCart, CalendarDays, Ticket
+  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -22,6 +22,7 @@ import { fr } from 'date-fns/locale';
 import PartnerPromoVideo from '@/components/promo/PartnerPromoVideo';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
+import ArtistEarnings from '@/components/partner/ArtistEarnings';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -53,6 +54,7 @@ const REQUEST_LABELS = {
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'artiste', label: 'Mon Artiste', icon: User },
+  { id: 'revenus', label: 'Revenus', icon: Wallet },
   { id: 'publications', label: 'Publications', icon: Music },
   { id: 'promotion', label: 'Promotion', icon: Megaphone },
   { id: 'evenements', label: 'Événements', icon: CalendarDays },
@@ -136,6 +138,28 @@ export default function PartnerDashboard() {
   const totalPlays = artistReleases.reduce((s, r) => s + (r.plays_count || 0), 0);
   const totalLikes = artistReleases.reduce((s, r) => s + (r.likes_count || 0), 0);
   const totalSales = artistReleases.reduce((s, r) => s + (r.sales_count || 0), 0);
+
+  // Revenus de l'artiste (achats + wave + billets validés)
+  const { data: artistPurchases = [] } = useQuery({
+    queryKey: ['artist-purchases', linkedArtistName],
+    queryFn: () => base44.entities.Purchase.filter({ artist_name: linkedArtistName }),
+    enabled: !!linkedArtistName,
+  });
+  const { data: artistWavePmts = [] } = useQuery({
+    queryKey: ['artist-wave-payments', linkedArtistName],
+    queryFn: () => base44.entities.WavePayment.filter({ artist_name: linkedArtistName }),
+    enabled: !!linkedArtistName,
+  });
+  const { data: artistTickets = [] } = useQuery({
+    queryKey: ['artist-tickets', linkedArtistName],
+    queryFn: () => base44.entities.Ticket.filter({ artist_name: linkedArtistName }),
+    enabled: !!linkedArtistName,
+  });
+  const grossEarnings =
+    artistPurchases.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0) +
+    artistWavePmts.filter(w => w.status === 'valide').reduce((s, w) => s + (w.amount || 0), 0) +
+    artistTickets.filter(t => t.status === 'valide').reduce((s, t) => s + (t.amount || 0), 0);
+  const netEarnings = Math.round(grossEarnings * 0.90);
 
   const pendingPubs = myPublications.filter(p => p.status === 'en_attente').length;
   const acceptedReqs = myRequests.filter(r => r.status === 'accepte').length;
@@ -286,13 +310,13 @@ export default function PartnerDashboard() {
             {/* Stats rapides */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Publications', count: myPublications.length, sub: `${pendingPubs} en attente`, color: 'border-primary/20' },
-                { label: 'Demandes', count: myRequests.length, sub: `${acceptedReqs} acceptées`, color: 'border-border/50' },
-                { label: 'Mon Artiste', count: linkedArtistId ? 1 : 0, sub: linkedArtistId ? 'Profil lié' : 'Non lié', color: 'border-border/50' },
-                { label: 'Contrat', count: invite?.status === 'actif' ? 1 : 0, sub: invite ? (invite.status === 'actif' ? 'Actif' : 'Inactif') : 'Aucun', color: 'border-border/50' },
-              ].map(s => (
+                 { label: 'Publications', count: myPublications.length, sub: `${pendingPubs} en attente`, color: 'border-primary/20' },
+                 { label: 'Demandes', count: myRequests.length, sub: `${acceptedReqs} acceptées`, color: 'border-border/50' },
+                 { label: 'Mon Artiste', count: linkedArtistId ? 1 : 0, sub: linkedArtistId ? 'Profil lié' : 'Non lié', color: 'border-border/50' },
+                 { label: 'Revenus net', count: `${netEarnings.toLocaleString('fr-FR')}`, sub: 'FCFA · après commission', color: 'border-primary/20', isText: true },
+               ].map(s => (
                 <div key={s.label} className={`bg-card border ${s.color} rounded-xl p-4`}>
-                  <p className="font-display text-3xl font-extrabold">{s.count}</p>
+                  <p className={`font-display font-extrabold ${s.isText ? 'text-xl' : 'text-3xl'}`}>{s.count}</p>
                   <p className="text-xs font-medium mt-0.5">{s.label}</p>
                   <p className="text-[11px] text-muted-foreground">{s.sub}</p>
                 </div>
@@ -303,19 +327,20 @@ export default function PartnerDashboard() {
             {linkedArtistName && (
               <div className="space-y-3">
                 <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Performance de mes sorties</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: 'Écoutes', value: totalPlays, icon: Headphones },
-                    { label: "J'aime", value: totalLikes, icon: Heart },
-                    { label: 'Ventes', value: totalSales, icon: ShoppingCart },
-                  ].map((s) => {
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                   {[
+                     { label: 'Écoutes', value: totalPlays.toLocaleString('fr-FR'), icon: Headphones },
+                     { label: "J'aime", value: totalLikes.toLocaleString('fr-FR'), icon: Heart },
+                     { label: 'Ventes', value: totalSales.toLocaleString('fr-FR'), icon: ShoppingCart },
+                     { label: 'Revenus net', value: `${netEarnings.toLocaleString('fr-FR')} F`, icon: Wallet },
+                   ].map((s) => {
                     const Ic = s.icon;
                     return (
                       <div key={s.label} className="bg-card border border-border/50 rounded-xl p-4">
-                        <Ic size={15} className="text-primary mb-1" />
-                        <p className="font-display text-2xl font-extrabold">{s.value.toLocaleString('fr-FR')}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                      </div>
+                         <Ic size={15} className="text-primary mb-1" />
+                        <p className="font-display text-xl sm:text-2xl font-extrabold">{s.value}</p>
+                         <p className="text-xs text-muted-foreground">{s.label}</p>
+                       </div>
                     );
                   })}
                 </div>
@@ -459,6 +484,29 @@ export default function PartnerDashboard() {
                   Réclamez votre profil artiste pour accéder à toutes vos informations, sorties et vidéos.
                 </p>
                 <Button onClick={() => setShowAccessForm(true)} className="gap-2">
+                  <UserCheck size={16} /> Réclamer mon profil
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── REVENUS TAB ── */}
+        {activeTab === 'revenus' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-extrabold">Revenus & Transactions</h2>
+            </div>
+            {linkedArtistName ? (
+              <ArtistEarnings user={user} artistName={linkedArtistName} artist={null} />
+            ) : (
+              <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
+                <Wallet size={40} className="mx-auto mb-4 text-muted-foreground/30" />
+                <h3 className="font-display font-bold text-lg mb-2">Aucun profil artiste lié</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Réclamez votre profil artiste pour suivre vos revenus et transactions.
+                </p>
+                <Button onClick={() => setShowAccessForm(true)} className="gap-2 mt-4">
                   <UserCheck size={16} /> Réclamer mon profil
                 </Button>
               </div>

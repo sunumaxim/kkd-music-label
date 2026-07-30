@@ -404,8 +404,8 @@ export default function PublishForm({ user, onClose }) {
                 {form.is_for_sale && (
                   <>
                     <div>
-                      <Label className="text-xs mb-1.5 block">Prix (euros) *</Label>
-                      <Input type="number" min="1" step="1" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="5" required />
+                      <Label className="text-xs mb-1.5 block">Prix (FCFA) *</Label>
+                      <Input type="number" min="100" step="100" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="500" required />
                     </div>
                     {form.file_url && (
                       <PreviewSnippetSelector fileUrl={form.file_url} value={form.preview_start} onChange={(v) => set('preview_start', v)} />

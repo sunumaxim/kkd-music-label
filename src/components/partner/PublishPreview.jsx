@@ -65,7 +65,7 @@ export default function PublishPreview({
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {form.is_for_sale ? (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold flex items-center gap-1">
-                  <Lock size={10} /> Payant — {form.price} €
+                  <Lock size={10} /> Payant — {Number(form.price).toLocaleString('fr-FR')} FCFA
                 </span>
               ) : (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-semibold">

@@ -120,6 +120,14 @@
       "type": "string",
       "description": "Lien Facebook"
     },
+    "wave_number": {
+      "type": "string",
+      "description": "Num\u00e9ro Wave pour recevoir les paiements / versements"
+    },
+    "payout_phone": {
+      "type": "string",
+      "description": "Num\u00e9ro de t\u00e9l\u00e9phone pour virements / Orange Money / transferts"
+    },
     "is_verified": {
       "type": "boolean",
       "default": false,
