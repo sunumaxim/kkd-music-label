@@ -182,9 +182,16 @@ export default function TicketPurchase({ event }) {
           <form onSubmit={submit} className="bg-card border border-border/60 rounded-xl p-4 space-y-3">
             <p className="text-sm font-medium">Confirmez votre achat</p>
             <div className="grid sm:grid-cols-2 gap-3">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom complet" required />
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Téléphone" />
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nom sur le billet</label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom complet" required />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Téléphone (facultatif)</label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Téléphone" />
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground">Vous pouvez acheter pour vous ou pour quelqu'un d'autre — le billet restera dans votre compte.</p>
 
             {pendingMethod === 'wave' ? (
               <>

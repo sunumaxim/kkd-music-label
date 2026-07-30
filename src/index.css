@@ -263,6 +263,8 @@
 
 /* Marquee + scrollbar utilities */
 @keyframes kkd-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes kkd-scan-line { 0%,100% { top: 8%; } 50% { top: 92%; } }
+.animate-scan-line { animation: kkd-scan-line 2s ease-in-out infinite; }
 .animate-marquee { animation: kkd-marquee 40s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
