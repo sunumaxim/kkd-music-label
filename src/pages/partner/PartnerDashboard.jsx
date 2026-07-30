@@ -6,7 +6,7 @@ import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
   ArrowRight, LogOut, Trash2, Plus, ExternalLink,
   User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
-  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet
+  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet, Eye, Video as VideoIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -75,8 +75,38 @@ export default function PartnerDashboard() {
     queryFn: () => base44.auth.me(),
   });
 
-  const isPartner = user?.role === 'admin' || user?.role === 'partner';
-  useEffect(() => { if (user && !isPartner) setActiveTab('demandes'); }, [user, isPartner]);
+  // Queries nécessaires pour déterminer le statut partenaire (avant isPartner)
+  const { data: invite, isLoading: inviteLoading } = useQuery({
+    queryKey: ['my-invite', user?.email],
+    queryFn: async () => {
+      const results = await base44.entities.ArtistInvite.filter({ email: user.email });
+      return results[0] || null;
+    },
+    enabled: !!user?.email,
+  });
+
+  const { data: myPublications = [], isLoading: pubsLoading } = useQuery({
+    queryKey: ['my-publications', user?.email],
+    queryFn: () => base44.entities.PartnerPublication.filter({ partner_email: user.email }, '-created_date'),
+    enabled: !!user?.email,
+  });
+
+  const { data: myAccessRequests = [], isLoading: accessLoading } = useQuery({
+    queryKey: ['my-access-requests', user?.email],
+    queryFn: () => base44.entities.ArtistAccessRequest.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+
+  // Accès automatique : admin, partner, OU compte lié à un artiste / ayant déjà publié
+  const hasActiveInvite = invite?.status === 'actif' || invite?.status === 'invite';
+  const hasApprovedAccess = myAccessRequests.some(r => r.status === 'approuve');
+  const hasPublications = myPublications.length > 0;
+  const partnerStatusResolved = !inviteLoading && !pubsLoading && !accessLoading;
+  const isPartner = user?.role === 'admin' || user?.role === 'partner' || hasActiveInvite || hasApprovedAccess || hasPublications;
+  useEffect(() => {
+    if (!user || !partnerStatusResolved) return;
+    if (!isPartner && activeTab !== 'demandes') setActiveTab('demandes');
+  }, [user, isPartner, partnerStatusResolved]);
 
   // Synchronise l'onglet actif avec ?tab= (redirections depuis les notifications)
   useEffect(() => {
@@ -95,27 +125,6 @@ export default function PartnerDashboard() {
   const { data: myRequests = [] } = useQuery({
     queryKey: ['my-requests', user?.email],
     queryFn: () => base44.entities.ServiceRequest.filter({ email: user.email }, '-created_date'),
-    enabled: !!user?.email,
-  });
-
-  const { data: invite } = useQuery({
-    queryKey: ['my-invite', user?.email],
-    queryFn: async () => {
-      const results = await base44.entities.ArtistInvite.filter({ email: user.email });
-      return results[0] || null;
-    },
-    enabled: !!user?.email,
-  });
-
-  const { data: myPublications = [] } = useQuery({
-    queryKey: ['my-publications', user?.email],
-    queryFn: () => base44.entities.PartnerPublication.filter({ partner_email: user.email }, '-created_date'),
-    enabled: !!user?.email,
-  });
-
-  const { data: myAccessRequests = [] } = useQuery({
-    queryKey: ['my-access-requests', user?.email],
-    queryFn: () => base44.entities.ArtistAccessRequest.filter({ user_email: user.email }),
     enabled: !!user?.email,
   });
 
@@ -139,6 +148,16 @@ export default function PartnerDashboard() {
   const totalLikes = artistReleases.reduce((s, r) => s + (r.likes_count || 0), 0);
   const totalSales = artistReleases.reduce((s, r) => s + (r.sales_count || 0), 0);
 
+  // Statistiques vidéos (fiables via artist_name)
+  const { data: artistVideos = [] } = useQuery({
+    queryKey: ['partner-artist-videos', linkedArtistName],
+    queryFn: () => base44.entities.Video.filter({ artist_name: linkedArtistName }, '-publish_date'),
+    enabled: !!linkedArtistName,
+  });
+  const totalVideoViews = artistVideos.reduce((s, v) => s + (v.views_count || 0), 0);
+  const totalVideoLikes = artistVideos.reduce((s, v) => s + (v.likes_count || 0), 0);
+  const totalVideoSales = artistVideos.reduce((s, v) => s + (v.sales_count || 0), 0);
+
   // Revenus de l'artiste (achats + wave + billets validés)
   const { data: artistPurchases = [] } = useQuery({
     queryKey: ['artist-purchases', linkedArtistName],
@@ -160,6 +179,7 @@ export default function PartnerDashboard() {
     artistWavePmts.filter(w => w.status === 'valide').reduce((s, w) => s + (w.amount || 0), 0) +
     artistTickets.filter(t => t.status === 'valide').reduce((s, t) => s + (t.amount || 0), 0);
   const netEarnings = Math.round(grossEarnings * 0.90);
+  const totalTicketsSold = artistTickets.filter(t => t.status === 'valide').length;
 
   const pendingPubs = myPublications.filter(p => p.status === 'en_attente').length;
   const acceptedReqs = myRequests.filter(r => r.status === 'accepte').length;
@@ -248,7 +268,7 @@ export default function PartnerDashboard() {
       </div>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {!isPartner && user && (
+        {!isPartner && partnerStatusResolved && user && (
           <div className="bg-secondary/40 border border-border/50 rounded-xl p-4 mb-6 text-sm text-muted-foreground">
             Vous êtes connecté en simple utilisateur. Vous pouvez soumettre une <strong>demande de service</strong> ; la soumission de contenu (sorties, vidéos, événements, promotions) est réservée aux artistes, partenaires et contributeurs.
           </div>
@@ -326,12 +346,14 @@ export default function PartnerDashboard() {
             {/* Performance de l'artiste */}
             {linkedArtistName && (
               <div className="space-y-3">
-                <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Performance de mes sorties</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Performance globale</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                    {[
                      { label: 'Écoutes', value: totalPlays.toLocaleString('fr-FR'), icon: Headphones },
-                     { label: "J'aime", value: totalLikes.toLocaleString('fr-FR'), icon: Heart },
-                     { label: 'Ventes', value: totalSales.toLocaleString('fr-FR'), icon: ShoppingCart },
+                     { label: 'Vues vidéos', value: totalVideoViews.toLocaleString('fr-FR'), icon: Eye },
+                     { label: "J'aime", value: (totalLikes + totalVideoLikes).toLocaleString('fr-FR'), icon: Heart },
+                     { label: 'Ventes', value: (totalSales + totalVideoSales).toLocaleString('fr-FR'), icon: ShoppingCart },
+                     { label: 'Billets', value: totalTicketsSold.toLocaleString('fr-FR'), icon: Ticket },
                      { label: 'Revenus net', value: `${netEarnings.toLocaleString('fr-FR')} F`, icon: Wallet },
                    ].map((s) => {
                     const Ic = s.icon;
@@ -346,6 +368,7 @@ export default function PartnerDashboard() {
                 </div>
                 {artistReleases.length > 0 && (
                   <div className="space-y-2">
+                    <p className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-widest pt-1">Sorties musique</p>
                     {artistReleases.slice(0, 5).map((r) => (
                       <div key={r.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center gap-3">
                         {r.cover_url ? (
@@ -364,6 +387,32 @@ export default function PartnerDashboard() {
                         <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
                           <span className="flex items-center gap-1"><Headphones size={11} /> {r.plays_count || 0}</span>
                           <span className="flex items-center gap-1"><ShoppingCart size={11} /> {r.sales_count || 0}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {artistVideos.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-widest pt-1">Vidéos / Clips</p>
+                    {artistVideos.slice(0, 5).map((v) => (
+                      <div key={v.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center gap-3">
+                        {v.thumbnail_url ? (
+                          <img src={v.thumbnail_url} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                            <VideoIcon size={13} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading font-bold text-sm truncate">{v.title}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {v.is_for_sale ? 'Payant' : 'Gratuit'} · {v.video_type}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground shrink-0">
+                          <span className="flex items-center gap-1"><Eye size={11} /> {v.views_count || 0}</span>
+                          <span className="flex items-center gap-1"><ShoppingCart size={11} /> {v.sales_count || 0}</span>
                         </div>
                       </div>
                     ))}
