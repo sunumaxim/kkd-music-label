@@ -17,6 +17,7 @@ import ResetPassword from '@/pages/ResetPassword';
 
 // Public layout
 import PublicLayout from './components/layout/PublicLayout';
+import ControleLayout from './components/layout/ControleLayout';
 
 // Partner
 import PartnerDashboard from './pages/partner/PartnerDashboard.jsx';
@@ -114,7 +115,6 @@ const AuthenticatedApp = () => {
         <Route path="/mes-achats" element={<MesAchats />} />
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/mes-billets" element={<MesBillets />} />
-        <Route path="/controle-acces" element={<ControleAcces />} />
         <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
         <Route path="/explorer" element={<Explorer />} />
@@ -123,6 +123,13 @@ const AuthenticatedApp = () => {
       {/* Partner dashboard (protected) */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/mon-espace" element={<PartnerDashboard />} />
+      </Route>
+
+      {/* Contrôle d'accès — sous-domaine isolé (controle.kkdmusic.com) */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<ControleLayout />}>
+          <Route path="/controle-acces" element={<ControleAcces />} />
+        </Route>
       </Route>
 
       {/* Admin routes (admin only) */}
