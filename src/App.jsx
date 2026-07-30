@@ -88,6 +88,26 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // Sous-domaine controle.kkdmusic.com — accès strictement isolé au scanner
+  const isControleSubdomain = typeof window !== 'undefined' && window.location.hostname.startsWith('controle.');
+
+  if (isControleSubdomain) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route element={<ControleLayout />}>
+            <Route path="/controle-acces" element={<ControleAcces />} />
+            <Route path="*" element={<Navigate to="/controle-acces" replace />} />
+          </Route>
+        </Route>
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
       {/* Auth routes */}
