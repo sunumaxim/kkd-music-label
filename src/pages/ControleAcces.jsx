@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import {
   QrCode, Search, CheckCircle2, Loader2, UserPlus, Trash2,
   ScanLine, LogIn, Users, XCircle, AlertCircle, ChevronDown, ChevronUp,
-  LogOut, Repeat, ArrowRightLeft, Clock,
+  LogOut, Repeat, ArrowRightLeft, Clock, Ticket as TicketIcon, Download, Send,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -45,6 +45,15 @@ export default function ControleAcces() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [drawerTicket, setDrawerTicket] = useState(null);
   const [drawerActionLoading, setDrawerActionLoading] = useState(false);
+  const [showCreateTicket, setShowCreateTicket] = useState(false);
+  const [showTicketSearch, setShowTicketSearch] = useState(false);
+  const [ticketSearchQuery, setTicketSearchQuery] = useState('');
+  const [ticketSearchResults, setTicketSearchResults] = useState([]);
+  const [searchingTickets, setSearchingTickets] = useState(false);
+  const [newTicket, setNewTicket] = useState({ buyer_name: '', buyer_email: '', buyer_phone: '', amount: '' });
+  const [creatingTicket, setCreatingTicket] = useState(false);
+  const [lastCreatedTicket, setLastCreatedTicket] = useState(null);
+  const [downloadingTicket, setDownloadingTicket] = useState(null);
   const resultTimerRef = useRef(null);
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
@@ -173,6 +182,73 @@ export default function ControleAcces() {
       await base44.functions.invoke('updateEventManagers', { event_id: selected.id, action: 'remove', email: m });
       qc.invalidateQueries({ queryKey: ['events-all'] });
     } catch (e) { toast({ title: 'Erreur', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
+  // ── Création manuelle de billet (achat externe) ──
+  const createTicket = async () => {
+    if (!newTicket.buyer_email.trim() || !selected) return;
+    setCreatingTicket(true);
+    try {
+      const res = await base44.functions.invoke('createManualTicket', {
+        event_id: selected.id,
+        buyer_name: newTicket.buyer_name,
+        buyer_email: newTicket.buyer_email,
+        buyer_phone: newTicket.buyer_phone,
+        amount: Number(newTicket.amount) || selected.ticket_price || 0,
+      });
+      const ticket = res?.ticket || res?.data?.ticket;
+      if (ticket) {
+        setLastCreatedTicket(ticket);
+        setNewTicket({ buyer_name: '', buyer_email: '', buyer_phone: '', amount: '' });
+        toast({ title: 'Billet créé ✅', description: ticket.ticket_number });
+        qc.invalidateQueries({ queryKey: ['event-tickets', selectedId] });
+      }
+    } catch (e) {
+      toast({ title: 'Erreur', description: e.response?.data?.error || e.message, variant: 'destructive' });
+    } finally { setCreatingTicket(false); }
+  };
+
+  const downloadTicketPdf = async (ticketNumber) => {
+    setDownloadingTicket(ticketNumber);
+    try {
+      const res = await base44.functions.invoke('generateTicketFile', { ticket_number: ticketNumber, app_url: window.location.origin });
+      const pdf = res?.data?.pdf || res?.pdf;
+      const filename = res?.data?.filename || res?.filename || `billet-${ticketNumber}.pdf`;
+      if (pdf) {
+        const bin = atob(pdf);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      } else {
+        toast({ title: 'Erreur', description: 'Billet indisponible', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Erreur téléchargement', description: e.message, variant: 'destructive' });
+    } finally { setDownloadingTicket(null); }
+  };
+
+  // ── Recherche de billets (global, tous événements) ──
+  const searchTickets = async () => {
+    const q = ticketSearchQuery.trim();
+    if (q.length < 2) return;
+    setSearchingTickets(true);
+    try {
+      // Recherche par numéro de billet
+      const byNumber = await base44.entities.Ticket.filter({ ticket_number: q });
+      let results = byNumber;
+      // Recherche par email acheteur si pas trouvé par numéro
+      if (results.length === 0) {
+        const byEmail = await base44.entities.Ticket.filter({ buyer_email: q });
+        results = byEmail;
+      }
+      setTicketSearchResults(results);
+    } catch (e) {
+      setTicketSearchResults([]);
+    } finally { setSearchingTickets(false); }
   };
 
   return (
@@ -404,6 +480,91 @@ export default function ControleAcces() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* ═══ Recherche de billets (global) ═══ */}
+            <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+              <button onClick={() => { setShowTicketSearch(!showTicketSearch); if (showTicketSearch) { setTicketSearchResults([]); setTicketSearchQuery(''); } }} className="w-full flex items-center justify-between p-3 text-sm font-medium">
+                <span className="flex items-center gap-2">
+                  <Search size={15} className="text-muted-foreground" /> Rechercher un billet
+                </span>
+                {showTicketSearch ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {showTicketSearch && (
+                <div className="px-3 pb-3 space-y-3">
+                  <p className="text-[11px] text-muted-foreground">Recherchez par numéro de billet ou email de l'acheteur, sur tous les événements.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={ticketSearchQuery}
+                      onChange={(e) => setTicketSearchQuery(e.target.value)}
+                      placeholder="N° billet ou email"
+                      onKeyDown={(e) => { if (e.key === 'Enter') searchTickets(); }}
+                    />
+                    <Button size="sm" variant="outline" disabled={searchingTickets || ticketSearchQuery.trim().length < 2} onClick={searchTickets} className="gap-1.5 shrink-0">
+                      {searchingTickets ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} Chercher
+                    </Button>
+                  </div>
+                  {ticketSearchResults.length > 0 && (
+                    <div className="space-y-2">
+                      {ticketSearchResults.map((t) => (
+                        <div key={t.id} className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${t.checked_in ? 'bg-emerald-500/15' : t.checked_out ? 'bg-amber-500/15' : 'bg-secondary'}`}>
+                            {t.checked_in ? <LogIn size={13} className="text-emerald-500" /> : t.checked_out ? <LogOut size={13} className="text-amber-500" /> : <TicketIcon size={13} className="text-muted-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-heading font-bold text-xs truncate">{t.buyer_name || '—'}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{t.event_title} · {t.ticket_number}</p>
+                          </div>
+                          {t.status === 'valide' && (
+                            <Button size="sm" variant="ghost" onClick={() => downloadTicketPdf(t.ticket_number)} disabled={downloadingTicket === t.ticket_number} className="h-7 px-2 text-xs gap-1 shrink-0">
+                              {downloadingTicket === t.ticket_number ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {ticketSearchResults.length === 0 && ticketSearchQuery.trim().length >= 2 && !searchingTickets && (
+                    <p className="text-xs text-muted-foreground text-center py-3">Aucun billet trouvé.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ═══ Créer un billet (achat externe) ═══ */}
+            <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+              <button onClick={() => { setShowCreateTicket(!showCreateTicket); if (showCreateTicket) setLastCreatedTicket(null); }} className="w-full flex items-center justify-between p-3 text-sm font-medium">
+                <span className="flex items-center gap-2">
+                  <TicketIcon size={15} className="text-muted-foreground" /> Créer un billet
+                </span>
+                {showCreateTicket ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {showCreateTicket && (
+                <div className="px-3 pb-3 space-y-2.5">
+                  <p className="text-[11px] text-muted-foreground">Pour les achats effectués à part (espèces, Wave, etc.). Le billet est généré avec un QR code unique et immédiatement valide.</p>
+                  <Input placeholder="Nom de l'acheteur" value={newTicket.buyer_name} onChange={(e) => setNewTicket({ ...newTicket, buyer_name: e.target.value })} />
+                  <Input placeholder="Email de l'acheteur" type="email" value={newTicket.buyer_email} onChange={(e) => setNewTicket({ ...newTicket, buyer_email: e.target.value })} />
+                  <Input placeholder="Téléphone (optionnel)" value={newTicket.buyer_phone} onChange={(e) => setNewTicket({ ...newTicket, buyer_phone: e.target.value })} />
+                  <Input placeholder={`Montant FCFA (défaut: ${Number(selected.ticket_price || 0).toLocaleString('fr-FR')})`} type="number" value={newTicket.amount} onChange={(e) => setNewTicket({ ...newTicket, amount: e.target.value })} />
+                  <Button size="sm" disabled={!newTicket.buyer_email.trim() || creatingTicket} onClick={createTicket} className="gap-2 w-full">
+                    {creatingTicket ? <Loader2 size={14} className="animate-spin" /> : <TicketIcon size={14} />} Créer le billet
+                  </Button>
+                  {lastCreatedTicket && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-500" />
+                        <p className="text-xs font-bold text-emerald-600">Billet créé : {lastCreatedTicket.ticket_number}</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{lastCreatedTicket.buyer_name || '—'} · {lastCreatedTicket.buyer_email}</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => downloadTicketPdf(lastCreatedTicket.ticket_number)} disabled={downloadingTicket === lastCreatedTicket.ticket_number} className="gap-1.5 text-xs">
+                          {downloadingTicket === lastCreatedTicket.ticket_number ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />} Télécharger PDF
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

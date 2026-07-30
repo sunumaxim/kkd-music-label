@@ -10,7 +10,6 @@ function bufToB64(buf) {
   return btoa(bin);
 }
 
-// Empêche le SSRF : bloque les schémas non-http(s) et les hôtes internes / privés.
 function isBlockedHost(host) {
   host = String(host || '').toLowerCase();
   if (!host) return true;
@@ -18,9 +17,7 @@ function isBlockedHost(host) {
   const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
     const a = +v4[1], b = +v4[2];
-    if (a === 0) return true;
-    if (a === 10) return true;
-    if (a === 127) return true;
+    if (a === 0 || a === 10 || a === 127) return true;
     if (a === 169 && b === 254) return true;
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 192 && b === 168) return true;
@@ -29,22 +26,18 @@ function isBlockedHost(host) {
   }
   if (host.includes(':')) {
     if (host === '::1' || host === '::' || host.startsWith('0:0:0:0:0:0:0:1')) return true;
-    if (host.startsWith('fc') || host.startsWith('fd')) return true;
-    if (host.startsWith('fe80')) return true;
+    if (host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
   }
   return false;
 }
 function isSafeUrl(raw) {
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
-    return !isBlockedHost(u.hostname);
-  } catch (_) { return false; }
+  try { const u = new URL(raw); if (u.protocol !== 'http:' && u.protocol !== 'https:') return false; return !isBlockedHost(u.hostname); }
+  catch (_) { return false; }
 }
 
 async function fetchImage(url) {
   if (!url) return null;
-  if (!isSafeUrl(url)) { console.warn('generateTicketFile: image URL blocked (SSRF protection)'); return null; }
+  if (!isSafeUrl(url)) return null;
   try {
     const r = await fetch(url);
     if (!r.ok) return null;
@@ -57,6 +50,50 @@ async function fetchImage(url) {
 
 function fmtDate(d) {
   try { return new Date(d).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }); } catch (_) { return ''; }
+}
+
+function fmtDateShort(d) {
+  try { return new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (_) { return ''; }
+}
+
+// Génère la valeur du code-barres : date + heure + minute + KKD + SM
+function generateBarcodeValue(ticket) {
+  const d = new Date(ticket.validated_date || ticket.created_date || Date.now());
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const min = String(d.getUTCMinutes()).padStart(2, '0');
+  return `${y}${m}${day}${h}${min}KKDSM`;
+}
+
+// Dessine un code-barres visuel (pattern Code 128-like)
+function drawBarcode(doc, x, y, w, h, value) {
+  const bars = [];
+  // Start guard
+  bars.push({ w: 2, black: true }); bars.push({ w: 1, black: false });
+  // Data
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    for (let j = 0; j < 4; j++) {
+      const width = ((code >> (j * 2)) & 3) + 1;
+      bars.push({ w: width, black: j % 2 === 0 });
+    }
+  }
+  // Stop guard
+  bars.push({ w: 1, black: false }); bars.push({ w: 2, black: true });
+
+  const totalUnits = bars.reduce((s, b) => s + b.w, 0);
+  const unitW = w / totalUnits;
+  let cx = x;
+  doc.setFillColor(255, 255, 255); doc.rect(x, y, w, h, 'F');
+  for (const bar of bars) {
+    if (bar.black) {
+      doc.setFillColor(20, 18, 16);
+      doc.rect(cx, y, bar.w * unitW, h, 'F');
+    }
+    cx += bar.w * unitW;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -83,52 +120,110 @@ Deno.serve(async (req) => {
       fetchImage(qrUrl),
     ]);
 
-    const W = 380, H = 620;
+    // ═══ Design professionnel du billet ═══
+    const W = 400, H = 740;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [W, H] });
 
-    doc.setFillColor(10, 10, 14); doc.rect(0, 0, W, H, 'F');
-    doc.setFillColor(230, 0, 0); doc.rect(0, 0, W, 8, 'F'); doc.rect(0, H - 8, W, 8, 'F');
+    // Fond sombre
+    doc.setFillColor(18, 16, 14); doc.rect(0, 0, W, H, 'F');
 
-    if (logo) { try { doc.addImage(logo.data, logo.fmt, 24, 28, 38, 38); } catch (_) {} }
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-    doc.text('KKD MUSIC', 72, 42);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(180, 180, 180);
-    doc.text('Billet officiel', 72, 56);
+    // Bandes rouges haut/bas
+    doc.setFillColor(229, 57, 53); doc.rect(0, 0, W, 7, 'F'); doc.rect(0, H - 7, W, 7, 'F');
 
-    let py = 86;
-    if (poster) { try { doc.addImage(poster.data, poster.fmt, 24, py, W - 48, 140); } catch (_) {} }
-    else { doc.setFillColor(40, 40, 48); doc.rect(24, py, W - 48, 140, 'F'); }
-    py += 140 + 18;
+    // ── En-tête ──
+    if (logo) { try { doc.addImage(logo.data, logo.fmt, 22, 22, 38, 38); } catch (_) {} }
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+    doc.text('KKD MUSIC', 70, 38);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(180, 175, 170);
+    doc.text('BILLET OFFICIEL  ·  SunuMaxim GROUP', 70, 52);
 
-    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
-    doc.text(String(ticket.event_title || 'Événement'), 24, py, { maxWidth: W - 48 });
-    py += 24;
+    // Séparateur
+    doc.setDrawColor(229, 57, 53); doc.setLineWidth(1.5);
+    doc.line(22, 70, W - 22, 70);
+
+    // ── Affiche ──
+    let py = 82;
+    const pw = W - 44, ph = 170;
+    if (poster) { try { doc.addImage(poster.data, poster.fmt, 22, py, pw, ph); } catch (_) {} }
+    else { doc.setFillColor(40, 36, 32); doc.rect(22, py, pw, ph, 'F'); }
+    py += ph + 16;
+
+    // ── Titre événement ──
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(22);
+    const titleLines = doc.splitTextToSize(String(ticket.event_title || 'Evenement'), W - 44);
+    doc.text(titleLines, 22, py);
+    py += titleLines.length * 24;
+
+    // Artiste
     if (ev?.artist_name || ticket.artist_name) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(230, 0, 0);
-      doc.text(String(ev?.artist_name || ticket.artist_name), 24, py); py += 16;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(229, 57, 53);
+      doc.text(String(ev?.artist_name || ticket.artist_name), 22, py); py += 17;
     }
-    doc.setTextColor(200, 200, 200); doc.setFontSize(11);
-    if (ev?.event_date || ticket.event_date) { doc.text(fmtDate(ev?.event_date || ticket.event_date), 24, py, { maxWidth: W - 48 }); py += 14; }
-    if (ev?.location || ev?.city) { doc.text([ev?.city, ev?.location].filter(Boolean).join(' — '), 24, py, { maxWidth: W - 48 }); py += 14; }
+
+    // Date + lieu
+    doc.setTextColor(190, 185, 180); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    if (ev?.event_date || ticket.event_date) {
+      doc.text(fmtDate(ev?.event_date || ticket.event_date), 22, py, { maxWidth: W - 44 }); py += 14;
+    }
+    if (ev?.location || ev?.city) {
+      const locStr = [ev?.city, ev?.location].filter(Boolean).join(' — ');
+      doc.text(locStr, 22, py, { maxWidth: W - 44 }); py += 14;
+    }
     py += 8;
 
-    const qrSize = 150; const qx = (W - qrSize) / 2;
-    if (qr) { try { doc.addImage(qr.data, qr.fmt, qx, py, qrSize, qrSize); } catch (_) {} }
-    else { doc.setFillColor(255, 255, 255); doc.rect(qx, py, qrSize, qrSize, 'F'); }
-    if (poster) {
-      const c = 44;
-      doc.setFillColor(255, 255, 255); doc.rect(qx + qrSize / 2 - c / 2 - 2, py + qrSize / 2 - c / 2 - 2, c + 4, c + 4, 'F');
-      try { doc.addImage(poster.data, poster.fmt, qx + qrSize / 2 - c / 2, py + qrSize / 2 - c / 2, c, c); } catch (_) {}
+    // ── QR code + infos ──
+    const qrSize = 120;
+    const qrX = 22;
+    // Fond blanc arrondi pour le QR
+    doc.setFillColor(255, 255, 255); doc.roundedRect(qrX - 5, py - 5, qrSize + 10, qrSize + 10, 6, 6, 'F');
+    if (qr) { try { doc.addImage(qr.data, qr.fmt, qrX, py, qrSize, qrSize); } catch (_) {} }
+    // Logo au centre du QR
+    if (logo) {
+      const c = 30;
+      doc.setFillColor(255, 255, 255); doc.rect(qrX + qrSize / 2 - c / 2 - 1, py + qrSize / 2 - c / 2 - 1, c + 2, c + 2, 'F');
+      try { doc.addImage(logo.data, logo.fmt, qrX + qrSize / 2 - c / 2, py + qrSize / 2 - c / 2, c, c); } catch (_) {}
     }
-    py += qrSize + 16;
 
-    doc.setTextColor(230, 0, 0); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(String(ticket.ticket_number), W / 2, py, { align: 'center' }); py += 14;
-    doc.setTextColor(255, 255, 255); doc.setFontSize(11);
-    doc.text(`Au nom de : ${ticket.buyer_name || '—'}`, W / 2, py, { align: 'center' }); py += 14;
-    doc.setFontSize(9); doc.setTextColor(150, 150, 150);
-    doc.text(`${Number(ticket.amount || 0).toLocaleString('fr-FR')} FCFA · Présentez ce billet à l'entrée`, W / 2, py, { align: 'center' }); py += 12;
-    doc.text('KKD Music — SunuMaxim GROUP', W / 2, py, { align: 'center' });
+    // Infos à droite du QR
+    const ix = qrX + qrSize + 18;
+    const iw = W - ix - 22;
+    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('AU NOM DE', ix, py + 8);
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    const nameLines = doc.splitTextToSize(String(ticket.buyer_name || '—'), iw);
+    doc.text(nameLines.slice(0, 2), ix, py + 22);
+
+    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('PRIX', ix, py + 48);
+    doc.setTextColor(229, 57, 53); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text(`${Number(ticket.amount || 0).toLocaleString('fr-FR')} FCFA`, ix, py + 62);
+
+    doc.setTextColor(150, 145, 140); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('N° BILLET', ix, py + 78);
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text(String(ticket.ticket_number || ''), ix, py + 90, { maxWidth: iw });
+
+    py += qrSize + 22;
+
+    // ── Code-barres ──
+    const bcValue = generateBarcodeValue(ticket);
+    const bcW = W - 44, bcH = 48;
+    doc.setFillColor(255, 255, 255); doc.roundedRect(20, py - 3, bcW + 4, bcH + 16, 4, 4, 'F');
+    drawBarcode(doc, 22, py, bcW, bcH, bcValue);
+    py += bcH + 4;
+    doc.setTextColor(40, 36, 32); doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.text(bcValue, W / 2, py, { align: 'center' });
+    py += 16;
+
+    // ── Pied de page ──
+    doc.setDrawColor(60, 55, 50); doc.setLineWidth(0.5);
+    doc.line(22, py, W - 22, py);
+    py += 13;
+    doc.setTextColor(150, 145, 140); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text("Presentez ce billet a l'entree", W / 2, py, { align: 'center' });
+    py += 11;
+    doc.setTextColor(120, 115, 110);
+    doc.text('KKD Music  —  SunuMaxim GROUP  —  kkdmusic.com', W / 2, py, { align: 'center' });
 
     const ab = doc.output('arraybuffer');
     return Response.json({ pdf: bufToB64(ab), filename: `billet-${ticket_number}.pdf` });
