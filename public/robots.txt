@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://kkdmusic.com/sitemap.xml
+
+# Pages privées — non indexables
+Disallow: /admin
+Disallow: /mon-espace
+Disallow: /controle-acces
+Disallow: /mes-achats
+Disallow: /playlists
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password

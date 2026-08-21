@@ -17,6 +17,7 @@ import LikeButton from '@/components/shared/LikeButton';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
 import { extractIdFromSlug, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, slugify } from '@/lib/slugify';
+import { resolveEntityBySlug } from '@/lib/resolveEntity';
 
 const TYPE_LABELS = {
   single: 'Single',
@@ -34,15 +35,7 @@ export default function ReleaseDetail() {
 
   const { data: release, isLoading } = useQuery({
     queryKey: ['release', id],
-    queryFn: async () => {
-      if (legacyId) return (await base44.entities.Release.filter({ id: legacyId }))[0] || null;
-      const bySlug = (await base44.entities.Release.filter({ slug }))[0];
-      if (bySlug) return bySlug;
-      const all = await base44.entities.Release.list('-created_date', 500);
-      const found = all.find((r) => slugify(r.title) === slug);
-      if (found) { base44.entities.Release.update(found.id, { slug }).catch(() => {}); return found; }
-      return null;
-    },
+    queryFn: () => resolveEntityBySlug('Release', slugParam, 'title'),
   });
 
   const { data: artist } = useQuery({
@@ -268,24 +261,21 @@ export default function ReleaseDetail() {
           <div>
             <h2 className="font-display font-bold text-lg mb-4">Autres sorties de {release.artist_name}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {otherReleases.map(r => {
-                const slug = `${slugify(r.title)}--${r.id}`;
-                return (
-                  <Link key={r.id} to={`/musique/${slug}`} className="group">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 mb-2">
-                      {r.cover_url ? (
-                        <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      ) : (
-                        <div className="w-full h-full bg-secondary flex items-center justify-center">
-                          <Music size={24} className="text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="font-heading font-bold text-xs truncate group-hover:text-primary transition-colors">{r.title}</p>
-                    <p className="text-[10px] text-muted-foreground capitalize">{r.release_type?.replace('_', ' ')}</p>
-                  </Link>
-                );
-              })}
+              {otherReleases.map(r => (
+                <Link key={r.id} to={`/musique/${r.slug || slugify(r.title)}`} className="group">
+                  <div className="aspect-square rounded-xl overflow-hidden bg-card border border-border/40 mb-2">
+                    {r.cover_url ? (
+                      <img src={r.cover_url} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-full h-full bg-secondary flex items-center justify-center">
+                        <Music size={24} className="text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="font-heading font-bold text-xs truncate group-hover:text-primary transition-colors">{r.title}</p>
+                  <p className="text-[10px] text-muted-foreground capitalize">{r.release_type?.replace('_', ' ')}</p>
+                </Link>
+              ))}
             </div>
           </div>
         )}

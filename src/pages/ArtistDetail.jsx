@@ -20,6 +20,7 @@ import CarouselRow from '@/components/home/CarouselRow';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
 import { slugify, buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
+import { resolveEntityBySlug } from '@/lib/resolveEntity';
 
 function compact(n) {
   if (!n || n < 0) return '0';
@@ -62,20 +63,7 @@ export default function ArtistDetail() {
 
   const { data: artist, isLoading } = useQuery({
     queryKey: ['artist', id],
-    queryFn: async () => {
-      if (legacyId) return (await base44.entities.Artist.filter({ id: legacyId }))[0] || null;
-      const bySlug = (await base44.entities.Artist.filter({ slug }))[0];
-      if (bySlug) return bySlug;
-      const all = await base44.entities.Artist.list('-created_date', 500);
-      const found = all.find((a) => slugify(a.name) === slug);
-      if (found) { base44.entities.Artist.update(found.id, { slug }).catch(() => {}); return found; }
-      // Fallback : lien legacy brut par ID (ex : /artistes/<id>)
-      try {
-        const byId = await base44.entities.Artist.get(slugParam);
-        if (byId) return byId;
-      } catch (_) {}
-      return null;
-    },
+    queryFn: () => resolveEntityBySlug('Artist', slugParam, 'name'),
   });
 
   const { data: releases = [] } = useQuery({

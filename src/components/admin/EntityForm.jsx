@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { X } from 'lucide-react';
+import { slugify } from '@/lib/slugify';
 
 export default function EntityForm({ fields, initialData, onSave, onCancel, title, onDirtyChange }) {
   const [data, setData] = useState(() => initialData || {});
@@ -46,7 +47,13 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    await onSave(data);
+    // Auto-generate slug from title/name if not explicitly set
+    const dataToSave = { ...data };
+    if (!dataToSave.slug) {
+      const nameVal = dataToSave.title || dataToSave.name;
+      if (nameVal) dataToSave.slug = slugify(nameVal);
+    }
+    await onSave(dataToSave);
     setIsDirty(false);
     onDirtyChange?.(false);
     setSaving(false);

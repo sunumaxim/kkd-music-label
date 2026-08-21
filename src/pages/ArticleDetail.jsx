@@ -12,6 +12,7 @@ import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { resolveEntityBySlug } from '@/lib/resolveEntity';
 
 const CATEGORY_LABELS = {
   communique: 'Communiqué',
@@ -30,15 +31,7 @@ export default function ArticleDetail() {
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['news-detail', newsId],
-    queryFn: async () => {
-      if (legacyId) return (await base44.entities.News.filter({ id: legacyId }))[0] || null;
-      const bySlug = (await base44.entities.News.filter({ slug }))[0];
-      if (bySlug) return bySlug;
-      const all = await base44.entities.News.list('-publish_date', 500);
-      const found = all.find((n) => slugify(n.title) === slug);
-      if (found) { base44.entities.News.update(found.id, { slug }).catch(() => {}); return found; }
-      return null;
-    },
+    queryFn: () => resolveEntityBySlug('News', slugParam, 'title'),
   });
 
   const handleShare = async () => {

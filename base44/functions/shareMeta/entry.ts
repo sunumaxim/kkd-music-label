@@ -25,6 +25,48 @@ function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function slugify(text) {
+  if (!text) return '';
+  return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+const ENTITY_MAP = {
+  release: { name: 'Release', nameField: 'title' },
+  video: { name: 'Video', nameField: 'title' },
+  artist: { name: 'Artist', nameField: 'name' },
+  news: { name: 'News', nameField: 'title' },
+  event: { name: 'Event', nameField: 'title' },
+};
+
+async function resolveEntity(base44, type, rawSlug) {
+  const cfg = ENTITY_MAP[type];
+  if (!cfg || !rawSlug) return null;
+  const entity = base44.asServiceRole.entities[cfg.name];
+  const cleanSlug = slugify(rawSlug);
+  const legacyId = String(rawSlug).includes('--') ? extractId(rawSlug) : null;
+
+  // 1. By ID (legacy format slug--id)
+  if (legacyId) {
+    try { const r = (await entity.filter({ id: legacyId }))[0]; if (r) return r; } catch (_) {}
+  }
+  // 2. By slug field
+  if (cleanSlug) {
+    try { const r = (await entity.filter({ slug: cleanSlug }))[0]; if (r) return r; } catch (_) {}
+  }
+  // 3. By raw ID (hex)
+  if (rawSlug.length >= 20 && /^[a-f0-9]+$/i.test(rawSlug)) {
+    try { const r = await entity.get(rawSlug); if (r) return r; } catch (_) {}
+  }
+  // 4. By slugified title/name (fallback)
+  try {
+    const all = await entity.list('-created_date', 500);
+    const found = all.find(r => slugify(r[cfg.nameField]) === cleanSlug);
+    if (found) return found;
+  } catch (_) {}
+  return null;
+}
+
 function ytId(url) {
   if (!url) return null;
   const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?\s]+)/);
@@ -57,13 +99,7 @@ Deno.serve(async (req) => {
 
     if (id) {
       try {
-        let ent = null;
-        if (type === 'release') ent = (await base44.asServiceRole.entities.Release.filter({ id }))[0];
-        else if (type === 'video') ent = (await base44.asServiceRole.entities.Video.filter({ id }))[0];
-        else if (type === 'artist') ent = (await base44.asServiceRole.entities.Artist.filter({ id }))[0];
-        else if (type === 'news') ent = (await base44.asServiceRole.entities.News.filter({ id }))[0];
-        else if (type === 'event') ent = (await base44.asServiceRole.entities.Event.filter({ id }))[0];
-
+        const ent = await resolveEntity(base44, type, slug);
         if (ent) {
           title = ent.title || ent.name || title;
           description =

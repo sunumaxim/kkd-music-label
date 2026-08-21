@@ -13,6 +13,7 @@ import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { resolveEntityBySlug } from '@/lib/resolveEntity';
 import { useQueryClient } from '@tanstack/react-query';
 
 const EVENT_TYPE_LABELS = {
@@ -32,15 +33,7 @@ export default function EventDetail() {
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event-detail', id],
-    queryFn: async () => {
-      if (legacyId) return (await base44.entities.Event.filter({ id: legacyId }))[0] || null;
-      const bySlug = (await base44.entities.Event.filter({ slug }))[0];
-      if (bySlug) return bySlug;
-      const all = await base44.entities.Event.list('-event_date', 500);
-      const found = all.find((e) => slugify(e.title) === slug);
-      if (found) { base44.entities.Event.update(found.id, { slug }).catch(() => {}); return found; }
-      return null;
-    },
+    queryFn: () => resolveEntityBySlug('Event', slugParam, 'title'),
   });
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });

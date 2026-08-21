@@ -12,6 +12,7 @@ import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import LikeButton from '@/components/shared/LikeButton';
 import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { resolveEntityBySlug } from '@/lib/resolveEntity';
 import { motion } from 'framer-motion';
 
 function getYouTubeId(url) {
@@ -37,15 +38,7 @@ export default function VideoDetail() {
 
   const { data: video, isLoading } = useQuery({
     queryKey: ['video', id],
-    queryFn: async () => {
-      if (legacyId) return (await base44.entities.Video.filter({ id: legacyId }))[0] || null;
-      const bySlug = (await base44.entities.Video.filter({ slug }))[0];
-      if (bySlug) return bySlug;
-      const all = await base44.entities.Video.list('-created_date', 500);
-      const found = all.find((v) => slugify(v.title) === slug);
-      if (found) { base44.entities.Video.update(found.id, { slug }).catch(() => {}); return found; }
-      return null;
-    },
+    queryFn: () => resolveEntityBySlug('Video', slugParam, 'title'),
     staleTime: 0,
   });
 
