@@ -35,12 +35,18 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { event_id, quantity, buyer_name, buyer_email, buyer_phone, buyer_location, amount } = await req.json();
+    const { event_id, quantity, buyer_name, buyer_email, buyer_phone, buyer_location, amount, blank } = await req.json();
 
     if (!event_id) return Response.json({ error: 'event_id requis' }, { status: 400 });
-    if (!buyer_name || !buyer_name.trim()) return Response.json({ error: 'Le nom est obligatoire' }, { status: 400 });
-    if (!buyer_phone || !buyer_phone.trim()) return Response.json({ error: 'Le téléphone est obligatoire' }, { status: 400 });
-    if (!buyer_location || !buyer_location.trim()) return Response.json({ error: 'Le lieu (ville/village) est obligatoire' }, { status: 400 });
+
+    // Mode "blank" (vente physique) : billets vierges sans infos acheteur, à activer par scan QR.
+    // Mode normal : infos acheteur obligatoires, billets déjà activés.
+    const isBlank = !!blank;
+    if (!isBlank) {
+      if (!buyer_name || !buyer_name.trim()) return Response.json({ error: 'Le nom est obligatoire' }, { status: 400 });
+      if (!buyer_phone || !buyer_phone.trim()) return Response.json({ error: 'Le téléphone est obligatoire' }, { status: 400 });
+      if (!buyer_location || !buyer_location.trim()) return Response.json({ error: 'Le lieu (ville/village) est obligatoire' }, { status: 400 });
+    }
 
     const events = await base44.asServiceRole.entities.Event.filter({ id: event_id });
     const ev = events[0];
@@ -89,18 +95,18 @@ Deno.serve(async (req) => {
         artist_name: ev.artist_name,
         organizer_email: ev.organizer_email,
         managers: ev.managers || [],
-        buyer_email: buyer_email ? buyer_email.trim().toLowerCase() : '',
-        buyer_name: buyer_name.trim(),
-        buyer_phone: buyer_phone.trim(),
-        buyer_location: buyer_location.trim(),
+        buyer_email: isBlank ? '' : (buyer_email ? buyer_email.trim().toLowerCase() : ''),
+        buyer_name: isBlank ? '' : buyer_name.trim(),
+        buyer_phone: isBlank ? '' : buyer_phone.trim(),
+        buyer_location: isBlank ? '' : buyer_location.trim(),
         ticket_number: number,
         security_hash: genSecurityHash(),
         batch_id: batchId,
         amount: ticketAmount,
         commission_pct: ev.commission_pct || 10,
         payment_method: 'wave',
-        status: 'valide',
-        validated_date: now,
+        status: isBlank ? 'en_attente' : 'valide',
+        validated_date: isBlank ? null : now,
         checked_in: false,
         checked_out: false,
         entry_count: 0,

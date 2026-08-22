@@ -150,7 +150,10 @@ Deno.serve(async (req) => {
     const tickets = await base44.asServiceRole.entities.Ticket.filter({ ticket_number });
     const ticket = tickets[0];
     if (!ticket) return Response.json({ error: 'Billet introuvable' }, { status: 404 });
-    if (ticket.status !== 'valide') return Response.json({ error: 'Billet non validé' }, { status: 400 });
+    // Autoriser les billets "en_attente" (vierges, à activer) et "valide" (activés)
+    if (ticket.status !== 'valide' && ticket.status !== 'en_attente') return Response.json({ error: 'Billet non validé' }, { status: 400 });
+
+    const isBlank = ticket.status === 'en_attente';
 
     const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
     const ev = events[0];
@@ -302,7 +305,7 @@ Deno.serve(async (req) => {
     // ── Disclaimer ──
     doc.setTextColor(150, 150, 150);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
-    doc.text('BILLET VALIDE POUR UNE SEULE ENTRÉE', padL, 298);
+    doc.text(isBlank ? 'À ACTIVER PAR SCAN QR AVANT L\'ÉVÉNEMENT' : 'BILLET VALIDE POUR UNE SEULE ENTRÉE', padL, 298);
 
     // ── Bottom bar (3 sections) ──
     const barY = 314, barH = 70;
@@ -361,19 +364,19 @@ Deno.serve(async (req) => {
     const sw = SIDE_W - 28;
     let sy = 18;
 
-    // Red pill "TICKET OFFICIEL"
+    // Red pill "TICKET OFFICIEL" or "À ACTIVER" for blank tickets
     doc.setFillColor(RED[0], RED[1], RED[2]);
     doc.roundedRect(sx, sy, sw, 18, 9, 9, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
-    doc.text('TICKET OFFICIEL', MAIN_W + SIDE_W / 2, sy + 12.5, { align: 'center' });
+    doc.text(isBlank ? 'À ACTIVER' : 'TICKET OFFICIEL', MAIN_W + SIDE_W / 2, sy + 12.5, { align: 'center' });
     sy += 28;
 
     // Info list
     const infoItems = [
       { label: 'N° TICKET', value: String(ticket.ticket_number || '') },
-      { label: 'NOM', value: (ticket.buyer_name || '—').toUpperCase() },
-      { label: 'TÉLÉPHONE', value: ticket.buyer_phone || '—' },
+      { label: 'NOM', value: isBlank ? '—' : (ticket.buyer_name || '—').toUpperCase() },
+      { label: 'TÉLÉPHONE', value: isBlank ? '—' : (ticket.buyer_phone || '—') },
       { label: 'DATE', value: dp ? `${dp.day} ${dp.month} ${dp.year}` : '—' },
       { label: 'HEURE', value: dp ? dp.time : '—' },
       { label: 'LIEU', value: (ev?.location || ev?.city || '—').toUpperCase() },
@@ -403,12 +406,12 @@ Deno.serve(async (req) => {
     }
     sy += qrSize + 8;
 
-    // "SCANNER POUR VÉRIFIER" button
+    // "SCANNER POUR VÉRIFIER" / "SCANNER POUR ACTIVER" button
     doc.setFillColor(20, 20, 20);
     doc.roundedRect(sx, sy, sw, 15, 4, 4, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
-    doc.text('SCANNER POUR VÉRIFIER', MAIN_W + SIDE_W / 2, sy + 10, { align: 'center' });
+    doc.text(isBlank ? 'SCANNER POUR ACTIVER' : 'SCANNER POUR VÉRIFIER', MAIN_W + SIDE_W / 2, sy + 10, { align: 'center' });
     sy += 22;
 
     // Barcode

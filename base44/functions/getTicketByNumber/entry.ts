@@ -9,7 +9,10 @@ Deno.serve(async (req) => {
     const tickets = await base44.asServiceRole.entities.Ticket.filter({ ticket_number });
     const ticket = tickets[0];
     if (!ticket) return Response.json({ error: 'Billet introuvable' }, { status: 404 });
-    if (ticket.status !== 'valide') return Response.json({ error: 'Billet non validé' }, { status: 400 });
+    // Autoriser les billets "en_attente" (vente physique, à activer) et "valide" (activés)
+    if (ticket.status !== 'valide' && ticket.status !== 'en_attente') {
+      return Response.json({ error: 'Billet non validé' }, { status: 400 });
+    }
 
     // Vérifier le hash de sécurité si fourni (anti-falsification QR)
     if (security_hash && ticket.security_hash && security_hash !== ticket.security_hash) {
@@ -42,6 +45,7 @@ Deno.serve(async (req) => {
       city: ev?.city || null,
       buyer_name: ticket.buyer_name,
       amount: ticket.amount,
+      status: ticket.status,
       checked_in: !!ticket.checked_in,
       checked_in_date: ticket.checked_in_date || null,
       commission_pct: ticket.commission_pct || 10,

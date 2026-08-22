@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import QrWithLogo from '@/components/events/QrWithLogo';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Loader2, MapPin, Calendar, CheckCircle2, Ticket, ShieldCheck, LogIn, User } from 'lucide-react';
+import { Loader2, MapPin, Calendar, CheckCircle2, Ticket, ShieldCheck, LogIn, User, UserPlus, Sparkles } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
 
@@ -17,6 +19,10 @@ export default function PublicVerifTicket() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [checking, setChecking] = useState(false);
+
+  // Formulaire d'activation
+  const [form, setForm] = useState({ buyer_name: '', buyer_phone: '', buyer_location: '', buyer_email: '' });
+  const [activating, setActivating] = useState(false);
 
   // Hash de sécurité depuis l'URL (QR code sécurisé)
   const urlParams = new URLSearchParams(window.location.search);
@@ -43,6 +49,29 @@ export default function PublicVerifTicket() {
     } finally { setChecking(false); }
   };
 
+  const activateTicket = async (e) => {
+    e.preventDefault();
+    if (!form.buyer_name.trim() || !form.buyer_phone.trim() || !form.buyer_location.trim()) {
+      toast({ title: 'Nom, téléphone et lieu requis', variant: 'destructive' });
+      return;
+    }
+    setActivating(true);
+    try {
+      const res = await base44.functions.invoke('activateTicket', {
+        ticket_number: number,
+        security_hash: securityHash,
+        buyer_name: form.buyer_name.trim(),
+        buyer_phone: form.buyer_phone.trim(),
+        buyer_location: form.buyer_location.trim(),
+        buyer_email: form.buyer_email.trim(),
+      });
+      toast({ title: 'Billet activé ✅', description: 'Votre billet est maintenant valide' });
+      qc.invalidateQueries({ queryKey: ['ticket-by-number', number] });
+    } catch (err) {
+      toast({ title: 'Erreur', description: err.response?.data?.error || err.message, variant: 'destructive' });
+    } finally { setActivating(false); }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -65,6 +94,79 @@ export default function PublicVerifTicket() {
     ? `${window.location.origin}/billet/${t.ticket_number}?h=${t.security_hash}`
     : `${window.location.origin}/billet/${t.ticket_number}`;
 
+  // ── Billet en attente d'activation (vente physique) ──
+  if (t.status === 'en_attente') {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <MobileHeader title="Activation billet" backPath="/evenements" />
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="bg-card border border-primary/30 rounded-2xl overflow-hidden">
+            {t.event_image_url && (
+              <div className="relative h-40">
+                <img src={t.event_image_url} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+              </div>
+            )}
+
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Sparkles size={16} />
+                <span className="text-[10px] font-mono uppercase tracking-widest">Activation du billet</span>
+              </div>
+
+              <div>
+                <h1 className="font-display text-xl font-extrabold leading-tight">{t.event_title}</h1>
+                {t.artist_name && <p className="text-sm text-primary font-medium">{t.artist_name}</p>}
+                {t.event_date && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                    <Calendar size={12} /> {format(new Date(t.event_date), "EEEE dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                  </p>
+                )}
+                {(t.location || t.city) && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <MapPin size={12} /> {[t.city, t.location].filter(Boolean).join(' — ')}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-center text-[10px] font-mono text-muted-foreground break-all px-4">{t.ticket_number}</p>
+
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600">
+                <UserPlus size={14} className="shrink-0 mt-0.5" />
+                <p>Ce billet n'est pas encore activé. Remplissez vos informations pour le valider. Le même QR code servira pour l'entrée à l'événement.</p>
+              </div>
+
+              <form onSubmit={activateTicket} className="space-y-3">
+                <div>
+                  <Label className="text-xs mb-1.5 block">Nom complet *</Label>
+                  <Input value={form.buyer_name} onChange={(e) => setForm({ ...form, buyer_name: e.target.value })} placeholder="Votre nom" />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Téléphone *</Label>
+                  <Input value={form.buyer_phone} onChange={(e) => setForm({ ...form, buyer_phone: e.target.value })} placeholder="+221 ..." />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Ville / Village *</Label>
+                  <Input value={form.buyer_location} onChange={(e) => setForm({ ...form, buyer_location: e.target.value })} placeholder="Dakar..." />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Email (facultatif)</Label>
+                  <Input type="email" value={form.buyer_email} onChange={(e) => setForm({ ...form, buyer_email: e.target.value })} placeholder="email@exemple.com" />
+                </div>
+                <Button type="submit" disabled={activating} className="w-full h-11 bg-primary gap-2">
+                  {activating ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                  {activating ? 'Activation...' : 'Activer mon billet'}
+                </Button>
+              </form>
+            </div>
+          </div>
+          <Link to="/evenements" className="block text-center text-xs text-muted-foreground hover:text-primary mt-4">← Retour aux événements</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Billet activé (vue normale) ──
   return (
     <div className="min-h-screen bg-background pb-24">
       <MobileHeader title="Vérification billet" backPath="/evenements" />

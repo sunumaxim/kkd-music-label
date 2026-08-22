@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
       ticket = t[0];
     }
     if (!ticket) return Response.json({ error: 'Ticket introuvable' }, { status: 404 });
+    if (ticket.status === 'en_attente') return Response.json({ error: 'Billet non activé — l\'acheteur doit scanner le QR code pour l\'activer d\'abord' }, { status: 400 });
     if (ticket.status !== 'valide') return Response.json({ error: 'Ticket non validé' }, { status: 400 });
 
     // Autorisation : admin, organisateur, contrôleur, ou artiste lié

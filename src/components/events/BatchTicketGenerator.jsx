@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Ticket, Layers, Download, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Ticket, Layers, Download, CheckCircle, AlertTriangle, Store, Monitor } from 'lucide-react';
 
 export default function BatchTicketGenerator({ event, user }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [blank, setBlank] = useState(false);
   const [quantity, setQuantity] = useState(50);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -34,24 +35,31 @@ export default function BatchTicketGenerator({ event, user }) {
   });
 
   const handleGenerate = async () => {
-    if (!name.trim() || !phone.trim() || !location.trim()) {
+    if (!blank && (!name.trim() || !phone.trim() || !location.trim())) {
       toast({ title: 'Nom, téléphone et lieu requis', variant: 'destructive' });
       return;
     }
     setGenerating(true);
     try {
-      const res = await base44.functions.invoke('generateTicketBatch', {
+      const payload = {
         event_id: event.id,
         quantity: Number(quantity),
-        buyer_name: name.trim(),
-        buyer_email: email.trim(),
-        buyer_phone: phone.trim(),
-        buyer_location: location.trim(),
         amount: Number(amount) || 0,
-      });
+        blank,
+      };
+      if (!blank) {
+        payload.buyer_name = name.trim();
+        payload.buyer_email = email.trim();
+        payload.buyer_phone = phone.trim();
+        payload.buyer_location = location.trim();
+      }
+      const res = await base44.functions.invoke('generateTicketBatch', payload);
       setResult(res.data);
       qc.invalidateQueries({ queryKey: ['event-batch-tickets', event.id] });
-      toast({ title: `${res.data.count} billets générés`, description: `Lot ${res.data.batch_id}` });
+      toast({
+        title: `${res.data.count} billets ${blank ? 'vierges' : ''} générés`,
+        description: blank ? 'À activer par scan QR' : `Lot ${res.data.batch_id}`,
+      });
     } catch (err) {
       toast({ title: 'Erreur', description: err.response?.data?.error || err.message, variant: 'destructive' });
     } finally {
@@ -87,7 +95,7 @@ export default function BatchTicketGenerator({ event, user }) {
         </div>
         <div className="text-left">
           <p className="font-heading font-bold text-sm">Générer un lot de billets</p>
-          <p className="text-xs text-muted-foreground">Jusqu'à {maxAllowed} billets automatiques avec QR sécurisés</p>
+          <p className="text-xs text-muted-foreground">Jusqu'à {maxAllowed} billets avec QR sécurisés</p>
         </div>
       </button>
     );
@@ -107,8 +115,14 @@ export default function BatchTicketGenerator({ event, user }) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-emerald-500">
             <CheckCircle size={18} />
-            <span className="font-heading font-bold text-sm">{result.count} billets générés avec succès</span>
+            <span className="font-heading font-bold text-sm">{result.count} billets {blank ? 'vierges' : ''} générés</span>
           </div>
+          {blank && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary">
+              <Store size={14} className="shrink-0 mt-0.5" />
+              <p>Billets vierges prêts à imprimer. L'acheteur scanne le QR code pour activer son billet avec ses infos. Le même QR code sert à l'entrée.</p>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground font-mono">Lot : {result.batch_id}</p>
           <div className="max-h-48 overflow-y-auto space-y-1.5 bg-secondary/30 rounded-xl p-3">
             {result.tickets.slice(0, 20).map((t) => (
@@ -127,6 +141,26 @@ export default function BatchTicketGenerator({ event, user }) {
         </div>
       ) : (
         <>
+          {/* Choix du mode */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setBlank(false)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${!blank ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+            >
+              <Monitor size={18} className={!blank ? 'text-primary' : 'text-muted-foreground'} />
+              <span className="text-xs font-bold">Vente en ligne</span>
+              <span className="text-[10px] text-muted-foreground text-center">Infos acheteur pré-remplies</span>
+            </button>
+            <button
+              onClick={() => setBlank(true)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${blank ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'}`}
+            >
+              <Store size={18} className={blank ? 'text-primary' : 'text-muted-foreground'} />
+              <span className="text-xs font-bold">Vente physique</span>
+              <span className="text-[10px] text-muted-foreground text-center">Billets vierges à activer par QR</span>
+            </button>
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs mb-1.5 block">Quantité (max {maxAllowed})</Label>
@@ -136,23 +170,35 @@ export default function BatchTicketGenerator({ event, user }) {
               <Label className="text-xs mb-1.5 block">Montant unitaire (FCFA)</Label>
               <Input type="number" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Nom (acheteur) *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom complet" />
-            </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Téléphone *</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+221 ..." />
-            </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Lieu / Ville *</Label>
-              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dakar..." />
-            </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Email (facultatif)</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" />
-            </div>
           </div>
+
+          {!blank && (
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1.5 block">Nom (acheteur) *</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom complet" />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Téléphone *</Label>
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+221 ..." />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Lieu / Ville *</Label>
+                <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Dakar..." />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Email (facultatif)</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" />
+              </div>
+            </div>
+          )}
+
+          {blank && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs text-primary">
+              <Store size={14} className="shrink-0 mt-0.5" />
+              <p>Les billets seront générés <strong>vierges</strong> (sans infos acheteur). Imprimez-les et vendez-les en physique. L'acheteur scanne le QR code pour activer son billet en ajoutant ses informations. Le même QR code servira pour l'entrée à l'événement.</p>
+            </div>
+          )}
 
           {event.ticket_capacity > 0 && (
             <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
@@ -163,10 +209,10 @@ export default function BatchTicketGenerator({ event, user }) {
 
           <Button onClick={handleGenerate} disabled={generating} className="w-full h-11 bg-primary gap-2">
             {generating ? <Loader2 size={16} className="animate-spin" /> : <Ticket size={16} />}
-            {generating ? 'Génération...' : `Générer ${quantity} billet${quantity > 1 ? 's' : ''}`}
+            {generating ? 'Génération...' : `Générer ${quantity} billet${quantity > 1 ? 's' : ''} ${blank ? 'vierge(s)' : ''}`}
           </Button>
           <p className="text-[11px] text-muted-foreground text-center">
-            Numéros cryptographiques uniques · QR codes sécurisés avec hash de vérification
+            {blank ? "Billets vierges · Activation par scan QR · Même QR pour l'entrée" : 'Numéros cryptographiques uniques · QR codes sécurisés avec hash de vérification'}
           </p>
         </>
       )}
@@ -178,7 +224,12 @@ export default function BatchTicketGenerator({ event, user }) {
           <div className="max-h-32 overflow-y-auto space-y-1">
             {myTickets.slice(0, 10).map((t) => (
               <div key={t.id} className="flex items-center justify-between gap-2 text-xs">
-                <span className="font-mono truncate">{t.ticket_number}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-mono truncate">{t.ticket_number}</span>
+                  {t.status === 'en_attente' && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 font-bold shrink-0">VIERGE</span>
+                  )}
+                </div>
                 <button onClick={() => downloadTicket(t.ticket_number)} className="text-primary hover:underline flex items-center gap-1 shrink-0">
                   <Download size={11} /> PDF
                 </button>
