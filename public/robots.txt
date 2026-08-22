@@ -1,16 +1,24 @@
 User-agent: *
 Allow: /
-
-# Sitemap
-Sitemap: https://kkdmusic.com/sitemap.xml
-
-# Pages privées — non indexables
+Allow: /musique
+Allow: /artistes
+Allow: /videos
+Allow: /evenements
+Allow: /actualites
+Allow: /partenaires
+Allow: /a-propos
 Disallow: /admin
 Disallow: /mon-espace
 Disallow: /controle-acces
-Disallow: /mes-achats
-Disallow: /playlists
-Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
-Disallow: /reset-password
+Disallow: /api
+Disallow: /functions
+
+User-agent: Googlebot
+Allow: /
+Allow: /musique
+Allow: /artistes
+Allow: /videos
+Allow: /evenements
+Allow: /actualites
+
+Sitemap: https://kkdmusic.com/functions/sitemap

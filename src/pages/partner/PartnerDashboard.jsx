@@ -88,6 +88,17 @@ export default function PartnerDashboard() {
     enabled: !!user?.email,
   });
 
+  // Tous les invitations/contrats liés (pour labels gérant plusieurs artistes)
+  const { data: allInvites = [] } = useQuery({
+    queryKey: ['my-all-invites', user?.email],
+    queryFn: () => base44.entities.ArtistInvite.filter({ email: user.email }),
+    enabled: !!user?.email,
+  });
+  // Artistes gérés par le label (invitations actives avec artist_id)
+  const managedArtists = allInvites
+    .filter(i => (i.status === 'actif' || i.status === 'invite') && i.artist_id)
+    .map(i => ({ id: i.artist_id, name: i.artist_name, invite_type: i.invite_type, label_name: i.label_name }));
+
   const { data: myPublications = [], isLoading: pubsLoading } = useQuery({
     queryKey: ['my-publications', user?.email],
     queryFn: () => base44.entities.PartnerPublication.filter({ partner_email: user.email }, '-created_date'),
@@ -532,6 +543,7 @@ export default function PartnerDashboard() {
             user={user}
             linkedArtistId={linkedArtistId}
             linkedArtistName={linkedArtistName}
+            managedArtists={managedArtists}
           />
         )}
 

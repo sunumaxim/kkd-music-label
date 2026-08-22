@@ -68,23 +68,16 @@ export default function AdminLicenses() {
 
   const resendMutation = useMutation({
     mutationFn: async (lic) => {
-      const emailBody = `Bonjour ${lic.artist_name},
-
-KKD Music vous renvoie vos documents professionnels pour l'œuvre « ${lic.release_title || lic.video_title} ».
-
-${lic.document_url ? `📄 LICENCE DE DISTRIBUTION\n${lic.document_url}\n\n` : ''}${lic.certificate_url ? `🏆 CERTIFICAT D'AUTHENTICITÉ\n${lic.certificate_url}\n\n` : ''}Empreinte numérique : ${lic.originality_hash}
-Valide jusqu'au : ${lic.valid_until ? format(new Date(lic.valid_until), 'dd MMMM yyyy', { locale: fr }) : 'N/A'}
-
-— KKD Music`.trim();
-
-      return base44.integrations.Core.SendEmail({
-        to: lic.sent_to_email,
-        subject: `[KKD Music] Vos documents — ${lic.release_title || lic.video_title}`,
-        body: emailBody,
-      });
+      const res = await base44.functions.invoke('sendLicenseEmail', { license_id: lic.id });
+      return res.data;
     },
-    onSuccess: () => {
-      toast({ title: 'Email renvoyé', description: 'Les documents ont été renvoyés par email.' });
+    onSuccess: (data) => {
+      if (data?.error) {
+        toast({ title: 'Échec', description: data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Email envoyé', description: `Documents envoyés à ${data.sent_to}.` });
+        queryClient.invalidateQueries({ queryKey: ['admin-licenses'] });
+      }
     },
     onError: (err) => {
       toast({ title: 'Erreur', description: err?.message || 'Échec de l\'envoi', variant: 'destructive' });
@@ -255,7 +248,7 @@ Valide jusqu'au : ${lic.valid_until ? format(new Date(lic.valid_until), 'dd MMMM
   );
 }
 
-// ── Generator Dialog ──
+// ── Generator Dialog (flux : sélection → prévisualisation → envoi) ──
 function LicenseGenerator({ artists, onClose, onGenerated }) {
   const { toast } = useToast();
   const [artistId, setArtistId] = useState('');
@@ -264,10 +257,11 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
   const [licenseType, setLicenseType] = useState('double');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [preview, setPreview] = useState(null); // { license_id, document_url, certificate_url, sent_to }
 
   const selectedArtist = artists.find(a => a.id === artistId);
 
-  // Releases & videos for selected artist
   const { data: releases = [] } = useQuery({
     queryKey: ['gen-releases', selectedArtist?.name],
     queryFn: () => base44.entities.Release.filter({ artist_name: selectedArtist.name }, '-release_date'),
@@ -293,15 +287,13 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
         video_id: workType === 'video' ? workId : '',
         license_type: licenseType,
         recipient_email: recipientEmail || undefined,
+        preview_only: true,
       });
       if (res.data?.error) {
         toast({ title: 'Échec', description: res.data.error, variant: 'destructive' });
       } else {
-        toast({
-          title: 'Documents générés et envoyés',
-          description: `Email envoyé à ${res.data.sent_to}. Le document est disponible dans l'espace du partenaire.`,
-        });
-        onGenerated();
+        setPreview(res.data);
+        toast({ title: 'Document généré', description: 'Prévisualisez puis envoyez ou téléchargez.' });
       }
     } catch (err) {
       toast({ title: 'Erreur', description: err?.message || 'Génération échouée', variant: 'destructive' });
@@ -310,9 +302,103 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
     }
   };
 
+  const handleSend = async () => {
+    if (!preview?.license_id) return;
+    setSending(true);
+    try {
+      const res = await base44.functions.invoke('sendLicenseEmail', {
+        license_id: preview.license_id,
+        recipient_email: recipientEmail || undefined,
+      });
+      if (res.data?.error) {
+        toast({ title: 'Échec envoi', description: res.data.error, variant: 'destructive' });
+      } else {
+        toast({ title: 'Email envoyé', description: `Documents envoyés à ${res.data.sent_to}.` });
+        onGenerated();
+      }
+    } catch (err) {
+      toast({ title: 'Erreur', description: err?.message || 'Envoi échoué', variant: 'destructive' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const reset = () => {
+    setPreview(null);
+    setArtistId('');
+    setWorkId('');
+    setRecipientEmail('');
+  };
+
+  // ── Étape 2 : Prévisualisation ──
+  if (preview) {
+    return (
+      <Dialog open onOpenChange={() => { reset(); onClose(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle size={18} className="text-emerald-500" /> Document généré — Prévisualisation
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700">
+              <p className="font-semibold">Licence N° {preview.license_number}</p>
+              {preview.certificate_number && <p>Certificat N° {preview.certificate_number}</p>}
+              <p className="mt-1 text-muted-foreground">Destinataire : {preview.sent_to}</p>
+            </div>
+
+            {/* PDF Preview */}
+            {preview.document_url && (
+              <div>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1"><FileText size={12} /> Licence de distribution</p>
+                <iframe src={preview.document_url} className="w-full h-64 rounded-lg border border-border/50" title="Licence" />
+              </div>
+            )}
+            {preview.certificate_url && (
+              <div>
+                <p className="text-xs font-semibold mb-1 flex items-center gap-1"><Award size={12} /> Certificat d'authenticité</p>
+                <iframe src={preview.certificate_url} className="w-full h-64 rounded-lg border border-border/50" title="Certificat" />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {preview.document_url && (
+                <a href={preview.document_url} target="_blank" rel="noreferrer" download>
+                  <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                    <Download size={15} /> Licence
+                  </Button>
+                </a>
+              )}
+              {preview.certificate_url && (
+                <a href={preview.certificate_url} target="_blank" rel="noreferrer" download>
+                  <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                    <Download size={15} /> Certificat
+                  </Button>
+                </a>
+              )}
+            </div>
+            <div className="flex gap-2 flex-1 sm:justify-end">
+              <Button variant="ghost" onClick={() => { reset(); }}>
+                <Plus size={15} /> Nouveau
+              </Button>
+              <Button onClick={handleSend} disabled={sending} className="gap-2 flex-1 sm:flex-none">
+                {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                {sending ? 'Envoi...' : 'Envoyer par email'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ── Étape 1 : Sélection ──
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck size={18} className="text-primary" /> Générer un document
@@ -320,7 +406,6 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Artist */}
           <div>
             <Label className="text-xs mb-1.5 block">Artiste</Label>
             <Select value={artistId} onValueChange={(v) => { setArtistId(v); setWorkId(''); }}>
@@ -335,7 +420,6 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
             </Select>
           </div>
 
-          {/* Work type */}
           {artistId && (
             <div>
               <Label className="text-xs mb-1.5 block">Type d'œuvre</Label>
@@ -352,7 +436,6 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
             </div>
           )}
 
-          {/* Work */}
           {artistId && (
             <div>
               <Label className="text-xs mb-1.5 block">Œuvre</Label>
@@ -371,7 +454,6 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
             </div>
           )}
 
-          {/* License type */}
           <div>
             <Label className="text-xs mb-1.5 block">Type de document</Label>
             <div className="grid grid-cols-1 gap-2">
@@ -390,7 +472,6 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
             </div>
           </div>
 
-          {/* Recipient email */}
           <div>
             <Label className="text-xs mb-1.5 block">Email destinataire (optionnel)</Label>
             <Input
@@ -399,7 +480,7 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
               placeholder={selectedArtist?.name ? `Email de ${selectedArtist.name}...` : 'Laissez vide pour l\'email de l\'artiste'}
             />
             <p className="text-[10px] text-muted-foreground mt-1">
-              Le document sera aussi disponible dans l'espace partenaire de l'artiste.
+              Le document sera prévisualisé. Vous pourrez ensuite l'envoyer ou le télécharger.
             </p>
           </div>
         </div>
@@ -409,8 +490,8 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
             <Button variant="outline">Annuler</Button>
           </DialogClose>
           <Button onClick={handleGenerate} disabled={generating || !artistId || !workId} className="gap-2">
-            {generating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            {generating ? 'Génération...' : 'Générer et envoyer'}
+            {generating ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+            {generating ? 'Génération...' : 'Générer & prévisualiser'}
           </Button>
         </DialogFooter>
       </DialogContent>

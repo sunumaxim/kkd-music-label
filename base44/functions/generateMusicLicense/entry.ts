@@ -77,15 +77,20 @@ function generateDistributionLicensePDF(doc, data) {
   doc.setFontSize(11);
   doc.setTextColor(BRAND_TEXT);
   doc.text(`Nom de scène : ${data.artist_name}`, 20, y);
-  if (data.artist_genre) doc.text(`Genre : ${data.artist_genre}`, 20, y + 7);
+  if (data.artist_genre) doc.text(`Genre musical : ${data.artist_genre}`, 20, y + 7);
+  if (data.artist_nationality) doc.text(`Nationalité : ${data.artist_nationality}`, 20, y + 14);
+  if (data.label_name) {
+    doc.text(`Label : ${data.label_name}`, 20, y + 21);
+    y += 7;
+  }
   if (data.artist_verified) {
     doc.setTextColor(BRAND_SECONDARY);
     doc.setFont('helvetica', 'bold');
-    doc.text('✓ Artiste vérifié KKD Music', 20, y + 14);
+    doc.text('✓ Artiste vérifié KKD Music', 20, y + 21);
   }
 
   // Section : Œuvre concernée
-  y += 28;
+  y += 35;
   doc.setDrawColor(BRAND_PRIMARY);
   doc.line(20, y - 4, W - 20, y - 4);
   doc.setFont('helvetica', 'bold');
@@ -99,39 +104,42 @@ function generateDistributionLicensePDF(doc, data) {
   doc.setTextColor(BRAND_TEXT);
   doc.text(`Titre : ${data.work_title}`, 20, y);
   if (data.work_type) doc.text(`Type : ${data.work_type}`, 20, y + 7);
-  if (data.work_date) doc.text(`Date de sortie : ${fmtDate(data.work_date)}`, 20, y + 14);
+  doc.text(`Code ISRC : ${data.isrc}`, 20, y + 14);
+  if (data.work_date) doc.text(`Date de sortie : ${fmtDate(data.work_date)}`, 20, y + 21);
   if (data.streaming_url) {
     doc.setFontSize(9);
     doc.setTextColor(BRAND_MUTED);
-    doc.text(`Lien : ${data.streaming_url.slice(0, 70)}`, 20, y + 21);
+    doc.text(`Lien : ${data.streaming_url.slice(0, 70)}`, 20, y + 28);
   }
 
-  // Section : Droits accordés
-  y += 36;
+  // Section : Droits & territoire
+  y += 43;
   doc.setDrawColor(BRAND_PRIMARY);
   doc.line(20, y - 4, W - 20, y - 4);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(BRAND_PRIMARY);
-  doc.text('DROITS ACCORDÉS', 20, y + 4);
+  doc.text('DROITS ACCORDÉS & TERRITOIRE', 20, y + 4);
 
   y += 14;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(BRAND_TEXT);
   const rights = [
-    'KKD Music est autorisée à distribuer, promouvoir et exploiter l\'œuvre sur ses canaux numériques.',
+    'KKD Music est autorisée à distribuer, promouvoir et exploiter l\'œuvre sur l\'ensemble de ses canaux numériques (plateforme web, application mobile, réseaux sociaux).',
+    'Territoire d\'exploitation : Mondial (toutes plateformes numériques partenaires).',
     'L\'artiste conserve l\'intégralité de ses droits moraux et patrimoniaux sur l\'œuvre.',
-    'La présente licence est non-exclusive et révocable.',
-    'Toute exploitation commerciale hors KKD Music nécessite un accord complémentaire.',
+    'La présente licence est non-exclusive et révocable sur notification.',
+    'Toute exploitation commerciale hors KKD Music nécessite un accord complémentaire écrit.',
+    'Redevances : l\'artiste perçoit 90 % des revenus nets générés par l\'œuvre, KKD Music percevant une commission de 10 %.',
   ];
   rights.forEach((r, i) => {
     const lines = doc.splitTextToSize(`• ${r}`, W - 50);
-    doc.text(lines, 22, y + i * 12);
+    doc.text(lines, 22, y + i * 13);
   });
 
   // Section : Empreinte & validité
-  y += 56;
+  y += 80;
   doc.setDrawColor(BRAND_PRIMARY);
   doc.line(20, y - 4, W - 20, y - 4);
   doc.setFont('helvetica', 'bold');
@@ -234,10 +242,12 @@ function generateAuthenticityCertificatePDF(doc, data) {
   doc.text(`Titre : ${data.work_title}`, 30, y);
   doc.text(`Artiste : ${data.artist_name}`, 30, y + 8);
   if (data.work_type) doc.text(`Type : ${data.work_type}`, 30, y + 16);
-  if (data.work_date) doc.text(`Date : ${fmtDate(data.work_date)}`, 30, y + 24);
+  doc.text(`Code ISRC : ${data.isrc}`, 30, y + 24);
+  if (data.label_name) doc.text(`Label : ${data.label_name}`, 30, y + 32);
+  if (data.work_date) doc.text(`Date : ${fmtDate(data.work_date)}`, 30, y + 40);
 
   // Section : Contrôles d'originalité (très exigeant)
-  y += 38;
+  y += 50;
   doc.setDrawColor(BRAND_PRIMARY);
   doc.line(30, y - 4, W - 30, y - 4);
   doc.setFont('helvetica', 'bold');
@@ -353,7 +363,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
 
     const body = await req.json();
-    const { artist_id, release_id, video_id, license_type, recipient_email } = body;
+    const { artist_id, release_id, video_id, license_type, recipient_email, preview_only } = body;
 
     if (!artist_id) return Response.json({ error: 'Artiste manquant' }, { status: 400 });
     if (!license_type) return Response.json({ error: 'Type de licence manquant' }, { status: 400 });
@@ -361,6 +371,14 @@ export default async function(req) {
     // ── Récupérer l'artiste ──
     const artist = await base44.asServiceRole.entities.Artist.get(artist_id);
     if (!artist) return Response.json({ error: 'Artiste introuvable' }, { status: 404 });
+
+    // ── Récupérer le label lié (si partenaire) ──
+    let labelName = '';
+    try {
+      const invites = await base44.asServiceRole.entities.ArtistInvite.filter({ artist_id });
+      const labelInvite = invites.find(i => i.invite_type === 'label_partenaire' && i.label_name);
+      if (labelInvite) labelName = labelInvite.label_name;
+    } catch {}
 
     // ── Récupérer l'œuvre (release ou video) ──
     let work = null;
@@ -391,14 +409,19 @@ export default async function(req) {
     const ts = Date.now().toString(36).toUpperCase();
     const licenseNumber = `KKD-LIC-${ts}`;
     const certificateNumber = `KKD-CERT-${ts}`;
+    // ISRC fictif basé sur le hash (format ISRC: CC-XXX-YY-NNNNN)
+    const isrc = `SNKKD${originalityHash.slice(0, 7).replace(/[^A-Z0-9]/g, '').padEnd(7, '0')}`;
 
     // ── Données pour les PDF ──
     const pdfData = {
       license_number: licenseNumber,
       certificate_number: certificateNumber,
+      isrc,
       artist_name: artist.name,
       artist_genre: artist.genre || '',
       artist_verified: !!artist.is_verified,
+      artist_nationality: artist.nationality || '',
+      label_name: labelName || '',
       work_title: workTitle,
       work_type: workType,
       work_date: workDate,
@@ -438,25 +461,8 @@ export default async function(req) {
     // ── Email destinataire ──
     const targetEmail = recipient_email || artist.email || user.email;
 
-    // ── Envoyer l'email ──
-    const emailBody = `
-Bonjour ${artist.name},
-
-KKD Music vous délivre vos documents professionnels pour l'œuvre « ${workTitle} ».
-
-${license_type === 'distribution' || license_type === 'double' ? `📄 LICENCE DE DISTRIBUTION (${licenseNumber})\n${documentUrl}\n\n` : ''}${license_type === 'authenticite' || license_type === 'double' ? `🏆 CERTIFICAT D'AUTHENTICITÉ (${certificateNumber})\n${certificateUrl}\n\n` : ''}Empreinte numérique : ${originalityHash}
-Valide jusqu'au : ${fmtDate(pdfData.valid_until)}
-
-Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Music à la distribuer sur ses canaux. Conservez-les précieusement.
-
-— KKD Music
-    `.trim();
-
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: targetEmail,
-      subject: `[KKD Music] Vos documents professionnels — ${workTitle}`,
-      body: emailBody,
-    });
+    // ── Mode prévisualisation : on génère les PDF sans envoyer l'email ──
+    const finalStatus = preview_only ? 'genere' : 'envoye';
 
     // ── Créer l'entité MusicLicense ──
     const license = await base44.asServiceRole.entities.MusicLicense.create({
@@ -471,22 +477,50 @@ Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Musi
       certificate_url: certificateUrl,
       originality_hash: originalityHash,
       originality_checks: originalityChecks,
-      status: 'envoye',
+      status: finalStatus,
       requested_by_email: user.email,
       sent_to_email: targetEmail,
-      sent_date: new Date().toISOString(),
+      sent_date: preview_only ? '' : new Date().toISOString(),
       valid_until: pdfData.valid_until,
     });
+
+    // ── Envoyer l'email uniquement si pas en mode prévisualisation ──
+    if (!preview_only) {
+      const emailBody = `
+Bonjour ${artist.name},
+
+KKD Music vous délivre vos documents professionnels pour l'œuvre « ${workTitle} ».
+
+${license_type === 'distribution' || license_type === 'double' ? `📄 LICENCE DE DISTRIBUTION (${licenseNumber})\n${documentUrl}\n\n` : ''}${license_type === 'authenticite' || license_type === 'double' ? `🏆 CERTIFICAT D'AUTHENTICITÉ (${certificateNumber})\n${certificateUrl}\n\n` : ''}Empreinte numérique : ${originalityHash}
+Valide jusqu'au : ${fmtDate(pdfData.valid_until)}
+
+Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Music à la distribuer sur ses canaux. Conservez-les précieusement.
+
+— KKD Music
+      `.trim();
+
+      try {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: targetEmail,
+          subject: `[KKD Music] Vos documents professionnels — ${workTitle}`,
+          body: emailBody,
+        });
+      } catch (emailErr) {
+        console.error('SendEmail error (non-fatal):', emailErr.message);
+        // On ne fait pas échouer la génération si l'email échoue
+      }
+    }
 
     return Response.json({
       success: true,
       license_id: license.id,
-      license_number,
-      certificate_number,
+      license_number: licenseNumber,
+      certificate_number: certificateNumber,
       document_url: documentUrl,
       certificate_url: certificateUrl,
       originality_hash: originalityHash,
       sent_to: targetEmail,
+      preview: !!preview_only,
     });
   } catch (error) {
     console.error('generateMusicLicense error:', error);
