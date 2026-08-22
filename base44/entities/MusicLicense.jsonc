@@ -1,0 +1,156 @@
+{
+  "name": "MusicLicense",
+  "type": "object",
+  "properties": {
+    "artist_id": {
+      "type": "string",
+      "description": "ID de l'artiste li\u00e9"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Nom de l'artiste (d\u00e9normalis\u00e9)"
+    },
+    "release_id": {
+      "type": "string",
+      "description": "ID de la sortie li\u00e9e (si licence sp\u00e9cifique \u00e0 une sortie)"
+    },
+    "release_title": {
+      "type": "string",
+      "description": "Titre de la sortie (d\u00e9normalis\u00e9)"
+    },
+    "video_id": {
+      "type": "string",
+      "description": "ID de la vid\u00e9o li\u00e9e (si licence sp\u00e9cifique \u00e0 un clip)"
+    },
+    "video_title": {
+      "type": "string",
+      "description": "Titre de la vid\u00e9o (d\u00e9normalis\u00e9)"
+    },
+    "license_type": {
+      "type": "string",
+      "enum": [
+        "distribution",
+        "authenticite",
+        "double"
+      ],
+      "default": "double",
+      "description": "Type de licence : distribution (contrat KKD), authenticit\u00e9 (certificat originalit\u00e9), double (les deux)"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "URL du document PDF g\u00e9n\u00e9r\u00e9 (licence de distribution)"
+    },
+    "certificate_url": {
+      "type": "string",
+      "description": "URL du certificat d'authenticit\u00e9 PDF g\u00e9n\u00e9r\u00e9"
+    },
+    "originality_hash": {
+      "type": "string",
+      "description": "Empreinte d'originalit\u00e9 (hash SHA du contenu : titre + artiste + date + m\u00e9tadonn\u00e9es)"
+    },
+    "originality_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "check": {
+            "type": "string",
+            "description": "Nom du contr\u00f4le d'originalit\u00e9"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "conforme",
+              "attention",
+              "non_verifie"
+            ],
+            "description": "R\u00e9sultat du contr\u00f4le"
+          },
+          "detail": {
+            "type": "string",
+            "description": "D\u00e9tail du contr\u00f4le"
+          }
+        }
+      },
+      "default": [],
+      "description": "Contr\u00f4les d'originalit\u00e9 effectu\u00e9s (d\u00e9doublonnage, fingerprint, v\u00e9rification artiste, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "genere",
+        "envoye",
+        "expire",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de la demande de licence"
+    },
+    "requested_by_email": {
+      "type": "string",
+      "description": "Email du demandeur (artiste / partenaire)"
+    },
+    "sent_to_email": {
+      "type": "string",
+      "description": "Email destinataire (artiste v\u00e9rifi\u00e9)"
+    },
+    "sent_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date d'envoi par email"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date",
+      "description": "Date de validit\u00e9 du document"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notes internes admin"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description",
+      "maxLength": 1000
+    }
+  },
+  "required": [
+    "artist_name",
+    "license_type",
+    "requested_by_email"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.requested_by_email": "{{user.email}}"
+        },
+        {
+          "data.sent_to_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

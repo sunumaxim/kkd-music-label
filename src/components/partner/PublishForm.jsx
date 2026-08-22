@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,13 @@ import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import {
   Music, Video, Disc, ListMusic, Upload,
-  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Sparkles, Lock, Eye
+  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Sparkles, Lock, Eye, AlertTriangle
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
 import PublishPreview from './PublishPreview';
 import MediaUploader from './MediaUploader';
+import LinkPublishMode from './LinkPublishMode';
 import { usePlayableUrl } from '@/hooks/usePlayableUrl';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -38,6 +39,7 @@ export default function PublishForm({ user, onClose }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [contentType, setContentType] = useState(null);
+  const [linkMode, setLinkMode] = useState(false);
   const [uploads, setUploads] = useState({ cover: false, file: false, photo: false, tracks: {} });
   const isUploading = uploads.cover || uploads.file || uploads.photo || Object.values(uploads.tracks).some(Boolean);
   const setUpload = (key, val) => setUploads((prev) => ({ ...prev, [key]: val }));
@@ -45,6 +47,7 @@ export default function PublishForm({ user, onClose }) {
   const [done, setDone] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
   const [newArtist, setNewArtist] = useState(false);
+  const [dupCheck, setDupCheck] = useState({ loading: false, duplicates: [], checked: false });
 
   const [form, setForm] = useState({
     title: '',
@@ -67,6 +70,25 @@ export default function PublishForm({ user, onClose }) {
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const { toast } = useToast();
+
+  // Dédoublonnage automatique quand un nouvel artiste est saisé
+  useEffect(() => {
+    if (!newArtist || !form.artist_name.trim() || form.artist_name.trim().length < 2) {
+      setDupCheck({ loading: false, duplicates: [], checked: false });
+      return;
+    }
+    const name = form.artist_name.trim();
+    setDupCheck((prev) => ({ ...prev, loading: true, checked: false }));
+    const timer = setTimeout(async () => {
+      try {
+        const res = await base44.functions.invoke('checkArtistDuplicate', { artist_name: name });
+        setDupCheck({ loading: false, duplicates: res.data?.duplicates || [], checked: true });
+      } catch {
+        setDupCheck({ loading: false, duplicates: [], checked: false });
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [newArtist, form.artist_name]);
 
   const selectedPlatform = PLATFORMS.find((p) => p.value === form.streaming_platform) || PLATFORMS[0];
   const isVideo = contentType === 'video_clip';
@@ -217,6 +239,10 @@ export default function PublishForm({ user, onClose }) {
     );
   }
 
+  if (linkMode) {
+    return <LinkPublishMode user={user} onClose={() => { setLinkMode(false); onClose(); }} />;
+  }
+
   if (step === 1) {
     return (
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -236,6 +262,23 @@ export default function PublishForm({ user, onClose }) {
             );
           })}
         </div>
+
+        {/* Option : publication par lien externe */}
+        <div className="mt-4 pt-4 border-t border-border/30">
+          <button
+            onClick={() => setLinkMode(true)}
+            className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-all group active:scale-[0.99]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors shrink-0">
+              <Link2 size={20} className="text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="font-heading font-bold text-sm">Publier via un lien externe</p>
+              <p className="text-xs text-muted-foreground">Collez un lien Spotify, YouTube, Apple Music… — métadonnées extraites automatiquement</p>
+            </div>
+          </button>
+        </div>
+
         <Button variant="ghost" onClick={onClose} className="mt-6 w-full text-muted-foreground">Annuler</Button>
       </motion.div>
     );
@@ -300,6 +343,45 @@ export default function PublishForm({ user, onClose }) {
               <div>
                 <Label className="text-xs mb-1.5 block">Nom de scène *</Label>
                 <Input value={form.artist_name} onChange={(e) => set('artist_name', e.target.value)} placeholder="Nom de l'artiste" />
+                {/* Alerte de dédoublonnage */}
+                {dupCheck.loading && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                    <Loader2 size={11} className="animate-spin" /> Vérification des doublons...
+                  </p>
+                )}
+                {dupCheck.checked && dupCheck.duplicates.length > 0 && (
+                  <div className="mt-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-[11px] text-amber-400 font-semibold flex items-center gap-1 mb-1.5">
+                      <AlertTriangle size={11} /> {dupCheck.duplicates.length} artiste(s) similaire(s) trouvé(s)
+                    </p>
+                    <div className="space-y-1">
+                      {dupCheck.duplicates.map(d => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => { setNewArtist(false); set('artist_id', d.id); set('artist_name', d.name); }}
+                          className="w-full flex items-center gap-2 p-1.5 rounded bg-background/60 hover:bg-background text-left transition-colors"
+                        >
+                          {d.photo_url ? (
+                            <img src={d.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                              {d.name[0]}
+                            </div>
+                          )}
+                          <span className="text-[11px] font-medium flex-1 truncate">{d.name}</span>
+                          {d.is_verified && <CheckCircle size={11} className="text-blue-400 shrink-0" />}
+                          <span className="text-[9px] text-muted-foreground shrink-0">Lier →</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {dupCheck.checked && dupCheck.duplicates.length === 0 && (
+                  <p className="text-[11px] text-green-400 mt-1.5 flex items-center gap-1">
+                    <CheckCircle size={11} /> Aucun doublon — nouvel artiste valide
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs mb-1.5 block">Genre musical</Label>

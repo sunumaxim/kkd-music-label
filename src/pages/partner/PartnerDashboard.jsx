@@ -24,6 +24,7 @@ import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import ArtistEarnings from '@/components/partner/ArtistEarnings';
 import PartnerOverview from '@/components/partner/PartnerOverview';
+import LicenseManager from '@/components/partner/LicenseManager';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -57,6 +58,7 @@ const TABS = [
   { id: 'artiste', label: 'Mon Artiste', icon: User },
   { id: 'revenus', label: 'Revenus', icon: Wallet },
   { id: 'publications', label: 'Publications', icon: Music },
+  { id: 'licences', label: 'Licences', icon: FileText },
   { id: 'promotion', label: 'Promotion', icon: Megaphone },
   { id: 'evenements', label: 'Événements', icon: CalendarDays },
   { id: 'demandes', label: 'Demandes', icon: FileText },
@@ -522,6 +524,15 @@ export default function PartnerDashboard() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── LICENCES TAB ── */}
+        {activeTab === 'licences' && (
+          <LicenseManager
+            user={user}
+            linkedArtistId={linkedArtistId}
+            linkedArtistName={linkedArtistName}
+          />
         )}
 
         {/* ── PROMOTION TAB ── */}
