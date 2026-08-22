@@ -474,8 +474,11 @@ export default function ControleAcces() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-heading font-bold text-xs truncate flex items-center gap-1">
-                            {t.buyer_name || '—'}
+                            {t.buyer_name || (t.status === 'en_attente' ? 'Billet vierge' : '—')}
                             {(t.entry_count || 0) > 1 && <Repeat size={10} className="text-primary" />}
+                            {t.status === 'en_attente' && (
+                              <span className="text-[8px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-600 font-bold shrink-0">VIERGE</span>
+                            )}
                           </p>
                           <p className="text-[10px] text-muted-foreground truncate">
                             {t.checked_in && t.checked_in_date ? `Entré ${format(new Date(t.checked_in_date), 'HH:mm', { locale: fr })}` :
