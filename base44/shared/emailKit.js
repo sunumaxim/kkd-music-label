@@ -121,8 +121,8 @@ export function buildEmailHtml(opts) {
     <div class="footer">
       <div class="social" style="margin-bottom:14px;">
         <a href="${SITE_URL}">Site web</a>
-        <a href="https://instagram.com/kkdlabelgroup">Instagram</a>
-        <a href="https://youtube.com/@kkdlabelgroup">YouTube</a>
+        <a href="https://instagram.com/kkdmusic">Instagram</a>
+        <a href="https://youtube.com/@kkdmusic">YouTube</a>
         <a href="https://open.spotify.com">Spotify</a>
       </div>
       <p class="brand">KKD Music</p>

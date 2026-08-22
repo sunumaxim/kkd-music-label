@@ -1,5 +1,5 @@
 /**
- * KKD Label Group — Email HTML Template Generator
+ * KKD Music — Email HTML Template Generator
  * Usage: import { buildEmailHtml } from '@/lib/emailTemplate';
  */
 
@@ -63,7 +63,7 @@ export function buildEmailHtml({ subject, preheader = '', headline, body, cta, e
     <div class="card">
       <!-- Header -->
       <div class="header">
-        <img src="${LOGO_URL}" alt="KKD Label Group" />
+        <img src="${LOGO_URL}" alt="KKD Music" />
       </div>
       <div class="red-bar"></div>
 
@@ -79,15 +79,15 @@ export function buildEmailHtml({ subject, preheader = '', headline, body, cta, e
       <div class="footer">
         <div class="social-links">
           <a href="${SITE_URL}">Site web</a>
-          <a href="https://instagram.com/kkdlabelgroup">Instagram</a>
-          <a href="https://youtube.com/@kkdlabelgroup">YouTube</a>
+          <a href="https://instagram.com/kkdmusic">Instagram</a>
+          <a href="https://youtube.com/@kkdmusic">YouTube</a>
           <a href="https://open.spotify.com">Spotify</a>
         </div>
         <div class="divider" style="margin:16px 0;"></div>
-        <p style="font-size:13px; color:#dddddd; font-weight:700; margin-bottom:8px;">KKD Label Group</p>
-        <p>Maison de disques indépendante · Distribution & Promotion · Paris, France</p>
+        <p style="font-size:13px; color:#dddddd; font-weight:700; margin-bottom:8px;">KKD Music</p>
+        <p>Maison de disques indépendante · Distribution & Promotion · Dakar, Sénégal</p>
         <p style="margin-top:12px;"><a href="${SITE_URL}/mon-espace">Gérer mes préférences</a> · <a href="${SITE_URL}">Visiter le site</a></p>
-        <p style="margin-top:8px;">© ${new Date().getFullYear()} KKD Label Group. Tous droits réservés.</p>
+        <p style="margin-top:8px;">© ${new Date().getFullYear()} KKD Music. Tous droits réservés.</p>
       </div>
     </div>
   </div>
