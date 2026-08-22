@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
 
     // Liste blanche d'origines autorisées pour les URLs de redirection Stripe.
     const ALLOWED_ORIGINS = [
-      'https://music.sunumaxim.com',
+      'https://kkdmusic.com',
       'http://localhost:5173',
       'http://localhost:3000',
     ];

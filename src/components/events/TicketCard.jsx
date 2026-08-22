@@ -16,7 +16,11 @@ const STATUS = {
 export default function TicketCard({ ticket }) {
   const st = STATUS[ticket.status] || STATUS.en_attente;
   const Icon = st.icon;
-  const verifUrl = ticket.ticket_number ? `${window.location.origin}/billet/${ticket.ticket_number}` : '';
+  const verifUrl = ticket.ticket_number
+    ? (ticket.security_hash
+        ? `${window.location.origin}/billet/${ticket.ticket_number}?h=${ticket.security_hash}`
+        : `${window.location.origin}/billet/${ticket.ticket_number}`)
+    : '';
 
   return (
     <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">

@@ -50,7 +50,7 @@ function generateDistributionLicensePDF(doc, data) {
   doc.text('LICENCE DE DISTRIBUTION', W / 2, 28, { align: 'center' });
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('SUNUMAXIM GROUP · KKD MUSIC', W / 2, 38, { align: 'center' });
+  doc.text('KKD MUSIC', W / 2, 38, { align: 'center' });
 
   // Numéro de licence
   doc.setTextColor(BRAND_MUTED);
@@ -154,7 +154,7 @@ function generateDistributionLicensePDF(doc, data) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(BRAND_TEXT);
-  doc.text('SUNUMAXIM GROUP · KKD MUSIC', W / 2, y + 8, { align: 'center' });
+  doc.text('KKD MUSIC', W / 2, y + 8, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(BRAND_MUTED);
@@ -192,7 +192,7 @@ function generateAuthenticityCertificatePDF(doc, data) {
   doc.text("D'AUTHENTICITÉ MUSICALE", W / 2, 46, { align: 'center' });
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('KKD MUSIC · SUNUMAXIM GROUP', W / 2, 56, { align: 'center' });
+  doc.text('KKD MUSIC', W / 2, 56, { align: 'center' });
 
   // Numéro de certificat
   doc.setTextColor(BRAND_ACCENT);
@@ -449,7 +449,7 @@ Valide jusqu'au : ${fmtDate(pdfData.valid_until)}
 
 Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Music à la distribuer sur ses canaux. Conservez-les précieusement.
 
-— KKD Music · SunuMaxim Group
+— KKD Music
     `.trim();
 
     await base44.asServiceRole.integrations.Core.SendEmail({

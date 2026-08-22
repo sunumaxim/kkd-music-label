@@ -5,7 +5,7 @@
  */
 
 // ===== BRAND TOKENS (from DESIGN_SYSTEM.md) =====
-export const SITE_URL = "https://music.sunumaxim.com";
+export const SITE_URL = "https://kkdmusic.com";
 export const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
 const C = {
@@ -125,9 +125,9 @@ export function buildEmailHtml(opts) {
         <a href="https://youtube.com/@kkdlabelgroup">YouTube</a>
         <a href="https://open.spotify.com">Spotify</a>
       </div>
-      <p class="brand">KKD Music — SunuMaxim Group</p>
+      <p class="brand">KKD Music</p>
       <p>Maison de disques indépendante · Distribution & Promotion</p>
-      <p style="margin-top:10px;"><a href="${SITE_URL}/mon-espace" style="color:${C.primary};text-decoration:none;">Gérer mon espace</a> · <a href="${SITE_URL}" style="color:${C.primary};text-decoration:none;">music.sunumaxim.com</a></p>
+      <p style="margin-top:10px;"><a href="${SITE_URL}/mon-espace" style="color:${C.primary};text-decoration:none;">Gérer mon espace</a> · <a href="${SITE_URL}" style="color:${C.primary};text-decoration:none;">kkdmusic.com</a></p>
       <p style="margin-top:8px;">© ${new Date().getFullYear()} KKD Music. Tous droits réservés.</p>
     </div>
   </div></div>

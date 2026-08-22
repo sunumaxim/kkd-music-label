@@ -4,7 +4,7 @@ const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a0
 const SIGNATURE_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/dcbcb9b1a_InShot_20260722_181043759.jpg";
 
 const CONTACT_EMAILS = [
-  "kkd@music.sunumaxim.com",
+  "contact@kkdmusic.com",
   "labelkkd@gmail.com",
   "africainrap90@gmail.com",
 ];
@@ -29,13 +29,13 @@ export default function ContractDocument({ invite }) {
           <img src={LOGO_URL} alt="KKD Music" crossOrigin="anonymous" style={{ height: '64px', width: 'auto' }} />
           <div>
             <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1 }}>KKD MUSIC</div>
-            <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.15em', textTransform: 'uppercase' }}>SunuMaxim Group</div>
+            <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Label Indépendant</div>
           </div>
         </div>
         <div style={{ textAlign: 'right', fontSize: '10px', color: '#666', lineHeight: 1.5 }}>
           <div style={{ fontWeight: 600, color: '#111' }}>Réf : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()}</div>
           <div>Émis le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-          <div>music.sunumaxim.com</div>
+          <div>kkdmusic.com</div>
           <div>Missira, Tambacounda, Sénégal</div>
         </div>
       </div>
@@ -49,8 +49,8 @@ export default function ContractDocument({ invite }) {
       {/* ── Entreprises ── */}
       <div style={{ margin: '24px 0', fontSize: '12px', lineHeight: 1.7 }}>
         <p style={{ marginBottom: '8px' }}>
-          <strong>ENTRE :</strong> KKD MUSIC, division du SUNUMAXIM GROUP, plateforme de distribution musicale
-          numérique accessible à l'adresse <strong>music.sunumaxim.com</strong>, ci-après « KKD Music »,
+          <strong>ENTRE :</strong> KKD MUSIC, plateforme de distribution musicale
+          numérique accessible à l'adresse <strong>kkdmusic.com</strong>, ci-après « KKD Music »,
         </p>
         <p style={{ marginBottom: '8px' }}>
           <strong>ET :</strong> {partyRole} <strong>{partyName}</strong>,
@@ -61,7 +61,7 @@ export default function ContractDocument({ invite }) {
       {/* ── Articles ── */}
       <div style={{ fontSize: '11.5px', lineHeight: 1.7, color: '#222' }}>
         <Article num="1" title="Objet du contrat">
-          KKD Music assure la distribution numérique, la promotion et la gestion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} exclusivement sur la plateforme <strong>music.sunumaxim.com</strong>. La diffusion des sorties musicales sur d'autres plateformes musicales (Spotify, Apple Music, YouTube Music, Audiomack, Deezer, etc.) n'est pas incluse automatiquement : elle nécessite une demande préalable adressée à KKD Music et est soumise à des critères spécifiques définis par l'équipe. {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} souhaitant une distribution multi-plateformes doit contacter KKD Music afin d'en convenir les conditions.
+          KKD Music assure la distribution numérique, la promotion et la gestion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} exclusivement sur la plateforme <strong>kkdmusic.com</strong>. La diffusion des sorties musicales sur d'autres plateformes musicales (Spotify, Apple Music, YouTube Music, Audiomack, Deezer, etc.) n'est pas incluse automatiquement : elle nécessite une demande préalable adressée à KKD Music et est soumise à des critères spécifiques définis par l'équipe. {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} souhaitant une distribution multi-plateformes doit contacter KKD Music afin d'en convenir les conditions.
         </Article>
 
         <Article num="2" title="Durée">
@@ -96,7 +96,7 @@ export default function ContractDocument({ invite }) {
           {CONTACT_EMAILS.map((e) => (
             <div key={e}>✉ {e}</div>
           ))}
-          <div style={{ marginTop: '4px' }}>Site web : music.sunumaxim.com · Réseaux : @kkdmusic</div>
+          <div style={{ marginTop: '4px' }}>Site web : kkdmusic.com · Réseaux : @kkdmusic</div>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function ContractDocument({ invite }) {
           <img src={SIGNATURE_URL} alt="Signature" crossOrigin="anonymous" style={{ height: '70px', width: 'auto', marginBottom: '8px' }} />
           <div style={{ fontSize: '12px', fontWeight: 700 }}>Madou Kane</div>
           <div style={{ fontSize: '10px', color: '#666' }}>PDG — Président Directeur Général</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>SunuMaxim Group — KKD Music</div>
+          <div style={{ fontSize: '10px', color: '#666' }}>KKD Music</div>
           <div style={{ fontSize: '10px', color: '#666' }}>Missira, Tambacounda, Sénégal</div>
         </div>
         <div style={{ flex: 1 }}>
@@ -119,7 +119,7 @@ export default function ContractDocument({ invite }) {
       </div>
 
       <div style={{ marginTop: '36px', paddingTop: '12px', borderTop: '1px solid #eee', fontSize: '9px', color: '#999', textAlign: 'center' }}>
-        KKD Music — SunuMaxim Group · music.sunumaxim.com · Document généré automatiquement — {new Date().toLocaleString('fr-FR')}
+        KKD Music · kkdmusic.com · Document généré automatiquement — {new Date().toLocaleString('fr-FR')}
       </div>
     </div>
   );
