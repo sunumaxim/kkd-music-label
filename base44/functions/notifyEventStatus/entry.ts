@@ -20,6 +20,13 @@ const STATUS_CONFIG = {
     bodyFn: (e) =>
       `Votre événement <strong>"${e.title}"</strong> n'a pas pu être validé pour le moment. Consultez les notes de l'équipe si disponibles.`,
   },
+  clarification_demandee: {
+    title: "Précisions demandées — événement",
+    headline: "ℹ️ Précisions demandées",
+    notifType: "demande",
+    bodyFn: (e) =>
+      `L'équipe KKD Music a besoin d'informations complémentaires pour valider votre événement <strong>"${e.title}"</strong>. Merci de consulter le message ci-dessous et de mettre à jour votre événement.`,
+  },
 };
 
 Deno.serve(async (req) => {

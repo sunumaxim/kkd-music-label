@@ -633,7 +633,9 @@ export default function PartnerDashboard() {
                     ? { label: 'En attente', cls: 'bg-amber-500/10 text-amber-400' }
                     : ev.published_status === 'refuse'
                       ? { label: 'Refusé', cls: 'bg-red-500/10 text-red-400' }
-                      : { label: 'Publié', cls: 'bg-emerald-500/10 text-emerald-400' };
+                      : ev.published_status === 'clarification_demandee'
+                        ? { label: 'Précisions demandées', cls: 'bg-blue-500/10 text-blue-400' }
+                        : { label: 'Publié', cls: 'bg-emerald-500/10 text-emerald-400' };
                   return (
                     <div key={ev.id} className="bg-card border border-border/50 rounded-xl p-4">
                       <div className="flex items-start gap-3">
@@ -661,6 +663,12 @@ export default function PartnerDashboard() {
                           )}
                           {ev.published_status === 'approuve' && (
                             <Link to="/controle-acces" className="text-[11px] text-primary hover:underline">Contrôle d'accès →</Link>
+                          )}
+                          {ev.published_status === 'clarification_demandee' && ev.admin_notes && (
+                            <div className="mt-2 bg-blue-500/5 border border-blue-500/20 rounded-lg px-3 py-2">
+                              <p className="text-[11px] font-semibold text-blue-400 mb-1">💬 Précisions demandées par KKD :</p>
+                              <p className="text-xs text-muted-foreground italic">{ev.admin_notes}</p>
+                            </div>
                           )}
                         </div>
                       </div>

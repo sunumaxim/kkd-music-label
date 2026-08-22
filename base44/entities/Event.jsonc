@@ -110,14 +110,15 @@
       "enum": [
         "en_attente",
         "approuve",
-        "refuse"
+        "refuse",
+        "clarification_demandee"
       ],
       "default": "approuve",
-      "description": "Statut de validation (en_attente = soumis par partenaire, approuve = visible)"
+      "description": "Statut de validation (en_attente = soumis par partenaire, approuve = visible, clarification_demandee = infos compl\u00e9mentaires requises)"
     },
     "admin_notes": {
       "type": "string",
-      "description": "Notes internes admin"
+      "description": "Notes internes admin / message de clarification demand\u00e9 \u00e0 l'organisateur"
     },
     "is_ticketed": {
       "type": "boolean",

@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Check, X, Ticket } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogFooter, DialogDescription,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
 
 const FIELDS = [
   { key: 'title', label: 'Titre', type: 'text', required: true },
@@ -58,7 +64,10 @@ function EventFormWrapper({ editing, onSave, onCancel }) {
 
 export default function AdminEvents() {
   const [editing, setEditing] = useState(null);
+  const [clarifyEvent, setClarifyEvent] = useState(null);
+  const [clarifyMsg, setClarifyMsg] = useState('');
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: events, isLoading } = useQuery({
     queryKey: ['admin-events'],
@@ -88,6 +97,18 @@ export default function AdminEvents() {
   const refuseMutation = useMutation({
     mutationFn: (id) => base44.entities.Event.update(id, { published_status: 'refuse' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-events'] }),
+  });
+  const clarifyMutation = useMutation({
+    mutationFn: ({ id, message }) => base44.entities.Event.update(id, {
+      published_status: 'clarification_demandee',
+      admin_notes: message,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      setClarifyEvent(null);
+      setClarifyMsg('');
+      toast({ title: 'Clarification demandée', description: 'L\'organisateur a été notifié.' });
+    },
   });
 
   const handleSave = async (data) => {
@@ -147,6 +168,7 @@ export default function AdminEvents() {
                   <p className="font-heading font-bold text-sm truncate">{event.title}</p>
                   {event.published_status === 'en_attente' && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full">En attente</span>}
                   {event.published_status === 'refuse' && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Refusé</span>}
+                  {event.published_status === 'clarification_demandee' && <span className="text-[10px] bg-blue-500/15 text-blue-500 px-2 py-0.5 rounded-full">Clarification demandée</span>}
                   {event.is_ticketed && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1"><Ticket size={9} /> {Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -156,6 +178,13 @@ export default function AdminEvents() {
               </div>
               <div className="flex items-center gap-1">
                 {event.published_status === 'en_attente' && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate(event.id)} className="text-emerald-600 hover:text-emerald-700 text-xs gap-1"><Check size={13} /> Approuver</Button>
+                    <Button variant="ghost" size="sm" onClick={() => refuseMutation.mutate(event.id)} className="text-destructive text-xs gap-1"><X size={13} /> Refuser</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setClarifyEvent(event); setClarifyMsg(event.admin_notes || ''); }} className="text-blue-600 hover:text-blue-700 text-xs gap-1"><HelpCircle size={13} /> Clarifier</Button>
+                  </>
+                )}
+                {event.published_status === 'clarification_demandee' && (
                   <>
                     <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate(event.id)} className="text-emerald-600 hover:text-emerald-700 text-xs gap-1"><Check size={13} /> Approuver</Button>
                     <Button variant="ghost" size="sm" onClick={() => refuseMutation.mutate(event.id)} className="text-destructive text-xs gap-1"><X size={13} /> Refuser</Button>
@@ -175,6 +204,38 @@ export default function AdminEvents() {
           ))}
         </div>
       )}
+
+      {/* Dialog : demander clarification */}
+      <Dialog open={!!clarifyEvent} onOpenChange={(open) => { if (!open) { setClarifyEvent(null); setClarifyMsg(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle size={18} className="text-blue-600" />
+              Demander des précisions
+            </DialogTitle>
+            <DialogDescription>
+              {clarifyEvent?.title && `"${clarifyEvent.title}"`} — L'organisateur recevra votre message par email et notification.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={clarifyMsg}
+            onChange={(e) => setClarifyMsg(e.target.value)}
+            placeholder="Ex : Merci de préciser l'heure exacte, le lieu détaillé, et ajouter une affiche en bonne qualité..."
+            rows={5}
+            className="resize-none"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setClarifyEvent(null); setClarifyMsg(''); }}>Annuler</Button>
+            <Button
+              onClick={() => clarifyMutation.mutate({ id: clarifyEvent.id, message: clarifyMsg })}
+              disabled={!clarifyMsg.trim() || clarifyMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            >
+              {clarifyMutation.isPending ? 'Envoi...' : 'Demander clarification'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
