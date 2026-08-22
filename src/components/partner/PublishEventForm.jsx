@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { WAVE_PAY_LINK } from '@/lib/wave';
 import { Loader2, Upload, Calendar, MapPin, Ticket, Plus } from 'lucide-react';
+import TicketThemePicker from '@/components/events/TicketThemePicker';
 
 const TYPES = [
   { value: 'concert', label: 'Concert' },
@@ -22,7 +23,7 @@ export default function PublishEventForm({ user, onClose }) {
     title: '', event_type: 'concert', event_date: '', location: '', city: '',
     description: '', image_url: '', stream_url: '', ticket_url: '',
     is_ticketed: false, ticket_price: 0, ticket_capacity: 0, managersText: '',
-    artist_id: '', artist_name: '',
+    artist_id: '', artist_name: '', ticket_theme: 'classic',
   });
 
   const { data: artists = [] } = useQuery({
@@ -67,6 +68,7 @@ export default function PublishEventForm({ user, onClose }) {
         is_ticketed: !!form.is_ticketed,
         ticket_price: Number(form.ticket_price) || 0,
         ticket_capacity: Number(form.ticket_capacity) || 0,
+        ticket_theme: form.ticket_theme || 'classic',
         managers,
         artist_id: form.artist_id || '',
         artist_name: form.artist_name || '',
@@ -179,6 +181,9 @@ export default function PublishEventForm({ user, onClose }) {
               <Label>Gestionnaires d'accès (emails, séparés par virgule)</Label>
               <Textarea rows={2} value={form.managersText} onChange={(e) => set('managersText', e.target.value)} placeholder="entree1@email.com, entree2@email.com" />
               <p className="text-[11px] text-muted-foreground">Ces personnes pourront scanner / rechercher les billets le jour J.</p>
+            </div>
+            <div className="sm:col-span-2">
+              <TicketThemePicker value={form.ticket_theme} onChange={(v) => set('ticket_theme', v)} />
             </div>
             <p className="text-[11px] text-muted-foreground sm:col-span-2">
               Commission KKD : 10 % des ventes. Paiement via Wave ({WAVE_PAY_LINK}).

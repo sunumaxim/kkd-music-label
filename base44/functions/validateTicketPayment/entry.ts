@@ -1,14 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
 
+const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
 function genTicketNumber(eventDate) {
   const ed = eventDate ? new Date(eventDate) : new Date();
   const p = (n, l = 2) => String(n).padStart(l, '0');
   const edPart = `${p(ed.getFullYear() % 100)}${p(ed.getMonth() + 1)}${p(ed.getDate())}`;
-  const now = new Date();
-  const tPart = `${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `KKD-${edPart}-${tPart}${rand}-SM`;
+  const randBytes = new Uint8Array(6);
+  crypto.getRandomValues(randBytes);
+  let rand = '';
+  for (let i = 0; i < 6; i++) rand += SAFE_CHARS[randBytes[i] % SAFE_CHARS.length];
+  return `KKD-${edPart}-${rand}-SM`;
+}
+
+function genSecurityHash() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 Deno.serve(async (req) => {
@@ -36,6 +45,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Ticket.update(ticket_id, {
       status: 'valide',
       ticket_number: number,
+      security_hash: genSecurityHash(),
       validated_date: new Date().toISOString(),
     });
 

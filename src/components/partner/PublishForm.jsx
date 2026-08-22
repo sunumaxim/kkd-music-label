@@ -178,7 +178,7 @@ export default function PublishForm({ user, onClose }) {
 
   const hasContent = isAlbum
     ? form.tracks.filter((t) => t.audio_file_url).length > 0
-    : !!form.file_url;
+    : !!form.file_url || !!form.streaming_link?.trim();
   const canSubmit =
     form.title.trim() &&
     !!form.cover_url &&
@@ -459,7 +459,7 @@ export default function PublishForm({ user, onClose }) {
         ) : (
           <>
             <MediaUploader
-              label={`${isVideo ? 'Fichier vidéo' : 'Fichier audio'} ${form.is_for_sale ? '(privé, vendu)' : '(gratuit)'} *`}
+              label={`${isVideo ? 'Fichier vidéo' : 'Fichier audio'} ${form.is_for_sale ? '(privé, vendu)' : '(gratuit)'}${form.streaming_link?.trim() ? ' (facultatif — lien fourni)' : ' *'}`}
               kind={isVideo ? 'video' : 'audio'}
               accept={isVideo ? 'video/*' : 'audio/*'}
               value={form.file_url}
@@ -559,7 +559,7 @@ export default function PublishForm({ user, onClose }) {
           </Button>
           {!canSubmit && (
             <p className="text-[11px] text-muted-foreground text-center mt-2">
-              Renseignez le titre, l'artiste, la pochette et un fichier audio obligatoirement.
+              Renseignez le titre, l'artiste et la pochette. Le fichier audio est facultatif si un lien de streaming est fourni.
             </p>
           )}
         </div>

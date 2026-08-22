@@ -152,6 +152,18 @@
       "type": "number",
       "default": 10,
       "description": "Commission KKD (%) sur les ventes de billets"
+    },
+    "ticket_theme": {
+      "type": "string",
+      "enum": [
+        "classic",
+        "gold",
+        "emerald",
+        "royal",
+        "ocean"
+      ],
+      "default": "classic",
+      "description": "Th\u00e8me de design des billets (classic=rouge/noir, gold=or/noir, emerald=vert/noir, royal=violet/noir, ocean=bleu/noir)"
     }
   },
   "required": [

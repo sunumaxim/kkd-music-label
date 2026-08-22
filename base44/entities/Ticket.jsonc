@@ -55,6 +55,14 @@
       "type": "string",
       "description": "Num\u00e9ro unique g\u00e9n\u00e9r\u00e9 apr\u00e8s validation (format KKD...SM)"
     },
+    "security_hash": {
+      "type": "string",
+      "description": "Hash de s\u00e9curit\u00e9 cryptographique inclus dans le QR code pour emp\u00eacher la falsification"
+    },
+    "batch_id": {
+      "type": "string",
+      "description": "Identifiant du lot de g\u00e9n\u00e9ration automatique (si billet cr\u00e9\u00e9 en lot)"
+    },
     "amount": {
       "type": "number",
       "default": 0,

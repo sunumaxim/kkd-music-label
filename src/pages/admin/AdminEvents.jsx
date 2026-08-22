@@ -36,6 +36,13 @@ const FIELDS = [
   { key: 'ticket_price', label: 'Prix billet (FCFA)', type: 'number' },
   { key: 'ticket_capacity', label: 'Capacité (0 = illimitée)', type: 'number' },
   { key: 'commission_pct', label: 'Commission KKD (%)', type: 'number' },
+  { key: 'ticket_theme', label: 'Thème des billets', type: 'select', options: [
+    { value: 'classic', label: 'Classic (Rouge/Noir)' },
+    { value: 'gold', label: 'Gold (Or/Noir)' },
+    { value: 'emerald', label: 'Emerald (Vert/Noir)' },
+    { value: 'royal', label: 'Royal (Violet/Noir)' },
+    { value: 'ocean', label: 'Ocean (Bleu/Noir)' },
+  ]},
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];
 

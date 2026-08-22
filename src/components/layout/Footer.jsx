@@ -17,8 +17,7 @@ export default function Footer() {
           <div>
             <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Label indépendant dédié à la promotion d'artistes talentueux. 
-              Une filiale de SunuMaxim GROUP.
+              Label indépendant dédié à la promotion d'artistes talentueux.
             </p>
           </div>
 
@@ -63,9 +62,7 @@ export default function Footer() {
             <Link to="/mes-achats" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Mes achats</Link>
             <Link to="/a-propos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">À propos</Link>
             <Link to="/confidentialite" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Politique de confidentialité</Link>
-            <p className="text-xs text-muted-foreground">
-              Une filiale de <span className="text-foreground font-medium">SunuMaxim GROUP</span>
-            </p>
+
           </div>
         </div>
       </div>

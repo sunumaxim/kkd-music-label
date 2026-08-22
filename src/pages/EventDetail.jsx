@@ -8,6 +8,7 @@ import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import TicketPurchase from '@/components/events/TicketPurchase';
+import BatchTicketGenerator from '@/components/events/BatchTicketGenerator';
 import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
@@ -254,6 +255,11 @@ export default function EventDetail() {
               🎟️ Acheter des billets <ExternalLink size={14} />
             </a>
           ) : null}
+
+          {/* Génération en lot — organisateurs, admins et contrôleurs autorisés */}
+          {me && (me.role === 'admin' || event.organizer_email === me.email || (event.managers && event.managers.includes(me.email))) && (
+            <BatchTicketGenerator event={event} user={me} />
+          )}
         </div>
 
         {/* Share */}

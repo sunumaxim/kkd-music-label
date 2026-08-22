@@ -18,10 +18,14 @@ export default function PublicVerifTicket() {
   const qc = useQueryClient();
   const [checking, setChecking] = useState(false);
 
+  // Hash de sécurité depuis l'URL (QR code sécurisé)
+  const urlParams = new URLSearchParams(window.location.search);
+  const securityHash = urlParams.get('h') || '';
+
   const { data: t, isLoading, error } = useQuery({
-    queryKey: ['ticket-by-number', number],
+    queryKey: ['ticket-by-number', number, securityHash],
     queryFn: async () => {
-      const res = await base44.functions.invoke('getTicketByNumber', { ticket_number: number });
+      const res = await base44.functions.invoke('getTicketByNumber', { ticket_number: number, security_hash: securityHash });
       return res.data;
     },
     retry: false,
@@ -57,7 +61,9 @@ export default function PublicVerifTicket() {
     );
   }
 
-  const verifUrl = `${window.location.origin}/billet/${t.ticket_number}`;
+  const verifUrl = t.security_hash
+    ? `${window.location.origin}/billet/${t.ticket_number}?h=${t.security_hash}`
+    : `${window.location.origin}/billet/${t.ticket_number}`;
 
   return (
     <div className="min-h-screen bg-background pb-24">

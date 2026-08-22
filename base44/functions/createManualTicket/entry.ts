@@ -1,15 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { isUserAuthorizedForEvent } from '../../shared/artistAccess.ts';
 
+const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
 function generateTicketNumber() {
   const now = new Date();
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, '0');
   const d = String(now.getUTCDate()).padStart(2, '0');
-  const h = String(now.getUTCHours()).padStart(2, '0');
-  const min = String(now.getUTCMinutes()).padStart(2, '0');
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `KKD-${y}${m}${d}${h}${min}-${rand}-SM`;
+  const randBytes = new Uint8Array(6);
+  crypto.getRandomValues(randBytes);
+  let rand = '';
+  for (let i = 0; i < 6; i++) rand += SAFE_CHARS[randBytes[i] % SAFE_CHARS.length];
+  return `KKD-${y}${m}${d}-${rand}-SM`;
+}
+
+function genSecurityHash() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 Deno.serve(async (req) => {
@@ -53,6 +62,7 @@ Deno.serve(async (req) => {
         buyer_phone: buyer_phone.trim(),
         buyer_location: buyer_location.trim(),
         ticket_number,
+        security_hash: genSecurityHash(),
         amount: ticketAmount,
         commission_pct: ev.commission_pct || 10,
         payment_method: 'wave',

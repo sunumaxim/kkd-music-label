@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { jsPDF } from 'npm:jspdf@4.2.1';
+import { getTheme } from '../../shared/ticketThemes.ts';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
 
@@ -121,15 +122,16 @@ function drawIconPin(doc, x, y, s, c) {
   doc.circle(cx, cy, r * 0.38, 'F');
 }
 
-function drawCertifiedStamp(doc, cx, cy, r) {
-  doc.setDrawColor(229, 57, 53);
+function drawCertifiedStamp(doc, cx, cy, r, color) {
+  const c = color || [229, 57, 53];
+  doc.setDrawColor(c[0], c[1], c[2]);
   doc.setFillColor(255, 255, 255);
   doc.setLineWidth(1.5);
   doc.circle(cx, cy, r, 'F');
   doc.circle(cx, cy, r, 'S');
   doc.setLineWidth(0.4);
   doc.circle(cx, cy, r - 2.5, 'S');
-  doc.setTextColor(229, 57, 53);
+  doc.setTextColor(c[0], c[1], c[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(4.5);
   doc.text('★ ARTISTE ★', cx, cy - 5, { align: 'center' });
@@ -169,7 +171,9 @@ Deno.serve(async (req) => {
     }
 
     const base = (app_url || '').replace(/\/+$/, '');
-    const qrData = `${base}/billet/${encodeURIComponent(ticket_number)}`;
+    // QR sécurisé : inclut le hash de sécurité pour empêcher la falsification
+    const hashParam = ticket.security_hash ? `?h=${ticket.security_hash}` : '';
+    const qrData = `${base}/billet/${encodeURIComponent(ticket_number)}${hashParam}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&margin=0&data=${encodeURIComponent(qrData)}`;
 
     const [logo, artistPhoto, eventPoster, qr] = await Promise.all([
@@ -187,13 +191,16 @@ Deno.serve(async (req) => {
     const eventTypeLabel = eventTypeMap[ev?.event_type] || 'CONCERT';
 
     // ═══ Layout constants ═══
+    const theme = getTheme(ev?.ticket_theme || 'classic');
     const W = 780, H = 460;
     const FOOTER_H = 52;
     const TICKET_H = H - FOOTER_H;
     const MAIN_W = 540;
     const SIDE_W = W - MAIN_W;
     const R = 10;
-    const RED = [229, 57, 53];
+    const RED = theme.primary;       // couleur accent du thème
+    const BG = theme.bg;             // fond principal du thème
+    const SIDEBAR_BG = theme.sidebar; // fond sidebar du thème
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [W, H] });
 
@@ -202,9 +209,9 @@ Deno.serve(async (req) => {
     doc.rect(0, 0, W, H, 'F');
 
     // ═══════════════════════════════════════
-    // MAIN SECTION (left — black bg + artist image)
+    // MAIN SECTION (left — themed bg + artist image)
     // ═══════════════════════════════════════
-    doc.setFillColor(6, 6, 6);
+    doc.setFillColor(BG[0], BG[1], BG[2]);
     doc.roundedRect(0, 0, MAIN_W, TICKET_H, R, R, 'F');
 
     // Artist image as background (clipped to rounded rect)
@@ -225,13 +232,13 @@ Deno.serve(async (req) => {
     let overlayApplied = false;
     try {
       doc.setGState(new doc.GState({ opacity: 0.55 }));
-      doc.setFillColor(5, 5, 5);
+      doc.setFillColor(BG[0], BG[1], BG[2]);
       doc.rect(0, 0, MAIN_W, TICKET_H, 'F');
       doc.setGState(new doc.GState({ opacity: 1 }));
       overlayApplied = true;
     } catch (_) {}
     if (!overlayApplied && !bgImage) {
-      doc.setFillColor(6, 6, 6);
+      doc.setFillColor(BG[0], BG[1], BG[2]);
       doc.rect(0, 0, MAIN_W, TICKET_H, 'F');
     }
 
@@ -336,12 +343,12 @@ Deno.serve(async (req) => {
     doc.text(String(ticket.ticket_number || ''), (s2 + MAIN_W) / 2, barY + 44, { align: 'center' });
 
     // ── Certified stamp ──
-    drawCertifiedStamp(doc, MAIN_W - 42, barY - 28, 24);
+    drawCertifiedStamp(doc, MAIN_W - 42, barY - 28, 24, RED);
 
     // ═══════════════════════════════════════
-    // SIDEBAR (right — light gray)
+    // SIDEBAR (right — themed light)
     // ═══════════════════════════════════════
-    doc.setFillColor(245, 245, 245);
+    doc.setFillColor(SIDEBAR_BG[0], SIDEBAR_BG[1], SIDEBAR_BG[2]);
     doc.roundedRect(MAIN_W, 0, SIDE_W, TICKET_H, R, R, 'F');
 
     // Perforation dashed line
@@ -421,9 +428,9 @@ Deno.serve(async (req) => {
     doc.text('kkdmusic.com', MAIN_W + SIDE_W - 12, TICKET_H - 8, { align: 'right' });
 
     // ═══════════════════════════════════════
-    // GLOBAL FOOTER (bottom black bar)
+    // GLOBAL FOOTER (bottom themed bar)
     // ═══════════════════════════════════════
-    doc.setFillColor(6, 6, 6);
+    doc.setFillColor(BG[0], BG[1], BG[2]);
     doc.rect(0, TICKET_H, W, FOOTER_H, 'F');
 
     const footerItems = [
