@@ -216,7 +216,7 @@ export default function VideoDetail() {
                 <LikeButton targetType="video" targetId={video.id} title={video.title} artistName={video.artist_name} coverUrl={video.thumbnail_url} size={22} />
                 <ShareBar title={video.title} url={sharePreviewUrl} />
               </div>
-              {video.youtube_url && (
+              {video.youtube_url && !effectivelyPaid && (
                 <a href={video.youtube_url} target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 transition-colors mt-1">
                   <ExternalLink size={12} /> Voir sur YouTube

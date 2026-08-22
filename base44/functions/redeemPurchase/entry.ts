@@ -54,11 +54,21 @@ Deno.serve(async (req) => {
       protected_url = signed.signed_url;
     }
 
+    // Contenu payant via lien externe (pas de fichier privé) :
+    // on débloque le lien de streaming externe après achat
+    let external_url = null;
+    if (!protected_url && item) {
+      external_url =
+        item.spotify_url || item.youtube_url || item.apple_music_url ||
+        item.audiomack_url || item.deezer_url || item.soundcloud_url || null;
+    }
+
     return Response.json({
       item_type, item_id, item_title, artist_name,
       cover_url: item?.cover_url || item?.thumbnail_url || null,
       is_video: item_type === 'video',
       protected_url,
+      external_url,
       user_email: email
     });
   } catch (error) {

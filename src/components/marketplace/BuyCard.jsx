@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import PaidPreview from '@/components/marketplace/PaidPreview';
 import ProtectedPlayer from '@/components/marketplace/ProtectedPlayer';
 import { WAVE_PAY_LINK, WAVE_MERCHANT } from '@/lib/wave';
-import { Lock, Loader2, ShieldCheck, Clock, Upload, Check, LogIn } from 'lucide-react';
+import { Lock, Loader2, ShieldCheck, Clock, Upload, Check, LogIn, ExternalLink } from 'lucide-react';
 
 function WaveIcon() {
   return (
@@ -118,7 +118,7 @@ export default function BuyCard({ item, itemType }) {
 
   const priceStr = `${Number(item.price).toLocaleString('fr-FR')} FCFA`;
 
-  // ── Accès débloqué ──
+  // ── Accès débloqué (fichier privé hébergé) ──
   if (access?.protected_url) {
     return (
       <div className="bg-gradient-to-br from-primary/10 to-card border border-primary/30 rounded-2xl p-5 space-y-3">
@@ -127,6 +127,27 @@ export default function BuyCard({ item, itemType }) {
           <span className="text-[11px] font-mono uppercase tracking-widest">Accès débloqué — merci !</span>
         </div>
         <ProtectedPlayer url={access.protected_url} isVideo={video} title={item.title} />
+      </div>
+    );
+  }
+
+  // ── Accès débloqué (lien externe — Spotify, YouTube, etc.) ──
+  if (access && access.external_url) {
+    return (
+      <div className="bg-gradient-to-br from-primary/10 to-card border border-primary/30 rounded-2xl p-5 space-y-3">
+        <div className="flex items-center gap-2 text-primary">
+          <ShieldCheck size={16} />
+          <span className="text-[11px] font-mono uppercase tracking-widest">Accès débloqué — merci !</span>
+        </div>
+        <p className="text-sm text-muted-foreground">Votre achat est confirmé. Accédez au contenu sur la plateforme d'origine :</p>
+        <a
+          href={access.external_url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-primary text-primary-foreground font-bold shadow-lg transition-transform hover:scale-[1.02]"
+        >
+          <ExternalLink size={16} /> Écouter sur la plateforme
+        </a>
       </div>
     );
   }
