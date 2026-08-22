@@ -14,7 +14,7 @@ import ShareBar from '@/components/shared/ShareBar';
 import LikeButton from '@/components/shared/LikeButton';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { motion } from 'framer-motion';
-import { extractIdFromSlug, buildShareUrl, buildEntitySlug, slugify } from '@/lib/slugify';
+import { extractIdFromSlug, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, slugify } from '@/lib/slugify';
 import { resolveEntityBySlug } from '@/lib/resolveEntity';
 import { getReleaseTracks } from '@/lib/releaseTracks';
 
@@ -68,6 +68,7 @@ export default function ReleaseDetail() {
   const playable = release ? getReleaseTracks(release).length > 0 : false;
   const hasExternal = release ? !!(release.spotify_url || release.youtube_url || release.apple_music_url || release.audiomack_url || release.deezer_url) : false;
   const shareUrl = release ? buildShareUrl('/musique', release.slug || release.title) : '';
+  const sharePreviewUrl = release ? buildSharePreviewUrl('release', release.slug || slugify(release.title)) : '';
 
   if (isLoading) {
     return (
@@ -90,7 +91,10 @@ export default function ReleaseDetail() {
     <div className="min-h-screen bg-background pb-24">
       <PageMeta
         title={`${release.title} — ${release.artist_name}`}
-        description={release.description || `Écoutez ${release.title} de ${release.artist_name} sur KKD Music.`}
+        description={
+          (effectivelyPaid ? `Prix: ${Number(release.price).toLocaleString('fr-FR')} F CFA — ` : '') +
+          (release.description || `Écoutez ${release.title} de ${release.artist_name} sur KKD Music.`)
+        }
         image={release.cover_url}
         url={shareUrl}
         type="music.album"
@@ -164,7 +168,7 @@ export default function ReleaseDetail() {
         <div className="flex items-center gap-3 flex-wrap">
           {playable && <PlayReleaseButton release={release} size="lg" />}
           <LikeButton targetType="release" targetId={release.id} title={release.title} artistName={release.artist_name} coverUrl={release.cover_url} size={22} />
-          <ShareBar title={`${release.title} — ${release.artist_name}`} url={shareUrl} />
+          <ShareBar title={`${release.title} — ${release.artist_name}`} url={sharePreviewUrl} />
           {playable && <AddToPlaylist release={release} />}
         </div>
 

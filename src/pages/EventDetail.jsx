@@ -60,7 +60,7 @@ export default function EventDetail() {
   });
 
   const shareUrl = event ? buildShareUrl('/evenements', event.slug || event.title) : '';
-  const sharePreviewUrl = shareUrl;
+  const sharePreviewUrl = event ? buildSharePreviewUrl('event', event.slug || slugify(event.title)) : '';
 
   if (isLoading) {
     return (
@@ -96,7 +96,10 @@ export default function EventDetail() {
     <div className="min-h-screen pb-24 bg-background">
       <PageMeta
         title={event.title}
-        description={event.description?.slice(0, 160) || `${event.event_type} — ${event.city || event.location || ''} sur KKD Music.`}
+        description={
+          (event.is_ticketed && Number(event.ticket_price) > 0 ? `Billet: ${Number(event.ticket_price).toLocaleString('fr-FR')} F CFA — ` : '') +
+          (event.description?.slice(0, 160) || `${event.event_type} — ${event.city || event.location || ''} sur KKD Music.`)
+        }
         image={event.image_url}
         url={shareUrl}
         type="event"

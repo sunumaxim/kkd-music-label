@@ -52,7 +52,7 @@ export default function VideoDetail() {
   });
 
   const shareUrl = video ? buildShareUrl('/videos', video.slug || video.title) : '';
-  const sharePreviewUrl = shareUrl;
+  const sharePreviewUrl = video ? buildSharePreviewUrl('video', video.slug || slugify(video.title)) : '';
 
   // Increment views once per session
   useEffect(() => {
@@ -98,7 +98,10 @@ export default function VideoDetail() {
     <div className="min-h-screen bg-background">
       <PageMeta
         title={video.title}
-        description={video.description || `Regardez ${video.title} de ${video.artist_name} sur KKD Music.`}
+        description={
+          (effectivelyPaid ? `Prix: ${Number(video.price).toLocaleString('fr-FR')} F CFA — ` : '') +
+          (video.description || `Regardez ${video.title} de ${video.artist_name} sur KKD Music.`)
+        }
         image={video.thumbnail_url || (getYouTubeId(video.youtube_url) ? `https://img.youtube.com/vi/${getYouTubeId(video.youtube_url)}/maxresdefault.jpg` : null)}
         url={shareUrl}
         type="video.other"

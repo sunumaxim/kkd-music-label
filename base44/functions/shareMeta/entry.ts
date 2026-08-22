@@ -102,9 +102,17 @@ Deno.serve(async (req) => {
         const ent = await resolveEntity(base44, type, slug);
         if (ent) {
           title = ent.title || ent.name || title;
-          description =
-            ent.description || ent.excerpt || (ent.biography ? ent.biography.slice(0, 160) : '') ||
+          let baseDesc = ent.description || ent.excerpt || (ent.biography ? ent.biography.slice(0, 120) : '') ||
             (ent.name ? `${ent.name} sur KKD Music` : description);
+          // Prix / billet — affiché en début de description pour être visible dans l'aperçu
+          let pricePrefix = '';
+          if (type === 'release' && ent.is_for_sale && Number(ent.price) > 0) {
+            pricePrefix = `Prix: ${Number(ent.price).toLocaleString('fr-FR')} F CFA — `;
+          } else if (type === 'event' && ent.is_ticketed && Number(ent.ticket_price) > 0) {
+            pricePrefix = `Billet: ${Number(ent.ticket_price).toLocaleString('fr-FR')} F CFA — `;
+          }
+          description = pricePrefix + baseDesc;
+          if (description.length > 200) description = description.slice(0, 197) + '...';
           image = ent.cover_url || ent.photo_url || ent.image_url || ent.thumbnail_url || image;
           if (type === 'video' && !ent.thumbnail_url) {
             const yid = ytId(ent.youtube_url);
