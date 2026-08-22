@@ -16,6 +16,14 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
 
+function base64ToBlobUrl(base64, mimeType = 'application/pdf') {
+  if (!base64) return '';
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+}
+
 const LICENSE_TYPES = [
   { value: 'double', label: 'Licence + Certificat', icon: ShieldCheck },
   { value: 'distribution', label: 'Licence de distribution', icon: FileText },
@@ -292,7 +300,22 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
       if (res.data?.error) {
         toast({ title: 'Échec', description: res.data.error, variant: 'destructive' });
       } else {
-        setPreview(res.data);
+        const docUrl = res.data.document_b64 ? base64ToBlobUrl(res.data.document_b64) : '';
+        const certUrl = res.data.certificate_b64 ? base64ToBlobUrl(res.data.certificate_b64) : '';
+        setPreview({
+          document_url: docUrl,
+          certificate_url: certUrl,
+          license_number: res.data.license_number,
+          certificate_number: res.data.certificate_number,
+          sent_to: res.data.sent_to,
+          _params: {
+            artist_id: artistId,
+            release_id: workType === 'release' ? workId : '',
+            video_id: workType === 'video' ? workId : '',
+            license_type: licenseType,
+            recipient_email: recipientEmail || undefined,
+          },
+        });
         toast({ title: 'Document généré', description: 'Prévisualisez puis envoyez ou téléchargez.' });
       }
     } catch (err) {
@@ -303,12 +326,12 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
   };
 
   const handleSend = async () => {
-    if (!preview?.license_id) return;
+    if (!preview?._params) return;
     setSending(true);
     try {
-      const res = await base44.functions.invoke('sendLicenseEmail', {
-        license_id: preview.license_id,
-        recipient_email: recipientEmail || undefined,
+      const res = await base44.functions.invoke('generateMusicLicense', {
+        ...preview._params,
+        preview_only: false,
       });
       if (res.data?.error) {
         toast({ title: 'Échec envoi', description: res.data.error, variant: 'destructive' });
@@ -324,6 +347,8 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
   };
 
   const reset = () => {
+    if (preview?.document_url?.startsWith('blob:')) URL.revokeObjectURL(preview.document_url);
+    if (preview?.certificate_url?.startsWith('blob:')) URL.revokeObjectURL(preview.certificate_url);
     setPreview(null);
     setArtistId('');
     setWorkId('');

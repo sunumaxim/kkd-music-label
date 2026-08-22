@@ -29,9 +29,11 @@ export default async function(req) {
     if (license.document_url) docs.push(['Licence de distribution', license.document_url]);
     if (license.certificate_url) docs.push(["Certificat d'authenticité", license.certificate_url]);
 
-    const docsHtml = docs.map(([label, url]) =>
-      `<tr><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:13px;color:#A6998C;width:45%;">${label}</td><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:14px;color:#F4EDE6;font-weight:600;text-align:right;"><a href="${url}" style="color:#D9A441;text-decoration:none;">Télécharger le PDF →</a></td></tr>`
-    ).join('');
+    const docsHtml = docs.length > 0
+      ? docs.map(([label, url]) =>
+          `<tr><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:13px;color:#A6998C;width:45%;">${label}</td><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:14px;color:#F4EDE6;font-weight:600;text-align:right;"><a href="${url}" style="color:#D9A441;text-decoration:none;">Télécharger le PDF →</a></td></tr>`
+        ).join('')
+      : `<tr><td style="padding:10px 0;font-size:13px;color:#A6998C;">Vos documents sont en cours de finalisation. L'équipe KKD Music vous les transmettra directement. Pour toute question, contactez-nous sur <a href="https://kkdmusic.com" style="color:#D9A441;text-decoration:none;">kkdmusic.com</a>.</td></tr>`;
 
     const html = buildEmailHtml({
       subject: `[KKD Music] Documents officiels — ${workTitle}`,

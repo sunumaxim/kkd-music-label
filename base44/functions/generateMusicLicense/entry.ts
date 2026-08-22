@@ -82,6 +82,13 @@ function genISRC(hash) {
   return `SN-KKD-${year}-${num}`;
 }
 
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
 // ===== SHARED PDF HELPERS =====
 
 function hexToRgb(hex) {
@@ -573,30 +580,64 @@ export default async function(req) {
 
     let documentUrl = '';
     let certificateUrl = '';
+    let documentB64 = '';
+    let certificateB64 = '';
 
     if (license_type === 'distribution' || license_type === 'double') {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       generateDistributionLicensePDF(doc, pdfData, logoData);
       const pdfBytes = doc.output('arraybuffer');
-      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const file = new File([pdfBlob], `licence-${licenseNumber}.pdf`, { type: 'application/pdf' });
-      const upRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-      documentUrl = upRes.file_url;
+      documentB64 = arrayBufferToBase64(pdfBytes);
+      if (!preview_only) {
+        try {
+          const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const file = new File([pdfBlob], `licence-${licenseNumber}.pdf`, { type: 'application/pdf' });
+          const upRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+          documentUrl = upRes.file_url;
+        } catch (uploadErr) {
+          console.error('UploadFile error (non-fatal):', uploadErr.message);
+        }
+      }
     }
 
     if (license_type === 'authenticite' || license_type === 'double') {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       generateAuthenticityCertificatePDF(doc, pdfData, logoData);
       const pdfBytes = doc.output('arraybuffer');
-      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const file = new File([pdfBlob], `certificat-${certificateNumber}.pdf`, { type: 'application/pdf' });
-      const upRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-      certificateUrl = upRes.file_url;
+      certificateB64 = arrayBufferToBase64(pdfBytes);
+      if (!preview_only) {
+        try {
+          const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+          const file = new File([pdfBlob], `certificat-${certificateNumber}.pdf`, { type: 'application/pdf' });
+          const upRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+          certificateUrl = upRes.file_url;
+        } catch (uploadErr) {
+          console.error('UploadFile error (non-fatal):', uploadErr.message);
+        }
+      }
     }
 
     const targetEmail = recipient_email || artist.email || user.email;
-    const finalStatus = preview_only ? 'genere' : 'envoye';
 
+    // Preview mode: return base64 PDFs directly — no upload, no entity creation
+    if (preview_only) {
+      return Response.json({
+        success: true,
+        document_b64: documentB64,
+        certificate_b64: certificateB64,
+        license_number: licenseNumber,
+        certificate_number: certificateNumber,
+        isrc,
+        originality_hash: originalityHash,
+        artist_name: artist.name,
+        work_title: workTitle,
+        valid_until: pdfData.valid_until,
+        sent_to: targetEmail,
+        preview: true,
+      });
+    }
+
+    // Send mode: create entity + upload (non-fatal) + email (non-fatal)
     const license = await base44.asServiceRole.entities.MusicLicense.create({
       artist_id,
       artist_name: artist.name,
@@ -609,30 +650,28 @@ export default async function(req) {
       certificate_url: certificateUrl,
       originality_hash: originalityHash,
       originality_checks: originalityChecks,
-      status: finalStatus,
+      status: 'envoye',
       requested_by_email: user.email,
       sent_to_email: targetEmail,
-      sent_date: preview_only ? '' : new Date().toISOString(),
+      sent_date: new Date().toISOString(),
       valid_until: pdfData.valid_until,
     });
 
-    if (!preview_only) {
-      try {
-        await sendBrandedLicenseEmail(base44, {
-          artist_name: artist.name,
-          work_title: workTitle,
-          license_number: licenseNumber,
-          certificate_number: certificateNumber,
-          document_url: documentUrl,
-          certificate_url: certificateUrl,
-          originality_hash: originalityHash,
-          valid_until: pdfData.valid_until,
-          license_type,
-          target_email: targetEmail,
-        });
-      } catch (emailErr) {
-        console.error('SendEmail error (non-fatal):', emailErr.message);
-      }
+    try {
+      await sendBrandedLicenseEmail(base44, {
+        artist_name: artist.name,
+        work_title: workTitle,
+        license_number: licenseNumber,
+        certificate_number: certificateNumber,
+        document_url: documentUrl,
+        certificate_url: certificateUrl,
+        originality_hash: originalityHash,
+        valid_until: pdfData.valid_until,
+        license_type,
+        target_email: targetEmail,
+      });
+    } catch (emailErr) {
+      console.error('SendEmail error (non-fatal):', emailErr.message);
     }
 
     return Response.json({
@@ -644,7 +683,7 @@ export default async function(req) {
       certificate_url: certificateUrl,
       originality_hash: originalityHash,
       sent_to: targetEmail,
-      preview: !!preview_only,
+      preview: false,
     });
   } catch (error) {
     console.error('generateMusicLicense error:', error);
