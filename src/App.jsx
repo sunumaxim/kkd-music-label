@@ -64,6 +64,7 @@ import AdminPayments from './pages/admin/AdminPayments';
 import AdminTickets from './pages/admin/AdminTickets';
 import AdminStudios from './pages/admin/AdminStudios.jsx';
 import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
+import AdminLicenses from './pages/admin/AdminLicenses.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
@@ -172,6 +173,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/tickets" element={<AdminTickets />} />
           <Route path="/admin/studios" element={<AdminStudios />} />
           <Route path="/admin/studio-medias" element={<AdminMediaStudio />} />
+          <Route path="/admin/documents" element={<AdminLicenses />} />
         </Route>
       </Route>
 
