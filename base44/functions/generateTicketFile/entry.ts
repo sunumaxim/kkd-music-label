@@ -354,10 +354,14 @@ Deno.serve(async (req) => {
     doc.setFillColor(SIDEBAR_BG[0], SIDEBAR_BG[1], SIDEBAR_BG[2]);
     doc.roundedRect(MAIN_W, 0, SIDE_W, TICKET_H, R, R, 'F');
 
-    // Perforation dashed line
-    doc.setDrawColor(170, 170, 170); doc.setLineWidth(0.5);
+    // Notched perforation (semi-circular cutouts for ticket stub effect)
+    doc.setFillColor(255, 255, 255);
+    doc.circle(MAIN_W, 0, 9, 'F');
+    doc.circle(MAIN_W, TICKET_H, 9, 'F');
+    // Dashed perforation line between notches
+    doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.5);
     doc.setLineDashPattern([3, 3], 0);
-    doc.line(MAIN_W, 12, MAIN_W, TICKET_H - 36);
+    doc.line(MAIN_W, 12, MAIN_W, TICKET_H - 12);
     doc.setLineDashPattern([], 0);
 
     const sx = MAIN_W + 14;
@@ -431,31 +435,26 @@ Deno.serve(async (req) => {
     doc.text('kkdmusic.com', MAIN_W + SIDE_W - 12, TICKET_H - 8, { align: 'right' });
 
     // ═══════════════════════════════════════
-    // GLOBAL FOOTER (bottom themed bar)
+    // GLOBAL FOOTER (simplified social bar)
     // ═══════════════════════════════════════
     doc.setFillColor(BG[0], BG[1], BG[2]);
     doc.rect(0, TICKET_H, W, FOOTER_H, 'F');
 
-    const footerItems = [
-      { title: 'PAIEMENT SÉCURISÉ', sub: '100% Sécurisé' },
-      { title: 'TICKET MOBILE', sub: 'Accès facile' },
-      { title: 'SUPPORT 24/7', sub: 'Assistance dédiée' },
-      { title: 'NON TRANSFÉRABLE', sub: 'Sécurité garantie' },
-    ];
-    const itemW = W / 4;
-    footerItems.forEach((item, i) => {
-      const cx = itemW * i + itemW / 2;
-      const fy = TICKET_H + FOOTER_H / 2;
-      // Small red dot/icon placeholder
-      doc.setFillColor(RED[0], RED[1], RED[2]);
-      doc.circle(cx - 58, fy - 1, 5, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      doc.text(item.title, cx - 48, fy - 2);
-      doc.setTextColor(145, 145, 145);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5);
-      doc.text(item.sub, cx - 48, fy + 7);
-    });
+    // Red top accent on footer
+    doc.setFillColor(RED[0], RED[1], RED[2]);
+    doc.rect(0, TICKET_H, W, 2, 'F');
+
+    // Centered social info
+    const fy = TICKET_H + FOOTER_H / 2;
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('@KKDmusic', W / 2 - 55, fy + 3, { align: 'center' });
+    doc.setTextColor(RED[0], RED[1], RED[2]);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('\u2022', W / 2, fy + 3, { align: 'center' });
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text('kkdmusic.com', W / 2 + 55, fy + 3, { align: 'center' });
 
     // Red bottom line
     doc.setFillColor(RED[0], RED[1], RED[2]);
