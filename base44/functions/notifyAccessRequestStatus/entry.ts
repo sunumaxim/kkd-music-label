@@ -8,15 +8,21 @@ import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChan
 const STATUS_CONFIG = {
   approuve: {
     title: "Accès artiste accordé",
-    headline: "✅ Accès artiste accordé !",
+    headline: "Votre accès artiste est actif !",
+    action: "success",
+    actionLabel: "APPROUVÉ",
     notifType: "success",
+    preheader: "Vous pouvez désormais gérer ce profil artiste.",
     bodyFn: (r) =>
-      `Votre demande d'accès au profil de <strong>${r.artist_name}</strong> a été approuvée. Vous pouvez désormais gérer ce profil depuis votre espace partenaire.`,
+      `Votre demande d'accès au profil de <strong>${r.artist_name}</strong> a été approuvée. Vous pouvez désormais gérer ce profil depuis votre espace partenaire : publications, événements, statistiques et paiements.`,
   },
   refuse: {
     title: "Demande d'accès refusée",
-    headline: "Demande d'accès refusée",
+    headline: "Mise à jour de votre demande d'accès",
+    action: "warning",
+    actionLabel: "REFUSÉ",
     notifType: "warning",
+    preheader: "Votre demande d'accès n'a pas pu être accordée.",
     bodyFn: (r) =>
       `Votre demande d'accès au profil de <strong>${r.artist_name}</strong> n'a pas pu être accordée. Contactez l'équipe KKD Music pour plus d'informations.`,
   },
@@ -40,16 +46,22 @@ Deno.serve(async (req) => {
     if (!verified) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
-    const notesBlock = data?.admin_notes
-      ? `<p style="font-size:13px;color:#aaa;margin:0 0 6px;">Message de l'équipe KKD :</p><div style="background:#1a1a1a;border-left:3px solid #E50000;border-radius:6px;padding:14px 18px;font-size:14px;color:#ddd;line-height:1.6;">${data.admin_notes}</div>`
-      : "";
+    const infoRows = [
+      ["Artiste", data?.artist_name],
+      ["Demandeur", data?.user_email],
+    ];
 
     const htmlBody = buildEmailHtml({
       subject: cfg.title,
+      preheader: cfg.preheader,
+      action: cfg.action,
+      actionLabel: cfg.actionLabel,
       headline: cfg.headline,
       body: cfg.bodyFn(data),
+      infoRows,
+      notes: data?.admin_notes,
+      notesLabel: "Message de l'équipe KKD",
       cta: { label: "Accéder à mon espace artiste", url: `${SITE_URL}/mon-espace?tab=artiste` },
-      extra: notesBlock,
     });
 
     await pushNotification({

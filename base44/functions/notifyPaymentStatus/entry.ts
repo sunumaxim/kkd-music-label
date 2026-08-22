@@ -8,17 +8,23 @@ import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChan
 const STATUS_CONFIG = {
   valide: {
     title: "Paiement validé — contenu débloqué",
-    headline: "✅ Achat confirmé !",
+    headline: "Votre achat est confirmé !",
+    action: "success",
+    actionLabel: "CONFIRMÉ",
     notifType: "success",
     link: "/mes-achats",
+    preheader: "Votre contenu est désormais accessible.",
     bodyFn: (p) =>
-      `Votre paiement pour <strong>"${p.item_title}"</strong>${p.artist_name ? ` de ${p.artist_name}` : ""} a été validé. Votre contenu est désormais accessible dans votre bibliothèque.`,
+      `Votre paiement pour <strong>"${p.item_title}"</strong>${p.artist_name ? ` de <strong>${p.artist_name}</strong>` : ""} a été validé. Votre contenu est désormais accessible dans votre bibliothèque personnelle.`,
   },
   refuse: {
     title: "Paiement non validé",
-    headline: "Paiement non validé",
+    headline: "Mise à jour de votre paiement",
+    action: "warning",
+    actionLabel: "REFUSÉ",
     notifType: "warning",
     link: "/mes-achats",
+    preheader: "Votre paiement n'a pas pu être validé.",
     bodyFn: (p) =>
       `Votre paiement pour <strong>"${p.item_title}"</strong> n'a pas pu être validé. Contactez l'équipe KKD Music pour plus d'informations.`,
   },
@@ -42,16 +48,24 @@ Deno.serve(async (req) => {
     if (!verified) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
-    const notesBlock = data?.admin_notes
-      ? `<p style="font-size:13px;color:#aaa;margin:0 0 6px;">Message de l'équipe KKD :</p><div style="background:#1a1a1a;border-left:3px solid #E50000;border-radius:6px;padding:14px 18px;font-size:14px;color:#ddd;line-height:1.6;">${data.admin_notes}</div>`
-      : "";
+    const infoRows = [
+      ["Contenu", data?.item_title],
+      ["Artiste", data?.artist_name],
+      ["Montant", data?.amount ? `${data.amount.toLocaleString("fr-FR")} FCFA` : null],
+      ["Référence Wave", data?.wave_reference],
+    ];
 
     const htmlBody = buildEmailHtml({
       subject: cfg.title,
+      preheader: cfg.preheader,
+      action: cfg.action,
+      actionLabel: cfg.actionLabel,
       headline: cfg.headline,
       body: cfg.bodyFn(data),
+      infoRows,
+      notes: data?.admin_notes,
+      notesLabel: "Message de l'équipe KKD",
       cta: { label: newStatus === "valide" ? "Accéder à ma bibliothèque" : "Voir mon espace", url: `${SITE_URL}${cfg.link}` },
-      extra: notesBlock,
     });
 
     await pushNotification({

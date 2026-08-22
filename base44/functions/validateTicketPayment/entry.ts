@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
 
 function genTicketNumber(eventDate) {
   const ed = eventDate ? new Date(eventDate) : new Date();
@@ -47,14 +48,41 @@ Deno.serve(async (req) => {
 
     // Notifier l'acheteur que son billet est validé et téléchargeable
     if (ticket.buyer_email) {
-      await base44.asServiceRole.entities.Notification.create({
-        user_email: ticket.buyer_email,
-        title: '✅ Billet validé !',
-        message: `Votre billet pour "${ticket.event_title || "l'événement"}" est confirmé. Téléchargez-le depuis la rubrique « Mes billets ».`,
-        type: 'success',
-        link: '/mes-billets',
-        is_read: false,
-      }).catch(() => {});
+      const eventTitle = ticket.event_title || "l'événement";
+      const eventDateStr = ticket.event_date
+        ? new Date(ticket.event_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : null;
+
+      const infoRows = [
+        ["Billet N°", number],
+        ["Événement", eventTitle],
+        ["Date", eventDateStr],
+        ["Acheteur", ticket.buyer_name],
+        ["Téléphone", ticket.buyer_phone],
+        ["Ville", ticket.buyer_location],
+      ];
+
+      const htmlBody = buildEmailHtml({
+        subject: "Billet validé — téléchargez-le",
+        preheader: `Votre billet pour "${eventTitle}" est confirmé.`,
+        action: "success",
+        actionLabel: "BILLET VALIDÉ",
+        headline: "Votre billet est confirmé !",
+        body: `Votre paiement pour <strong>"${eventTitle}"</strong> a été validé. Votre billet est désormais téléchargeable au format PDF. Présentez-le (ou son QR code) à l'entrée de l'événement.`,
+        infoRows,
+        cta: { label: "Télécharger mon billet", url: `${SITE_URL}/mes-billets` },
+      });
+
+      await pushNotification({
+        base44,
+        userEmail: ticket.buyer_email,
+        title: "Billet validé !",
+        message: `Votre billet pour "${eventTitle}" est confirmé. Téléchargez-le depuis la rubrique « Mes billets ».`,
+        type: "success",
+        link: "/mes-billets",
+        subject: `KKD Music — Billet validé : ${eventTitle}`,
+        body: htmlBody,
+      });
     }
 
     return Response.json({ ticket_number: number, status: 'valide' });
