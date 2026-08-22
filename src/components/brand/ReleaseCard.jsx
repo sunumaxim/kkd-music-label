@@ -6,7 +6,7 @@ import { slugify } from '@/lib/slugify';
 const TYPE_LABELS = { single: 'Single', album: 'Album', ep: 'EP', projet_special: 'Projet' };
 
 export default function ReleaseCard({ release: r, playable = true }) {
-  const slug = `${slugify(r.title)}--${r.id}`;
+  const slug = r.slug || slugify(r.title);
   const eyebrow = [TYPE_LABELS[r.release_type] || (r.release_type ? r.release_type.replace('_', ' ') : null), r.is_for_sale ? 'À vendre' : null].filter(Boolean).join(' · ');
   const paid = r.is_for_sale && Number(r.price) > 0;
   return (
@@ -31,7 +31,7 @@ export default function ReleaseCard({ release: r, playable = true }) {
           <p className="kkd-card-release-artist">{r.artist_name}</p>
           {paid && (
             <div className="kkd-card-release-row">
-              <span className="kkd-card-release-price">{Number(r.price).toLocaleString('fr-FR')} €</span>
+              <span className="kkd-card-release-price">{Number(r.price).toLocaleString('fr-FR')} F CFA</span>
               <button className="kkd-card-release-cta" type="button" onClick={(e) => e.preventDefault()}>Acheter</button>
             </div>
           )}
