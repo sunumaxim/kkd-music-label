@@ -20,6 +20,7 @@ export default function BatchTicketGenerator({ event, user }) {
   const [amount, setAmount] = useState(event.ticket_price || 0);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   // Déterminer la limite max selon le rôle
   const isPartner = user?.role === 'admin' || event.organizer_email === user?.email;
@@ -84,6 +85,16 @@ export default function BatchTicketGenerator({ event, user }) {
     }
   };
 
+  const downloadAllTickets = async () => {
+    setDownloadingAll(true);
+    for (let i = 0; i < result.tickets.length; i++) {
+      await downloadTicket(result.tickets[i].ticket_number);
+      if (i < result.tickets.length - 1) await new Promise(r => setTimeout(r, 250));
+    }
+    setDownloadingAll(false);
+    toast({ title: 'Téléchargement terminé', description: `${result.tickets.length} billets téléchargés.` });
+  };
+
   if (!open) {
     return (
       <button
@@ -137,6 +148,10 @@ export default function BatchTicketGenerator({ event, user }) {
               <p className="text-[10px] text-muted-foreground text-center pt-1">+{result.tickets.length - 20} autres — téléchargez-les depuis « Mes billets »</p>
             )}
           </div>
+          <Button variant="outline" onClick={downloadAllTickets} disabled={downloadingAll} className="w-full gap-2">
+            {downloadingAll ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            {downloadingAll ? 'Téléchargement...' : `Télécharger tous les PDFs (${result.tickets.length})`}
+          </Button>
           <Button variant="outline" onClick={() => setResult(null)} className="w-full">Générer un autre lot</Button>
         </div>
       ) : (

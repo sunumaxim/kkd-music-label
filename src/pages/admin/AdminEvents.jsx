@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle } from 'lucide-react
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
+import BatchTicketGenerator from '@/components/events/BatchTicketGenerator';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -82,6 +83,12 @@ export default function AdminEvents() {
     initialData: [],
   });
 
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+    retry: false,
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Event.create(data),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin-events'] }); setEditing(null); },
@@ -133,6 +140,11 @@ export default function AdminEvents() {
         {editing !== 'new' && editing.id && (
           <div className="mt-6">
             <EventReleaseLinker eventId={editing.id} linkedIds={editing.linked_release_ids || []} />
+          </div>
+        )}
+        {editing !== 'new' && editing.id && (
+          <div className="mt-6">
+            <BatchTicketGenerator event={editing} user={me} />
           </div>
         )}
       </div>
