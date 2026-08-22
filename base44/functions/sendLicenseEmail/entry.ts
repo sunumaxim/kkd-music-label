@@ -1,8 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { buildEmailHtml } from '../../shared/emailKit.js';
 
 function fmtDate(d) {
-  const date = new Date(d);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default async function(req) {
@@ -24,31 +25,43 @@ export default async function(req) {
 
     const workTitle = license.release_title || license.video_title || license.artist_name;
 
-    const emailBody = `
-Bonjour ${license.artist_name},
+    const docs = [];
+    if (license.document_url) docs.push(['Licence de distribution', license.document_url]);
+    if (license.certificate_url) docs.push(["Certificat d'authenticité", license.certificate_url]);
 
-KKD Music vous délivre vos documents professionnels pour l'œuvre « ${workTitle} ».
+    const docsHtml = docs.map(([label, url]) =>
+      `<tr><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:13px;color:#A6998C;width:45%;">${label}</td><td style="padding:10px 0;border-bottom:1px solid #3A302A;font-size:14px;color:#F4EDE6;font-weight:600;text-align:right;"><a href="${url}" style="color:#D9A441;text-decoration:none;">Télécharger le PDF →</a></td></tr>`
+    ).join('');
 
-${license.document_url ? `📄 LICENCE DE DISTRIBUTION\n${license.document_url}\n\n` : ''}${license.certificate_url ? `🏆 CERTIFICAT D'AUTHENTICITÉ\n${license.certificate_url}\n\n` : ''}Empreinte numérique : ${license.originality_hash}
-Valide jusqu'au : ${license.valid_until ? fmtDate(license.valid_until) : 'N/A'}
-
-Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Music à la distribuer sur ses canaux. Conservez-les précieusement.
-
-— KKD Music
-    `.trim();
+    const html = buildEmailHtml({
+      subject: `[KKD Music] Documents officiels — ${workTitle}`,
+      preheader: `Vos documents professionnels pour « ${workTitle} »`,
+      action: 'success',
+      actionLabel: 'DOCUMENTS OFFICIELS',
+      headline: `Documents officiels pour « ${workTitle} »`,
+      body: `Bonjour <strong>${license.artist_name}</strong>,<br/><br/>KKD Music vous renvoie vos documents professionnels de droits d'auteur et de distribution pour l'œuvre <strong>« ${workTitle} »</strong>. Ces documents attestent de l'originalité de votre œuvre et sécurisent vos droits d'auteur conformément aux standards de l'industrie musicale. Conservez-les précieusement.`,
+      infoRows: [
+        ['Artiste', license.artist_name],
+        ['Œuvre', workTitle],
+        ['Empreinte numérique', (license.originality_hash || '').slice(0, 24) + '…'],
+        ['Valide jusqu\'au', license.valid_until ? fmtDate(license.valid_until) : '—'],
+      ],
+      extra: `<div style="margin:24px 0;"><table style="width:100%;border-collapse:collapse;" cellpadding="0" cellspacing="0">${docsHtml}</table></div>`,
+      cta: { label: 'Voir mon espace', url: 'https://kkdmusic.com/mon-espace' },
+    });
 
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: targetEmail,
-        subject: `[KKD Music] Vos documents professionnels — ${workTitle}`,
-        body: emailBody,
+        subject: `[KKD Music] Documents officiels — ${workTitle}`,
+        body: html,
+        from_name: 'KKD Music',
       });
     } catch (emailErr) {
       console.error('SendEmail error:', emailErr.message);
       return Response.json({ error: `Envoi email échoué : ${emailErr.message}` }, { status: 500 });
     }
 
-    // Mettre à jour le statut
     await base44.asServiceRole.entities.MusicLicense.update(license_id, {
       status: 'envoye',
       sent_to_email: targetEmail,

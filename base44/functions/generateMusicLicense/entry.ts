@@ -1,22 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { jsPDF } from 'npm:jspdf@4.2.1';
-import { secrets } from 'base44:runtime';
+import { buildEmailHtml } from '../../shared/emailKit.js';
 
+// ===== BRAND TOKENS (from DESIGN_SYSTEM.md — exact platform colors) =====
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
-const BRAND_PRIMARY = '#E53935';
-const BRAND_SECONDARY = '#1F8A5C';
-const BRAND_ACCENT = '#B07D1F';
-const BRAND_TEXT = '#1B1410';
-const BRAND_MUTED = '#6F655B';
+const C = {
+  primary:    '#E4622B',
+  primaryLt:  '#F08355',
+  secondary:  '#1F8A5C',
+  accent:     '#D9A441',
+  accentLt:   '#E8B865',
+  bg:         '#16110E',
+  surface:    '#231C18',
+  surfaceLt:  '#2E2620',
+  border:     '#3A302A',
+  text:       '#F4EDE6',
+  textMuted:  '#A6998C',
+  textDim:    '#7A6E62',
+  white:      '#FFFFFF',
+  cream:      '#FAF6F0',
+};
 
-function bufToB64(buf) {
-  const bytes = new Uint8Array(buf);
-  let bin = '';
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
+// ===== UTILITIES =====
+
+async function fetchLogoData() {
+  try {
+    const res = await fetch(LOGO_URL);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return `data:image/png;base64,${btoa(bin)}`;
+  } catch (e) {
+    console.error('logo fetch error:', e.message);
+    return null;
+  }
 }
 
-// Hash SHA-256 via Web Crypto
 async function sha256(text) {
   const data = new TextEncoder().encode(text);
   const hash = await crypto.subtle.digest('SHA-256', data);
@@ -27,334 +48,461 @@ async function sha256(text) {
 }
 
 function fmtDate(d) {
-  const date = new Date(d);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// ── Génère le PDF : Licence de distribution ──
-function generateDistributionLicensePDF(doc, data) {
+function fmtDateShort(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function ymd(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function genSuffix() {
+  return Math.random().toString(36).substring(2, 6).toUpperCase();
+}
+
+function genLicenseNumber() {
+  return `KKD-LIC-${ymd()}-${genSuffix()}`;
+}
+
+function genCertificateNumber() {
+  return `KKD-CERT-${ymd()}-${genSuffix()}`;
+}
+
+function genISRC(hash) {
+  const year = new Date().getFullYear().toString().slice(-2);
+  const num = hash.slice(0, 5).replace(/[^A-Z0-9]/g, '').padEnd(5, '0');
+  return `SN-KKD-${year}-${num}`;
+}
+
+// ===== SHARED PDF HELPERS =====
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function setFill(doc, hex) { doc.setFillColor(...hexToRgb(hex)); }
+function setText(doc, hex) { doc.setTextColor(...hexToRgb(hex)); }
+function setDraw(doc, hex) { doc.setDrawColor(...hexToRgb(hex)); }
+
+function addWatermark(doc, text) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  doc.saveGraphicsState();
+  setText(doc, C.surfaceLt);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(60);
+  doc.text(text, W / 2, H / 2, { align: 'center', angle: 35 });
+  doc.restoreGraphicsState();
+}
+
+function drawHeader(doc, logoData, title, subtitle, docNumber) {
+  const W = doc.internal.pageSize.getWidth();
+  setFill(doc, C.bg);
+  doc.rect(0, 0, W, 42, 'F');
+  setFill(doc, C.primary);
+  doc.rect(0, 42, W, 1.5, 'F');
+  setFill(doc, C.accent);
+  doc.rect(0, 43.5, W, 0.8, 'F');
+
+  if (logoData) {
+    try { doc.addImage(logoData, 'PNG', 15, 8, 24, 24); } catch (e) { console.error('logo addImage error:', e.message); }
+  }
+
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(title, W / 2 + 8, 18, { align: 'center' });
+
+  setText(doc, C.accent);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(subtitle, W / 2 + 8, 26, { align: 'center' });
+
+  setText(doc, C.textMuted);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text(docNumber, W - 15, 18, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text(`Émis le ${fmtDateShort(new Date())}`, W - 15, 24, { align: 'right' });
+}
+
+function drawFooter(doc, docNumber, hash) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  setFill(doc, C.bg);
+  doc.rect(0, H - 18, W, 18, 'F');
+  setFill(doc, C.primary);
+  doc.rect(0, H - 19, W, 1, 'F');
+
+  setText(doc, C.textMuted);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(`Document officiel KKD Music · ${docNumber}`, 15, H - 10);
+  doc.text(`Empreinte SHA-256 : ${hash.slice(0, 32)}...`, 15, H - 5.5);
+
+  setText(doc, C.textDim);
+  doc.text('www.kkdmusic.com', W - 15, H - 10, { align: 'right' });
+  doc.text(`© ${new Date().getFullYear()} KKD Music — Tous droits réservés`, W - 15, H - 5.5, { align: 'right' });
+}
+
+function sectionTitle(doc, y, text) {
+  const W = doc.internal.pageSize.getWidth();
+  setDraw(doc, C.primary);
+  doc.setLineWidth(0.6);
+  doc.line(15, y, W - 15, y);
+  setText(doc, C.primary);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(text.toUpperCase(), 15, y + 5.5);
+  return y + 12;
+}
+
+function infoRow(doc, y, label, value, x = 15, labelW = 50) {
+  setText(doc, C.textMuted);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.text(label, x, y);
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  const valLines = doc.splitTextToSize(value, doc.internal.pageSize.getWidth() - x - labelW - 15);
+  doc.text(valLines, x + labelW, y);
+  return y + (valLines.length * 4.5);
+}
+
+function numberedClause(doc, y, num, text) {
+  const W = doc.internal.pageSize.getWidth();
+  setText(doc, C.accent);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(`${num}.`, 15, y);
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  const lines = doc.splitTextToSize(text, W - 25);
+  doc.text(lines, 22, y);
+  return y + (lines.length * 4.2) + 3;
+}
+
+// ===== DISTRIBUTION LICENSE PDF =====
+
+function generateDistributionLicensePDF(doc, data, logoData) {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
 
-  // Bordure cadre
-  doc.setDrawColor(BRAND_ACCENT);
-  doc.setLineWidth(2);
+  addWatermark(doc, 'KKD MUSIC');
+
+  setDraw(doc, C.accent);
+  doc.setLineWidth(1.5);
+  doc.rect(6, 6, W - 12, H - 12);
+  setDraw(doc, C.border);
+  doc.setLineWidth(0.3);
   doc.rect(8, 8, W - 16, H - 16);
 
-  // En-tête
-  doc.setFillColor(BRAND_TEXT);
-  doc.rect(8, 8, W - 16, 40, 'F');
-  doc.setTextColor('#FFFFFF');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('LICENCE DE DISTRIBUTION', W / 2, 28, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('KKD MUSIC', W / 2, 38, { align: 'center' });
+  drawHeader(doc, logoData, 'LICENCE DE DISTRIBUTION', 'CONTRAT DE DISTRIBUTION MUSICALE NUMÉRIQUE', data.license_number);
 
-  // Numéro de licence
-  doc.setTextColor(BRAND_MUTED);
-  doc.setFontSize(9);
-  doc.text(`N° ${data.license_number}`, W - 20, 56, { align: 'right' });
+  let y = 52;
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  const preamble = `Entre KKD Music, maison de disques indépendante, ci-après « le Concédant », et l'artiste ${data.artist_name}, ci-après « le Bénéficiaire », il a été convenu ce qui suit :`;
+  const pl = doc.splitTextToSize(preamble, W - 30);
+  doc.text(pl, 15, y);
+  y += pl.length * 4.2 + 4;
 
-  // Date
-  doc.setTextColor(BRAND_TEXT);
-  doc.setFontSize(11);
-  doc.text(`Délivrée le ${fmtDate(new Date())}`, 20, 56);
-
-  // Section : Titulaire
-  let y = 72;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.setLineWidth(0.8);
-  doc.line(20, y - 4, W - 20, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('ARTISTE TITULAIRE', 20, y + 4);
-
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(BRAND_TEXT);
-  doc.text(`Nom de scène : ${data.artist_name}`, 20, y);
-  if (data.artist_genre) doc.text(`Genre musical : ${data.artist_genre}`, 20, y + 7);
-  if (data.artist_nationality) doc.text(`Nationalité : ${data.artist_nationality}`, 20, y + 14);
-  if (data.label_name) {
-    doc.text(`Label : ${data.label_name}`, 20, y + 21);
-    y += 7;
-  }
+  y = sectionTitle(doc, y, 'Article 1 — Parties');
+  y = infoRow(doc, y, 'Le Concédant', 'KKD Music — Maison de disques indépendante');
+  y = infoRow(doc, y, 'Siège', 'Dakar, Sénégal · www.kkdmusic.com');
+  y = infoRow(doc, y, 'Le Bénéficiaire', data.artist_name);
+  if (data.artist_nationality) y = infoRow(doc, y, 'Nationalité', data.artist_nationality);
+  if (data.label_name) y = infoRow(doc, y, 'Label', data.label_name);
   if (data.artist_verified) {
-    doc.setTextColor(BRAND_SECONDARY);
+    setText(doc, C.secondary);
     doc.setFont('helvetica', 'bold');
-    doc.text('✓ Artiste vérifié KKD Music', 20, y + 21);
+    doc.setFontSize(8);
+    doc.text('✓ Artiste vérifié et certifié KKD Music', 15, y);
+    y += 6;
   }
+  y += 4;
 
-  // Section : Œuvre concernée
-  y += 35;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(20, y - 4, W - 20, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('ŒUVRE CONCERNÉE', 20, y + 4);
-
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(BRAND_TEXT);
-  doc.text(`Titre : ${data.work_title}`, 20, y);
-  if (data.work_type) doc.text(`Type : ${data.work_type}`, 20, y + 7);
-  doc.text(`Code ISRC : ${data.isrc}`, 20, y + 14);
-  if (data.work_date) doc.text(`Date de sortie : ${fmtDate(data.work_date)}`, 20, y + 21);
+  y = sectionTitle(doc, y, "Article 2 — Œuvre concernée");
+  y = infoRow(doc, y, 'Titre', data.work_title);
+  y = infoRow(doc, y, 'Artiste', data.artist_name);
+  if (data.artist_genre) y = infoRow(doc, y, 'Genre musical', data.artist_genre);
+  if (data.work_type) y = infoRow(doc, y, 'Type', data.work_type);
+  y = infoRow(doc, y, 'Code ISRC', data.isrc);
+  if (data.work_date) y = infoRow(doc, y, 'Date de sortie', fmtDate(data.work_date));
   if (data.streaming_url) {
-    doc.setFontSize(9);
-    doc.setTextColor(BRAND_MUTED);
-    doc.text(`Lien : ${data.streaming_url.slice(0, 70)}`, 20, y + 28);
+    setText(doc, C.textMuted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    const urlLines = doc.splitTextToSize(data.streaming_url, W - 65);
+    doc.text('Lien streaming', 15, y);
+    setText(doc, C.accent);
+    doc.text(urlLines, 65, y);
+    y += urlLines.length * 4 + 2;
   }
+  y += 4;
 
-  // Section : Droits & territoire
-  y += 43;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(20, y - 4, W - 20, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('DROITS ACCORDÉS & TERRITOIRE', 20, y + 4);
+  y = sectionTitle(doc, y, 'Article 3 — Droits concédés');
+  y = numberedClause(doc, y, '3.1', "KKD Music est autorisée à distribuer, promouvoir, commercialiser et exploiter l'œuvre sur l'ensemble de ses canaux numériques (plateforme web, application mobile, réseaux sociaux, plateformes partenaires).");
+  y = numberedClause(doc, y, '3.2', "L'artiste conserve l'intégralité de ses droits moraux (paternité, intégrité) et patrimoniaux sur l'œuvre. La présente licence est non-exclusive.");
+  y = numberedClause(doc, y, '3.3', "KKD Music est autorisée à reproduire, représenter, adapter et diffuser l'œuvre sous tous formats numériques connus ou à venir.");
+  y = numberedClause(doc, y, '3.4', "Toute exploitation commerciale hors KKD Music nécessite un accord complémentaire écrit entre les parties.");
 
-  y += 14;
+  y = sectionTitle(doc, y, 'Article 4 — Territoire & Durée');
+  y = numberedClause(doc, y, '4.1', "Territoire d'exploitation : Mondial (tous pays, toutes plateformes numériques partenaires).");
+  y = numberedClause(doc, y, '4.2', `Durée : La présente licence est valable jusqu'au ${fmtDate(data.valid_until)}, renouvelable par tacite reconduction.`);
+  y = numberedClause(doc, y, '4.3', "La licence est révocable à tout moment par notification écrite de l'artiste, avec un préavis de 30 jours.");
+
+  y = sectionTitle(doc, y, 'Article 5 — Redevances & Partage des revenus');
+  y = numberedClause(doc, y, '5.1', "L'artiste perçoit 90 % des revenus nets générés par l'exploitation de l'œuvre sur les canaux KKD Music.");
+  y = numberedClause(doc, y, '5.2', "KKD Music percevant une commission de 10 % pour services de distribution, promotion et gestion technique.");
+  y = numberedClause(doc, y, '5.3', "Les revenus sont versés à l'artiste selon la fréquence définie dans son contrat principal (mensuel ou trimestriel).");
+
+  y = sectionTitle(doc, y, 'Article 6 — Obligations des parties');
+  y = numberedClause(doc, y, '6.1', "L'artiste déclare être l'auteur légitime et unique titulaire des droits sur l'œuvre et garantit son originalité.");
+  y = numberedClause(doc, y, '6.2', "L'artiste s'engage à garantir l'œuvre contre tout risque de contrefaçon, plagiat ou duplication frauduleuse.");
+  y = numberedClause(doc, y, '6.3', "KKD Music s'engage à assurer la meilleure promotion et visibilité de l'œuvre sur ses canaux.");
+
+  y = sectionTitle(doc, y, 'Article 7 — Résiliation & Litiges');
+  y = numberedClause(doc, y, '7.1', "En cas de manquement grave, la partie lésée peut résilier la licence après mise en demeure restée infructueuse pendant 30 jours.");
+  y = numberedClause(doc, y, '7.2', "Tout litige relatif à la présente licence sera régi par le droit sénégalais et tranché par les tribunaux de Dakar.");
+
+  y += 2;
+  y = sectionTitle(doc, y, 'Empreinte numérique & Vérification');
+  setText(doc, C.textMuted);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(BRAND_TEXT);
-  const rights = [
-    'KKD Music est autorisée à distribuer, promouvoir et exploiter l\'œuvre sur l\'ensemble de ses canaux numériques (plateforme web, application mobile, réseaux sociaux).',
-    'Territoire d\'exploitation : Mondial (toutes plateformes numériques partenaires).',
-    'L\'artiste conserve l\'intégralité de ses droits moraux et patrimoniaux sur l\'œuvre.',
-    'La présente licence est non-exclusive et révocable sur notification.',
-    'Toute exploitation commerciale hors KKD Music nécessite un accord complémentaire écrit.',
-    'Redevances : l\'artiste perçoit 90 % des revenus nets générés par l\'œuvre, KKD Music percevant une commission de 10 %.',
-  ];
-  rights.forEach((r, i) => {
-    const lines = doc.splitTextToSize(`• ${r}`, W - 50);
-    doc.text(lines, 22, y + i * 13);
-  });
+  doc.setFontSize(7);
+  doc.text(`SHA-256 : ${data.originality_hash}`, 15, y);
+  y += 5;
+  setText(doc, C.textDim);
+  doc.setFontSize(7);
+  doc.text(`Vérifiable en ligne : www.kkdmusic.com/verifier/${data.license_number}`, 15, y);
 
-  // Section : Empreinte & validité
-  y += 80;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(20, y - 4, W - 20, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('EMPREINTE NUMÉRIQUE & VALIDITÉ', 20, y + 4);
-
-  y += 14;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(BRAND_MUTED);
-  doc.text(`SHA-256 : ${data.originality_hash.slice(0, 40)}...`, 20, y);
-  doc.text(`Valide jusqu'au : ${fmtDate(data.valid_until)}`, 20, y + 7);
-
-  // Signature KKD
-  y = H - 50;
-  doc.setDrawColor(BRAND_ACCENT);
-  doc.setLineWidth(1.5);
-  doc.line(W / 2 - 40, y, W / 2 + 40, y);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(BRAND_TEXT);
-  doc.text('KKD MUSIC', W / 2, y + 8, { align: 'center' });
+  // Signature block
+  y = H - 65;
+  setText(doc, C.textMuted);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(BRAND_MUTED);
-  doc.text('Direction Artistique & Licences', W / 2, y + 14, { align: 'center' });
+  doc.text(`Fait à Dakar, le ${fmtDate(new Date())}`, 15, y);
 
-  // Pied de page
+  y += 14;
+  setDraw(doc, C.accent);
+  doc.setLineWidth(0.5);
+  doc.line(15, y, 80, y);
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text('KKD MUSIC', 15, y + 5);
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(BRAND_MUTED);
-  doc.text(`Document généré automatiquement par KKD Music · ${new Date().toISOString()}`, W / 2, H - 14, { align: 'center' });
+  setText(doc, C.textMuted);
+  doc.text('Direction Artistique & Licences', 15, y + 10);
+  doc.text('Cachet & Signature', 15, y + 14);
 
+  doc.line(W - 80, y, W - 15, y);
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text(data.artist_name, W - 80, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  setText(doc, C.textMuted);
+  doc.text('Artiste — Signature', W - 80, y + 10);
+
+  drawFooter(doc, data.license_number, data.originality_hash);
   return doc;
 }
 
-// ── Génère le PDF : Certificat d'authenticité (exigeant sur l'originalité) ──
-function generateAuthenticityCertificatePDF(doc, data) {
+// ===== AUTHENTICITY CERTIFICATE PDF =====
+
+function generateAuthenticityCertificatePDF(doc, data, logoData) {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
 
-  // Cadre double
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.setLineWidth(3);
-  doc.rect(10, 10, W - 20, H - 20);
+  addWatermark(doc, 'KKD MUSIC');
+
+  setDraw(doc, C.accent);
+  doc.setLineWidth(2);
+  doc.rect(8, 8, W - 16, H - 16);
+  setDraw(doc, C.border);
   doc.setLineWidth(0.5);
-  doc.setDrawColor(BRAND_ACCENT);
-  doc.rect(14, 14, W - 28, H - 28);
+  doc.rect(11, 11, W - 22, H - 22);
 
-  // En-tête
-  doc.setFillColor(BRAND_TEXT);
-  doc.rect(14, 14, W - 28, 48, 'F');
-  doc.setTextColor('#FFFFFF');
+  drawHeader(doc, logoData, "CERTIFICAT D'AUTHENTICITÉ", "CERTIFICATION OFFICIELLE D'ORIGINALITÉ MUSICALE", data.certificate_number);
+
+  let y = 54;
+  setText(doc, C.primary);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.text('CERTIFICAT', W / 2, 34, { align: 'center' });
-  doc.setFontSize(16);
-  doc.text("D'AUTHENTICITÉ MUSICALE", W / 2, 46, { align: 'center' });
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text('KKD MUSIC', W / 2, 56, { align: 'center' });
-
-  // Numéro de certificat
-  doc.setTextColor(BRAND_ACCENT);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(`CERTIFICAT N° ${data.certificate_number}`, W / 2, 72, { align: 'center' });
-
-  // Déclaration d'originalité
-  let y = 86;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.setLineWidth(1);
-  doc.line(30, y - 4, W - 30, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text("DÉCLARATION D'ORIGINALITÉ", W / 2, y + 4, { align: 'center' });
-
-  y += 16;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(BRAND_TEXT);
-  const declaration = `Par la présente, KKD Music certifie que l'œuvre intitulée « ${data.work_title} » attribuée à l'artiste « ${data.artist_name} » a fait l'objet d'une vérification d'originalité selon nos standards d'exigence. L'artiste déclare être l'auteur légitime et unique titulaire des droits sur cette œuvre, et s'engage à garantir son authenticité contre tout risque de contrefaçon, de plagiat ou de duplication frauduleuse.`;
-  const declLines = doc.splitTextToSize(declaration, W - 60);
-  doc.text(declLines, 30, y);
-
-  // Section : Œuvre certifiée
-  y += declLines.length * 5 + 14;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(30, y - 4, W - 30, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('ŒUVRE CERTIFIÉE', W / 2, y + 4, { align: 'center' });
-
-  y += 14;
-  doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  doc.setTextColor(BRAND_TEXT);
-  doc.text(`Titre : ${data.work_title}`, 30, y);
-  doc.text(`Artiste : ${data.artist_name}`, 30, y + 8);
-  if (data.work_type) doc.text(`Type : ${data.work_type}`, 30, y + 16);
-  doc.text(`Code ISRC : ${data.isrc}`, 30, y + 24);
-  if (data.label_name) doc.text(`Label : ${data.label_name}`, 30, y + 32);
-  if (data.work_date) doc.text(`Date : ${fmtDate(data.work_date)}`, 30, y + 40);
+  doc.text("DÉCLARATION D'ORIGINALITÉ", W / 2, y, { align: 'center' });
+  y += 8;
 
-  // Section : Contrôles d'originalité (très exigeant)
-  y += 50;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(30, y - 4, W - 30, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text("CONTRÔLES D'ORIGINALITÉ", W / 2, y + 4, { align: 'center' });
-
-  y += 14;
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'italic');
   doc.setFontSize(9);
+  const declaration = `Par la présente, KKD Music certifie que l'œuvre intitulée « ${data.work_title} » attribuée à l'artiste « ${data.artist_name} » a fait l'objet d'une vérification d'originalité selon nos standards d'exigence. L'artiste déclare être l'auteur légitime et unique titulaire des droits d'auteur sur cette œuvre, et s'engage à garantir son authenticité contre tout risque de contrefaçon, de plagiat ou de duplication frauduleuse.`;
+  const declLines = doc.splitTextToSize(declaration, W - 40);
+  doc.text(declLines, 20, y);
+  y += declLines.length * 4.5 + 6;
+
+  y = sectionTitle(doc, y, 'Œuvre certifiée');
+  y = infoRow(doc, y, 'Titre', data.work_title, 20, 45);
+  y = infoRow(doc, y, 'Artiste', data.artist_name, 20, 45);
+  if (data.work_type) y = infoRow(doc, y, 'Type', data.work_type, 20, 45);
+  y = infoRow(doc, y, 'Code ISRC', data.isrc, 20, 45);
+  if (data.label_name) y = infoRow(doc, y, 'Label', data.label_name, 20, 45);
+  if (data.work_date) y = infoRow(doc, y, 'Date', fmtDate(data.work_date), 20, 45);
+  y += 4;
+
+  y = sectionTitle(doc, y, "Contrôles d'originalité effectués");
+  doc.setFontSize(8);
   for (const check of data.originality_checks) {
     const icon = check.result === 'conforme' ? '✓' : check.result === 'attention' ? '⚠' : '○';
-    const color = check.result === 'conforme' ? BRAND_SECONDARY : check.result === 'attention' ? BRAND_ACCENT : BRAND_MUTED;
-    doc.setTextColor(color);
+    const color = check.result === 'conforme' ? C.secondary : check.result === 'attention' ? C.accent : C.textDim;
+    setText(doc, color);
     doc.setFont('helvetica', 'bold');
-    doc.text(icon, 32, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(BRAND_TEXT);
-    doc.text(check.check, 40, y);
-    doc.setTextColor(BRAND_MUTED);
-    doc.setFontSize(8);
-    doc.text(check.detail || '', 40, y + 5);
     doc.setFontSize(9);
-    y += 14;
+    doc.text(icon, 20, y);
+    setText(doc, C.text);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text(check.check, 27, y);
+    setText(doc, C.textMuted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(check.detail || '', 27, y + 3.5);
+    y += 9;
   }
-
-  // Empreinte numérique
   y += 4;
-  doc.setDrawColor(BRAND_PRIMARY);
-  doc.line(30, y - 4, W - 30, y - 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(BRAND_PRIMARY);
-  doc.text('EMPREINTE NUMÉRIQUE DE L\'ŒUVRE', W / 2, y + 4, { align: 'center' });
 
-  y += 12;
+  y = sectionTitle(doc, y, 'Empreinte numérique de l\'œuvre');
+  setText(doc, C.textMuted);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(BRAND_MUTED);
-  doc.text(`SHA-256 : ${data.originality_hash}`, 30, y);
-  doc.text(`Générée le : ${new Date().toISOString()}`, 30, y + 6);
-
-  // Signature KKD
-  y = H - 56;
-  doc.setDrawColor(BRAND_ACCENT);
-  doc.setLineWidth(1.5);
-  doc.line(W / 2 - 45, y, W / 2 + 45, y);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(BRAND_TEXT);
-  doc.text('KKD MUSIC — CERTIFICATION OFFICIELLE', W / 2, y + 8, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(BRAND_MUTED);
-  doc.text(`Valide jusqu'au ${fmtDate(data.valid_until)}`, W / 2, y + 14, { align: 'center' });
-
-  // Avertissement
   doc.setFontSize(7);
-  doc.setTextColor(BRAND_MUTED);
-  const warning = 'Ce certificat atteste de l\'originalité déclarée de l\'œuvre selon les contrôles effectués à la date d\'émission. Toute contrefaçon ou utilisation frauduleuse engage la responsabilité civile et pénale de son auteur.';
-  const warnLines = doc.splitTextToSize(warning, W - 60);
-  doc.text(warnLines, W / 2, H - 20, { align: 'center' });
+  doc.text(`SHA-256 : ${data.originality_hash}`, 20, y);
+  y += 5;
+  setText(doc, C.textDim);
+  doc.text(`Générée le ${new Date().toISOString()}`, 20, y);
+  y += 5;
+  setText(doc, C.textDim);
+  doc.text(`Valide jusqu'au ${fmtDate(data.valid_until)}`, 20, y);
 
+  // Official seal
+  const sealX = W / 2;
+  const sealY = H - 55;
+  setDraw(doc, C.accent);
+  doc.setLineWidth(1.5);
+  doc.circle(sealX, sealY, 16);
+  doc.setLineWidth(0.5);
+  doc.circle(sealX, sealY, 13);
+  setText(doc, C.accent);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('KKD MUSIC', sealX, sealY - 4, { align: 'center' });
+  doc.setFontSize(5);
+  doc.text('CERTIFICATION OFFICIELLE', sealX, sealY + 1, { align: 'center' });
+  doc.text(`N° ${data.certificate_number.slice(-8)}`, sealX, sealY + 6, { align: 'center' });
+
+  // Signature
+  const sigY = H - 38;
+  setDraw(doc, C.accent);
+  doc.setLineWidth(0.5);
+  doc.line(W / 2 - 40, sigY, W / 2 + 40, sigY);
+  setText(doc, C.text);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('KKD MUSIC', W / 2, sigY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  setText(doc, C.textMuted);
+  doc.text('Direction de la Certification', W / 2, sigY + 10, { align: 'center' });
+  doc.text(`Fait à Dakar, le ${fmtDate(new Date())}`, W / 2, sigY + 15, { align: 'center' });
+
+  drawFooter(doc, data.certificate_number, data.originality_hash);
   return doc;
 }
 
-// ── Contrôles d'originalité exigeants ──
+// ===== ORIGINALITY CHECKS =====
+
 async function runOriginalityChecks(base44, data) {
   const checks = [];
 
-  // 1. Dédoublonnage : pas de sortie existante avec le même titre + artiste
   try {
     const existing = await base44.asServiceRole.entities.Release.filter({ artist_name: data.artist_name, title: data.work_title });
     const others = existing.filter(r => r.id !== data.release_id);
     if (others.length === 0) {
-      checks.push({ check: 'Dédoublonnage catalogue', result: 'conforme', detail: 'Aucune sortie identique trouvée dans le catalogue KKD' });
+      checks.push({ check: 'Dédoublonnage catalogue', result: 'conforme', detail: 'Aucune sortie identique dans le catalogue KKD Music' });
     } else {
-      checks.push({ check: 'Dédoublonnage catalogue', result: 'attention', detail: `${others.length} sortie(s) similaire(s) détectée(s) — vérification manuelle requise` });
+      checks.push({ check: 'Dédoublonnage catalogue', result: 'attention', detail: `${others.length} sortie(s) similaire(s) — vérification manuelle requise` });
     }
   } catch {
     checks.push({ check: 'Dédoublonnage catalogue', result: 'non_verifie', detail: 'Contrôle non exécuté' });
   }
 
-  // 2. Vérification artiste vérifié
   if (data.artist_verified) {
     checks.push({ check: 'Statut artiste vérifié', result: 'conforme', detail: 'Artiste certifié KKD Music — profil authentifié' });
   } else {
     checks.push({ check: 'Statut artiste vérifié', result: 'attention', detail: 'Artiste non vérifié — certification à compléter' });
   }
 
-  // 3. Empreinte numérique générée
-  checks.push({ check: 'Empreinte numérique SHA-256', result: 'conforme', detail: `Empreinte ${data.originality_hash.slice(0, 16)}... générée et horodatée` });
+  checks.push({ check: 'Empreinte numérique SHA-256', result: 'conforme', detail: `Empreinte ${data.originality_hash.slice(0, 16)}… générée et horodatée` });
 
-  // 4. Lien de streaming présent
   if (data.streaming_url) {
-    checks.push({ check: 'Lien de streaming associé', result: 'conforme', detail: 'Œuvre référencée sur une plateforme externe vérifiable' });
+    checks.push({ check: 'Référencement plateforme externe', result: 'conforme', detail: 'Œuvre référencée sur une plateforme de streaming vérifiable' });
   } else {
-    checks.push({ check: 'Lien de streaming associé', result: 'non_verifie', detail: 'Aucun lien externe — originalité basée sur déclaration artiste' });
+    checks.push({ check: 'Référencement plateforme externe', result: 'non_verifie', detail: 'Aucun lien externe — originalité basée sur déclaration artiste' });
   }
 
-  // 5. Déclaration d'originalité artiste
   checks.push({ check: "Déclaration d'originalité artiste", result: 'conforme', detail: "L'artiste déclare être l'auteur légitime sous peine de poursuites" });
-
-  // 6. Horodatage certifié
-  checks.push({ check: 'Horodatage certifié', result: 'conforme', detail: `Émis le ${new Date().toISOString()}` });
+  checks.push({ check: 'Horodatage certifié', result: 'conforme', detail: `Émis le ${new Date().toLocaleString('fr-FR')}` });
 
   return checks;
 }
+
+// ===== BRANDED EMAIL =====
+
+async function sendBrandedLicenseEmail(base44, d) {
+  const docs = [];
+  if (d.document_url) docs.push(['Licence de distribution', d.license_number, d.document_url]);
+  if (d.certificate_url) docs.push(["Certificat d'authenticité", d.certificate_number, d.certificate_url]);
+
+  const html = buildEmailHtml({
+    subject: `[KKD Music] Documents officiels — ${d.work_title}`,
+    preheader: `Vos documents professionnels pour « ${d.work_title} »`,
+    action: 'success',
+    actionLabel: 'DOCUMENTS GÉNÉRÉS',
+    headline: `Documents officiels pour « ${d.work_title} »`,
+    body: `Bonjour <strong>${d.artist_name}</strong>,<br/><br/>KKD Music vous délivre vos documents professionnels de droits d'auteur et de distribution pour l'œuvre <strong>« ${d.work_title} »</strong>. Ces documents attestent de l'originalité de votre œuvre et sécurisent vos droits d'auteur conformément aux standards de l'industrie musicale.`,
+    infoRows: [
+      ['Artiste', d.artist_name],
+      ['Œuvre', d.work_title],
+      ...docs.map(([label, num]) => [label, num]),
+      ['Empreinte numérique', d.originality_hash.slice(0, 24) + '…'],
+      ['Valide jusqu\'au', new Date(d.valid_until).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })],
+    ],
+    cta: { label: 'Voir mon espace', url: 'https://kkdmusic.com/mon-espace' },
+  });
+
+  await base44.asServiceRole.integrations.Core.SendEmail({
+    to: d.target_email,
+    subject: `[KKD Music] Documents officiels — ${d.work_title}`,
+    body: html,
+    from_name: 'KKD Music',
+  });
+}
+
+// ===== MAIN ENTRY =====
 
 export default async function(req) {
   try {
@@ -368,11 +516,9 @@ export default async function(req) {
     if (!artist_id) return Response.json({ error: 'Artiste manquant' }, { status: 400 });
     if (!license_type) return Response.json({ error: 'Type de licence manquant' }, { status: 400 });
 
-    // ── Récupérer l'artiste ──
     const artist = await base44.asServiceRole.entities.Artist.get(artist_id);
     if (!artist) return Response.json({ error: 'Artiste introuvable' }, { status: 404 });
 
-    // ── Récupérer le label lié (si partenaire) ──
     let labelName = '';
     try {
       const invites = await base44.asServiceRole.entities.ArtistInvite.filter({ artist_id });
@@ -380,12 +526,7 @@ export default async function(req) {
       if (labelInvite) labelName = labelInvite.label_name;
     } catch {}
 
-    // ── Récupérer l'œuvre (release ou video) ──
-    let work = null;
-    let workType = null;
-    let workTitle = artist.name;
-    let workDate = null;
-    let streamingUrl = null;
+    let work = null, workType = null, workTitle = artist.name, workDate = null, streamingUrl = null;
 
     if (release_id) {
       work = await base44.asServiceRole.entities.Release.get(release_id);
@@ -401,18 +542,13 @@ export default async function(req) {
       streamingUrl = work?.youtube_url || null;
     }
 
-    // ── Empreinte d'originalité ──
     const fingerprintInput = `${workTitle}|${artist.name}|${workDate || ''}|${workType || ''}|${new Date().toISOString()}`;
     const originalityHash = await sha256(fingerprintInput);
 
-    // ── Numéros de documents ──
-    const ts = Date.now().toString(36).toUpperCase();
-    const licenseNumber = `KKD-LIC-${ts}`;
-    const certificateNumber = `KKD-CERT-${ts}`;
-    // ISRC fictif basé sur le hash (format ISRC: CC-XXX-YY-NNNNN)
-    const isrc = `SNKKD${originalityHash.slice(0, 7).replace(/[^A-Z0-9]/g, '').padEnd(7, '0')}`;
+    const licenseNumber = genLicenseNumber();
+    const certificateNumber = genCertificateNumber();
+    const isrc = genISRC(originalityHash);
 
-    // ── Données pour les PDF ──
     const pdfData = {
       license_number: licenseNumber,
       certificate_number: certificateNumber,
@@ -430,17 +566,17 @@ export default async function(req) {
       valid_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     };
 
-    // ── Contrôles d'originalité ──
     const originalityChecks = await runOriginalityChecks(base44, { ...pdfData, release_id, video_id });
     pdfData.originality_checks = originalityChecks;
 
-    // ── Générer les PDF ──
+    const logoData = await fetchLogoData();
+
     let documentUrl = '';
     let certificateUrl = '';
 
     if (license_type === 'distribution' || license_type === 'double') {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      generateDistributionLicensePDF(doc, pdfData);
+      generateDistributionLicensePDF(doc, pdfData, logoData);
       const pdfBytes = doc.output('arraybuffer');
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const file = new File([pdfBlob], `licence-${licenseNumber}.pdf`, { type: 'application/pdf' });
@@ -450,7 +586,7 @@ export default async function(req) {
 
     if (license_type === 'authenticite' || license_type === 'double') {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      generateAuthenticityCertificatePDF(doc, pdfData);
+      generateAuthenticityCertificatePDF(doc, pdfData, logoData);
       const pdfBytes = doc.output('arraybuffer');
       const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
       const file = new File([pdfBlob], `certificat-${certificateNumber}.pdf`, { type: 'application/pdf' });
@@ -458,13 +594,9 @@ export default async function(req) {
       certificateUrl = upRes.file_url;
     }
 
-    // ── Email destinataire ──
     const targetEmail = recipient_email || artist.email || user.email;
-
-    // ── Mode prévisualisation : on génère les PDF sans envoyer l'email ──
     const finalStatus = preview_only ? 'genere' : 'envoye';
 
-    // ── Créer l'entité MusicLicense ──
     const license = await base44.asServiceRole.entities.MusicLicense.create({
       artist_id,
       artist_name: artist.name,
@@ -484,30 +616,22 @@ export default async function(req) {
       valid_until: pdfData.valid_until,
     });
 
-    // ── Envoyer l'email uniquement si pas en mode prévisualisation ──
     if (!preview_only) {
-      const emailBody = `
-Bonjour ${artist.name},
-
-KKD Music vous délivre vos documents professionnels pour l'œuvre « ${workTitle} ».
-
-${license_type === 'distribution' || license_type === 'double' ? `📄 LICENCE DE DISTRIBUTION (${licenseNumber})\n${documentUrl}\n\n` : ''}${license_type === 'authenticite' || license_type === 'double' ? `🏆 CERTIFICAT D'AUTHENTICITÉ (${certificateNumber})\n${certificateUrl}\n\n` : ''}Empreinte numérique : ${originalityHash}
-Valide jusqu'au : ${fmtDate(pdfData.valid_until)}
-
-Ces documents attestent de l'originalité de votre œuvre et autorisent KKD Music à la distribuer sur ses canaux. Conservez-les précieusement.
-
-— KKD Music
-      `.trim();
-
       try {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: targetEmail,
-          subject: `[KKD Music] Vos documents professionnels — ${workTitle}`,
-          body: emailBody,
+        await sendBrandedLicenseEmail(base44, {
+          artist_name: artist.name,
+          work_title: workTitle,
+          license_number: licenseNumber,
+          certificate_number: certificateNumber,
+          document_url: documentUrl,
+          certificate_url: certificateUrl,
+          originality_hash: originalityHash,
+          valid_until: pdfData.valid_until,
+          license_type,
+          target_email: targetEmail,
         });
       } catch (emailErr) {
         console.error('SendEmail error (non-fatal):', emailErr.message);
-        // On ne fait pas échouer la génération si l'email échoue
       }
     }
 
