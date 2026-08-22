@@ -44,6 +44,7 @@ import MesBillets from './pages/MesBillets';
 import ControleAcces from './pages/ControleAcces';
 import PublicVerifTicket from './pages/PublicVerifTicket';
 import Playlists from './pages/Playlists';
+import DocumentViewer from './pages/DocumentViewer';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -177,6 +178,7 @@ const AuthenticatedApp = () => {
         </Route>
       </Route>
 
+      <Route path="/document/:id" element={<DocumentViewer />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -8,7 +8,7 @@
     },
     "artist_name": {
       "type": "string",
-      "description": "Nom de l'artiste (d\u00e9normalis\u00e9)"
+      "description": "Nom de l'artiste (d\u00e9norm\u00e9)"
     },
     "release_id": {
       "type": "string",
@@ -16,7 +16,7 @@
     },
     "release_title": {
       "type": "string",
-      "description": "Titre de la sortie (d\u00e9normalis\u00e9)"
+      "description": "Titre de la sortie (d\u00e9norm\u00e9)"
     },
     "video_id": {
       "type": "string",
@@ -24,7 +24,7 @@
     },
     "video_title": {
       "type": "string",
-      "description": "Titre de la vid\u00e9o (d\u00e9normalis\u00e9)"
+      "description": "Titre de la vid\u00e9o (d\u00e9norm\u00e9)"
     },
     "license_type": {
       "type": "string",
@@ -34,19 +34,61 @@
         "double"
       ],
       "default": "double",
-      "description": "Type de licence : distribution (contrat KKD), authenticit\u00e9 (certificat originalit\u00e9), double (les deux)"
+      "description": "Type de licence"
+    },
+    "license_number": {
+      "type": "string",
+      "description": "Num\u00e9ro unique de licence (KKD-LIC-YYYYMMDD-XXXX)"
+    },
+    "certificate_number": {
+      "type": "string",
+      "description": "Num\u00e9ro unique de certificat (KKD-CERT-YYYYMMDD-XXXX)"
+    },
+    "pdf_data": {
+      "type": "object",
+      "description": "Donn\u00e9es compl\u00e8tes pour r\u00e9g\u00e9n\u00e9rer les PDF c\u00f4t\u00e9 frontend",
+      "properties": {
+        "isrc": {
+          "type": "string"
+        },
+        "artist_genre": {
+          "type": "string"
+        },
+        "artist_verified": {
+          "type": "boolean"
+        },
+        "artist_nationality": {
+          "type": "string"
+        },
+        "label_name": {
+          "type": "string"
+        },
+        "work_title": {
+          "type": "string"
+        },
+        "work_type": {
+          "type": "string"
+        },
+        "work_date": {
+          "type": "string"
+        },
+        "streaming_url": {
+          "type": "string"
+        }
+      },
+      "default": {}
     },
     "document_url": {
       "type": "string",
-      "description": "URL du document PDF g\u00e9n\u00e9r\u00e9 (licence de distribution)"
+      "description": "URL du document PDF (licence de distribution) \u2014 si upload\u00e9"
     },
     "certificate_url": {
       "type": "string",
-      "description": "URL du certificat d'authenticit\u00e9 PDF g\u00e9n\u00e9r\u00e9"
+      "description": "URL du certificat PDF \u2014 si upload\u00e9"
     },
     "originality_hash": {
       "type": "string",
-      "description": "Empreinte d'originalit\u00e9 (hash SHA du contenu : titre + artiste + date + m\u00e9tadonn\u00e9es)"
+      "description": "Empreinte d'originalit\u00e9 (hash SHA-256)"
     },
     "originality_checks": {
       "type": "array",
@@ -54,8 +96,7 @@
         "type": "object",
         "properties": {
           "check": {
-            "type": "string",
-            "description": "Nom du contr\u00f4le d'originalit\u00e9"
+            "type": "string"
           },
           "result": {
             "type": "string",
@@ -63,17 +104,15 @@
               "conforme",
               "attention",
               "non_verifie"
-            ],
-            "description": "R\u00e9sultat du contr\u00f4le"
+            ]
           },
           "detail": {
-            "type": "string",
-            "description": "D\u00e9tail du contr\u00f4le"
+            "type": "string"
           }
         }
       },
       "default": [],
-      "description": "Contr\u00f4les d'originalit\u00e9 effectu\u00e9s (d\u00e9doublonnage, fingerprint, v\u00e9rification artiste, etc.)"
+      "description": "Contr\u00f4les d'originalit\u00e9 effectu\u00e9s"
     },
     "status": {
       "type": "string",
@@ -85,15 +124,15 @@
         "refuse"
       ],
       "default": "en_attente",
-      "description": "Statut de la demande de licence"
+      "description": "Statut de la demande"
     },
     "requested_by_email": {
       "type": "string",
-      "description": "Email du demandeur (artiste / partenaire)"
+      "description": "Email du demandeur"
     },
     "sent_to_email": {
       "type": "string",
-      "description": "Email destinataire (artiste v\u00e9rifi\u00e9)"
+      "description": "Email destinataire"
     },
     "sent_date": {
       "type": "string",
@@ -103,7 +142,7 @@
     "valid_until": {
       "type": "string",
       "format": "date",
-      "description": "Date de validit\u00e9 du document"
+      "description": "Date de validit\u00e9"
     },
     "admin_notes": {
       "type": "string",

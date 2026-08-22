@@ -15,14 +15,7 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
-
-function base64ToBlobUrl(base64, mimeType = 'application/pdf') {
-  if (!base64) return '';
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-  return URL.createObjectURL(new Blob([bytes], { type: mimeType }));
-}
+import { generatePdfBlobs, buildPdfDataFromBackend } from '@/lib/licensePdf';
 
 const LICENSE_TYPES = [
   { value: 'double', label: 'Licence + Certificat', icon: ShieldCheck },
@@ -194,18 +187,10 @@ export default function AdminLicenses() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 mt-2">
-                      {lic.document_url && (
-                        <a href={lic.document_url} target="_blank" rel="noreferrer"
-                          className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                          <Download size={11} /> Licence
-                        </a>
-                      )}
-                      {lic.certificate_url && (
-                        <a href={lic.certificate_url} target="_blank" rel="noreferrer"
-                          className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                          <Download size={11} /> Certificat
-                        </a>
-                      )}
+                      <a href={`/document/${lic.id}`} target="_blank" rel="noreferrer"
+                        className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                        <Download size={11} /> Voir les documents
+                      </a>
                       {lic.sent_to_email && (
                         <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
                           <Mail size={11} /> {lic.sent_to_email}
@@ -300,11 +285,11 @@ function LicenseGenerator({ artists, onClose, onGenerated }) {
       if (res.data?.error) {
         toast({ title: 'Échec', description: res.data.error, variant: 'destructive' });
       } else {
-        const docUrl = res.data.document_b64 ? base64ToBlobUrl(res.data.document_b64) : '';
-        const certUrl = res.data.certificate_b64 ? base64ToBlobUrl(res.data.certificate_b64) : '';
+        const pdfData = await buildPdfDataFromBackend(res.data);
+        const urls = await generatePdfBlobs(pdfData, licenseType);
         setPreview({
-          document_url: docUrl,
-          certificate_url: certUrl,
+          document_url: urls.license_url || '',
+          certificate_url: urls.certificate_url || '',
           license_number: res.data.license_number,
           certificate_number: res.data.certificate_number,
           sent_to: res.data.sent_to,

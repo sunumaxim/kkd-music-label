@@ -12,6 +12,7 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
+import { generatePdfBlobs, buildPdfDataFromBackend } from '@/lib/licensePdf';
 
 const LICENSE_TYPES = [
   { value: 'double', label: 'Licence + Certificat', icon: ShieldCheck, desc: 'Les deux documents (recommandé)' },
@@ -88,7 +89,22 @@ export default function LicenseManager({ user, linkedArtistId, linkedArtistName,
       if (res.data?.error) {
         toast({ title: 'Échec', description: res.data.error, variant: 'destructive' });
       } else {
-        setPreview(res.data);
+        const pdfData = await buildPdfDataFromBackend(res.data);
+        const urls = await generatePdfBlobs(pdfData, licenseType);
+        setPreview({
+          document_url: urls.license_url || '',
+          certificate_url: urls.certificate_url || '',
+          license_number: res.data.license_number,
+          certificate_number: res.data.certificate_number,
+          sent_to: res.data.sent_to,
+          _params: {
+            artist_id: activeArtistId,
+            release_id: workType === 'release' ? selectedWork : '',
+            video_id: workType === 'video' ? selectedWork : '',
+            license_type: licenseType,
+            recipient_email: user.email,
+          },
+        });
         toast({ title: 'Document généré', description: 'Prévisualisez, puis envoyez ou téléchargez.' });
       }
     } catch (err) {
@@ -99,17 +115,19 @@ export default function LicenseManager({ user, linkedArtistId, linkedArtistName,
   };
 
   const handleSend = async () => {
-    if (!preview?.license_id) return;
+    if (!preview?._params) return;
     setSending(true);
     try {
-      const res = await base44.functions.invoke('sendLicenseEmail', {
-        license_id: preview.license_id,
-        recipient_email: user.email,
+      const res = await base44.functions.invoke('generateMusicLicense', {
+        ...preview._params,
+        preview_only: false,
       });
       if (res.data?.error) {
         toast({ title: 'Échec envoi', description: res.data.error, variant: 'destructive' });
       } else {
         toast({ title: 'Email envoyé', description: `Documents envoyés à ${res.data.sent_to}.` });
+        if (preview?.document_url?.startsWith('blob:')) URL.revokeObjectURL(preview.document_url);
+        if (preview?.certificate_url?.startsWith('blob:')) URL.revokeObjectURL(preview.certificate_url);
         setPreview(null);
         setSelectedWork('');
         queryClient.invalidateQueries({ queryKey: ['my-licenses'] });
@@ -195,7 +213,11 @@ export default function LicenseManager({ user, linkedArtistId, linkedArtistName,
                 <Button variant="outline" size="sm" className="gap-2"><Download size={14} /> Certificat</Button>
               </a>
             )}
-            <Button variant="ghost" size="sm" onClick={() => { setPreview(null); setSelectedWork(''); }}>
+            <Button variant="ghost" size="sm" onClick={() => {
+              if (preview?.document_url?.startsWith('blob:')) URL.revokeObjectURL(preview.document_url);
+              if (preview?.certificate_url?.startsWith('blob:')) URL.revokeObjectURL(preview.certificate_url);
+              setPreview(null); setSelectedWork('');
+            }}>
               <Plus size={14} /> Nouveau
             </Button>
             <Button size="sm" onClick={handleSend} disabled={sending} className="gap-2 ml-auto">
@@ -309,18 +331,10 @@ export default function LicenseManager({ user, linkedArtistId, linkedArtistName,
                         <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
                       </div>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {lic.document_url && (
-                          <a href={lic.document_url} target="_blank" rel="noreferrer"
-                            className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                            <Download size={10} /> Licence
-                          </a>
-                        )}
-                        {lic.certificate_url && (
-                          <a href={lic.certificate_url} target="_blank" rel="noreferrer"
-                            className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                            <Download size={10} /> Certificat
-                          </a>
-                        )}
+                        <a href={`/document/${lic.id}`} target="_blank" rel="noreferrer"
+                          className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                          <Download size={10} /> Voir les documents
+                        </a>
                         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                           <Calendar size={10} />
                           {lic.sent_date ? format(new Date(lic.sent_date), 'dd MMM yyyy', { locale: fr }) : 'En attente'}
