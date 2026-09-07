@@ -3,29 +3,24 @@ import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  Home, Compass, Library, ListMusic, Video, Users, CalendarDays,
-  Newspaper, Handshake, Ticket, ScanLine, LayoutDashboard, ShieldCheck, Music2,
+  Home, Library, ListMusic, Video, Users, CalendarDays,
+  Newspaper, Handshake, Ticket, LayoutDashboard, ShieldCheck, Music2,
 } from 'lucide-react';
 
 const mainNav = [
   { label: 'Accueil', path: '/', icon: Home },
   { label: 'Musique', path: '/musique', icon: Music2 },
-  { label: 'Explorer', path: '/explorer', icon: Compass },
-  { label: 'Bibliothèque', path: '/mes-achats', icon: Library },
-  { label: 'Playlists', path: '/playlists', icon: ListMusic },
-];
-
-const browseNav = [
   { label: 'Vidéos', path: '/videos', icon: Video },
   { label: 'Artistes', path: '/artistes', icon: Users },
   { label: 'Événements', path: '/evenements', icon: CalendarDays },
   { label: 'Actualités', path: '/actualites', icon: Newspaper },
-  { label: 'Partenaires', path: '/partenaires', icon: Handshake },
 ];
 
 const libraryNav = [
+  { label: 'Bibliothèque', path: '/mes-achats', icon: Library },
+  { label: 'Playlists', path: '/playlists', icon: ListMusic },
   { label: 'Mes billets', path: '/mes-billets', icon: Ticket },
-  { label: "Contrôle d'accès", path: '/controle-acces', icon: ScanLine },
+  { label: 'Partenaires', path: '/partenaires', icon: Handshake },
 ];
 
 function NavLink({ item, active }) {
@@ -68,13 +63,6 @@ export default function PublicSidebar() {
         {mainNav.map((l) => (
           <NavLink key={l.path} item={l} active={isActive(l.path)} />
         ))}
-
-        <div className="pt-3 mt-3 border-t border-border/20">
-          <p className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50">Parcourir</p>
-          {browseNav.map((l) => (
-            <NavLink key={l.path} item={l} active={isActive(l.path)} />
-          ))}
-        </div>
 
         <div className="pt-3 mt-3 border-t border-border/20">
           <p className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50">Bibliothèque</p>
