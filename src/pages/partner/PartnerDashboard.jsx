@@ -4,9 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, Music, Bell, Clock, CheckCircle, XCircle,
-  ArrowRight, LogOut, Trash2, Plus, ExternalLink,
+  ArrowRight, LogOut, Trash2, Plus, ExternalLink, Pencil,
   User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
-  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet, Eye, Video as VideoIcon
+  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet, Eye, Video as VideoIcon, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -68,10 +68,20 @@ export default function PartnerDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
   const [showPublishForm, setShowPublishForm] = useState(false);
+  const [editingPublication, setEditingPublication] = useState(null);
   const [showPublishEventForm, setShowPublishEventForm] = useState(false);
   const [showAccessForm, setShowAccessForm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletingPubId, setDeletingPubId] = useState(null);
   const queryClient = useQueryClient();
+
+  const deletePubMutation = useMutation({
+    mutationFn: (id) => base44.entities.PartnerPublication.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-publications'] });
+      setDeletingPubId(null);
+    },
+  });
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -221,11 +231,15 @@ export default function PartnerDashboard() {
         </div>
       </header>
 
-      {/* Overlay PublishForm */}
-      {showPublishForm && (
+      {/* Overlay PublishForm (création ou édition) */}
+      {(showPublishForm || editingPublication) && (
         <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-8">
-            <PublishForm user={user} onClose={() => setShowPublishForm(false)} />
+            <PublishForm
+              user={user}
+              editPublication={editingPublication}
+              onClose={() => { setShowPublishForm(false); setEditingPublication(null); }}
+            />
           </div>
         </div>
       )}
@@ -495,6 +509,7 @@ export default function PartnerDashboard() {
               <div className="space-y-3">
                 {myPublications.map(pub => {
                   const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
+                  const canManage = pub.status === 'en_attente';
                   return (
                     <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4">
                       <div className="flex items-start gap-3">
@@ -507,17 +522,47 @@ export default function PartnerDashboard() {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="font-heading font-bold text-sm">{pub.title}</p>
-                              <p className="text-xs text-muted-foreground">{pub.artist_name}</p>
+                            <div className="min-w-0">
+                              <p className="font-heading font-bold text-sm truncate">{pub.title}</p>
+                              <p className="text-xs text-muted-foreground truncate">{pub.artist_name}</p>
                             </div>
-                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold ${st.color}`}>{st.label}</span>
+                              {canManage && (
+                                <>
+                                  <button
+                                    onClick={() => setEditingPublication(pub)}
+                                    className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                    title="Modifier"
+                                  >
+                                    <Pencil size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm('Supprimer cette publication ? Cette action est irréversible.')) {
+                                        setDeletingPubId(pub.id);
+                                        deletePubMutation.mutate(pub.id);
+                                      }
+                                    }}
+                                    disabled={deletingPubId === pub.id}
+                                    className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                                    title="Supprimer"
+                                  >
+                                    {deletingPubId === pub.id
+                                      ? <Loader2 size={13} className="animate-spin" />
+                                      : <Trash2 size={13} />}
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
-                            <a href={pub.streaming_link} target="_blank" rel="noreferrer"
-                              className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                              <ExternalLink size={10} /> Voir le lien
-                            </a>
+                            {pub.streaming_link && (
+                              <a href={pub.streaming_link} target="_blank" rel="noreferrer"
+                                className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                                <ExternalLink size={10} /> Voir le lien
+                              </a>
+                            )}
                             <span className="text-[11px] text-muted-foreground">
                               {new Date(pub.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>

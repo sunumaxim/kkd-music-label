@@ -35,37 +35,38 @@ const PLATFORMS = [
   { value: 'soundcloud', label: 'SoundCloud', placeholder: 'https://soundcloud.com/...' },
 ];
 
-export default function PublishForm({ user, onClose }) {
+export default function PublishForm({ user, onClose, editPublication }) {
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(1);
-  const [contentType, setContentType] = useState(null);
+  const isEditing = !!editPublication;
+  const [step, setStep] = useState(isEditing ? 2 : 1);
+  const [contentType, setContentType] = useState(editPublication?.content_type || null);
   const [linkMode, setLinkMode] = useState(false);
   const [uploads, setUploads] = useState({ cover: false, file: false, photo: false, tracks: {} });
   const isUploading = uploads.cover || uploads.file || uploads.photo || Object.values(uploads.tracks).some(Boolean);
   const setUpload = (key, val) => setUploads((prev) => ({ ...prev, [key]: val }));
   const setTrackUpload = (idx, val) => setUploads((prev) => ({ ...prev, tracks: { ...prev.tracks, [idx]: val } }));
   const [done, setDone] = useState(false);
-  const [showLinks, setShowLinks] = useState(false);
-  const [newArtist, setNewArtist] = useState(false);
+  const [showLinks, setShowLinks] = useState(!!editPublication?.streaming_link);
+  const [newArtist, setNewArtist] = useState(isEditing ? !editPublication?.artist_id : false);
   const [dupCheck, setDupCheck] = useState({ loading: false, duplicates: [], checked: false });
 
   const [form, setForm] = useState({
-    title: '',
-    artist_id: '',
-    artist_name: user?.full_name || '',
-    featuring_artist: '',
-    featuring_artist_id: '',
-    description: '',
-    cover_url: '',
-    file_url: '',
-    tracks: [],
-    is_for_sale: false,
-    price: 0,
-    preview_start: 0,
-    streaming_platform: 'spotify',
-    streaming_link: '',
-    new_artist_genre: '',
-    new_artist_photo_url: '',
+    title: editPublication?.title || '',
+    artist_id: editPublication?.artist_id || '',
+    artist_name: editPublication?.artist_name || user?.full_name || '',
+    featuring_artist: editPublication?.featuring_artist || '',
+    featuring_artist_id: editPublication?.featuring_artist_id || '',
+    description: editPublication?.description || '',
+    cover_url: editPublication?.cover_url || '',
+    file_url: editPublication?.file_url || '',
+    tracks: editPublication?.tracks || [],
+    is_for_sale: editPublication?.is_for_sale || false,
+    price: editPublication?.price || 0,
+    preview_start: editPublication?.preview_start || 0,
+    streaming_platform: editPublication?.streaming_platform || 'spotify',
+    streaming_link: editPublication?.streaming_link || '',
+    new_artist_genre: editPublication?.new_artist_genre || '',
+    new_artist_photo_url: editPublication?.new_artist_photo_url || '',
   });
 
   const set = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
@@ -169,7 +170,9 @@ export default function PublishForm({ user, onClose }) {
   };
 
   const mutation = useMutation({
-    mutationFn: (data) => base44.entities.PartnerPublication.create(data),
+    mutationFn: (data) => isEditing
+      ? base44.entities.PartnerPublication.update(editPublication.id, data)
+      : base44.entities.PartnerPublication.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-publications'] });
       setDone(true);
@@ -230,9 +233,13 @@ export default function PublishForm({ user, onClose }) {
         <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-5">
           <CheckCircle size={40} className="text-green-400" />
         </div>
-        <h3 className="font-display text-xl font-extrabold mb-2">Publication envoyée !</h3>
+        <h3 className="font-display text-xl font-extrabold mb-2">
+          {isEditing ? 'Publication mise à jour !' : 'Publication envoyée !'}
+        </h3>
         <p className="text-sm text-muted-foreground max-w-xs mb-6">
-          L'équipe KKD va examiner votre contenu. Dès validation, il sera automatiquement disponible et écoutable sur la plateforme.
+          {isEditing
+            ? 'Vos modifications ont été enregistrées. L\'équipe KKD réexaminera votre contenu.'
+            : "L'équipe KKD va examiner votre contenu. Dès validation, il sera automatiquement disponible et écoutable sur la plateforme."}
         </p>
         <Button onClick={onClose} variant="outline">Retour au tableau de bord</Button>
       </motion.div>
@@ -307,14 +314,18 @@ export default function PublishForm({ user, onClose }) {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => setStep(1)} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={20} />
-        </button>
+        {!isEditing && (
+          <button onClick={() => setStep(1)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={20} />
+          </button>
+        )}
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <SelIcon size={16} className="text-primary" />
           </div>
-          <p className="font-heading font-bold text-sm leading-none">{selected?.label}</p>
+          <p className="font-heading font-bold text-sm leading-none">
+            {isEditing ? 'Modifier la publication' : selected?.label}
+          </p>
         </div>
       </div>
 
