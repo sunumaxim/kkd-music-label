@@ -7,10 +7,12 @@ import {
   Newspaper, Handshake, Ticket, LayoutDashboard, ShieldCheck, Music2,
 } from 'lucide-react';
 
-const mainNav = [
-  { label: 'Accueil', path: '/', icon: Home },
+const musicNav = [
   { label: 'Musique', path: '/musique', icon: Music2 },
   { label: 'Vidéos', path: '/videos', icon: Video },
+];
+
+const artistNav = [
   { label: 'Artistes', path: '/artistes', icon: Users },
   { label: 'Événements', path: '/evenements', icon: CalendarDays },
   { label: 'Actualités', path: '/actualites', icon: Newspaper },
@@ -60,9 +62,21 @@ export default function PublicSidebar() {
         </Link>
       </div>
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-        {mainNav.map((l) => (
-          <NavLink key={l.path} item={l} active={isActive(l.path)} />
-        ))}
+        <NavLink item={{ label: 'Accueil', path: '/', icon: Home }} active={isActive('/')} />
+
+        <div className="pt-3 mt-1">
+          <p className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-primary/60">Musique</p>
+          {musicNav.map((l) => (
+            <NavLink key={l.path} item={l} active={isActive(l.path)} />
+          ))}
+        </div>
+
+        <div className="pt-3 mt-1">
+          <p className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-primary/60">Artistes</p>
+          {artistNav.map((l) => (
+            <NavLink key={l.path} item={l} active={isActive(l.path)} />
+          ))}
+        </div>
 
         <div className="pt-3 mt-3 border-t border-border/20">
           <p className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50">Bibliothèque</p>
