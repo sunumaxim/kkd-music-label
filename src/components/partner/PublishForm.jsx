@@ -63,6 +63,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
     is_for_sale: editPublication?.is_for_sale || false,
     price: editPublication?.price || 0,
     preview_start: editPublication?.preview_start || 0,
+    preview_duration: editPublication?.preview_duration || 30,
     streaming_platform: editPublication?.streaming_platform || 'spotify',
     streaming_link: editPublication?.streaming_link || '',
     new_artist_genre: editPublication?.new_artist_genre || '',
@@ -224,6 +225,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
       is_for_sale: isAlbum ? false : form.is_for_sale,
       price: isAlbum ? 0 : form.is_for_sale ? Number(form.price) : 0,
       preview_start: isAlbum ? 0 : form.is_for_sale ? form.preview_start : 0,
+      preview_duration: isAlbum ? 30 : form.is_for_sale ? Number(form.preview_duration) || 30 : 30,
     });
   };
 
@@ -490,7 +492,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
-                    <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 30s puis achat.</p>
+                    <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 25-30s puis achat obligatoire.</p>
                   </div>
                   <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} disabled={isUploading} />
                 </div>
@@ -503,6 +505,19 @@ export default function PublishForm({ user, onClose, editPublication }) {
                     {form.file_url && (
                       <PreviewSnippetSelector fileUrl={form.file_url} value={form.preview_start} onChange={(v) => set('preview_start', v)} />
                     )}
+                    <div>
+                      <Label className="text-xs mb-1.5 block">Durée de l'extrait gratuit</Label>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => set('preview_duration', 25)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${Number(form.preview_duration) === 25 ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                          25 secondes
+                        </button>
+                        <button type="button" onClick={() => set('preview_duration', 30)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${Number(form.preview_duration) === 30 ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground hover:bg-secondary/80'}`}>
+                          30 secondes
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

@@ -225,6 +225,7 @@ export default function BuyCard({ item, itemType }) {
           protectedFileUri={item.protected_file_uri}
           audioUrl={item.protected_file_uri ? null : (video ? item.video_file_url : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)))}
           previewStart={item.preview_start || 0}
+          duration={item.preview_duration || 30}
           isVideo={video}
         />
       )}

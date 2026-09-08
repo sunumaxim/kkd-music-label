@@ -194,8 +194,8 @@ export default function ReleaseDetail() {
           </div>
         )}
 
-        {/* Liens de streaming externes — masqués si contenu payant (débloqués après achat via BuyCard) */}
-        {hasExternal && !effectivelyPaid && (
+        {/* Liens de streaming externes — visibles sur toutes les sorties (gratuites et payantes) */}
+        {hasExternal && (
           <StreamingLinks
             spotify={release.spotify_url}
             youtube={release.youtube_url}

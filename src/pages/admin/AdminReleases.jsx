@@ -29,6 +29,11 @@ const FIELDS = [
   { key: 'is_for_sale', label: 'Mettre en vente', type: 'boolean', placeholder: 'Vendre avant disponibilité officielle' },
   { key: 'price', label: 'Prix (FCFA)', type: 'number', placeholder: '0 = non vendu' },
   { key: 'protected_file_uri', label: 'Fichier vendu (audio)', type: 'privatefile', placeholder: 'Fichier audio privé vendu après achat', isVideo: false },
+  { key: 'preview_start', label: 'Début extrait (secondes)', type: 'number', placeholder: '0' },
+  { key: 'preview_duration', label: 'Durée extrait gratuit', type: 'select', options: [
+    { value: 25, label: '25 secondes' },
+    { value: 30, label: '30 secondes' },
+  ]},
 ];
 
 export default function AdminReleases() {

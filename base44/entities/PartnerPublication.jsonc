@@ -118,7 +118,12 @@
     "preview_start": {
       "type": "number",
       "default": 0,
-      "description": "D\u00e9but de l'extrait d'\u00e9coute gratuit de 30s (secondes)"
+      "description": "D\u00e9but de l'extrait d'\u00e9coute gratuit (secondes)"
+    },
+    "preview_duration": {
+      "type": "number",
+      "default": 30,
+      "description": "Dur\u00e9e de l'extrait gratuit en secondes (25 ou 30, choisi par l'uploadeur)"
     },
     "status": {
       "type": "string",
