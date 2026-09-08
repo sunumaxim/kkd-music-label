@@ -1,17 +1,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Music, Video, ShoppingBag, ListMusic, Compass } from 'lucide-react';
+import { Home, Search, Music, Users, Library } from 'lucide-react';
 
 const TABS = [
   { label: 'Accueil', path: '/', icon: Home },
-  { label: 'Explorer', path: '/explorer', icon: Compass },
-  { label: 'Playlists', path: '/playlists', icon: ListMusic },
+  { label: 'Musique', path: '/musique', icon: Music },
+  { label: 'Artistes', path: '/artistes', icon: Users },
   { label: 'Rechercher', path: '/recherche', icon: Search },
-  { label: 'Achats', path: '/mes-achats', icon: ShoppingBag },
+  { label: 'Bibliothèque', path: '/mes-achats', icon: Library },
 ];
 
 // Deep child routes that should hide the bottom tabs
-const DEEP_ROUTES = ['/artistes/', '/actualites/', '/musique/', '/videos/'];
+const DEEP_ROUTES = ['/artistes/', '/actualites/', '/musique/', '/videos/', '/evenements/'];
 
 export default function MobileBottomTabs() {
   const location = useLocation();
