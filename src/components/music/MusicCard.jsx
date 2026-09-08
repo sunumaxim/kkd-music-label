@@ -6,7 +6,7 @@ import { useMyPurchases } from '@/hooks/useMyPurchases';
 import { Play, Pause, Music, ShoppingBag, Loader2 } from 'lucide-react';
 import { slugify } from '@/lib/slugify';
 import StreamingChips from '@/components/shared/StreamingChips';
-import { base44 } from '@/api/base44Client';
+import { fetchProtectedPreview } from '@/lib/previewAudio';
 
 /**
  * Carte musicale style Spotify (sombre, pochette dessus, pastilles plateformes au bas).
@@ -95,23 +95,23 @@ export default function MusicCard({ release }) {
       return;
     }
 
-    // Démarrer l'extrait
-    setPreviewState('loading');
-    const source = release.protected_file_uri || release.audio_file_url;
-    if (!source) {
+    // Démarrer l'extrait — via fonction backend sécurisée (jamais d'URL signée exposée)
+    if (!release.protected_file_uri) {
       setPreviewState('idle');
       return;
     }
 
+    setPreviewState('loading');
     try {
       let url = previewUrl;
       if (!url) {
-        if (String(source).startsWith('http')) {
-          url = source;
-        } else {
-          const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: source });
-          url = res.signed_url;
-        }
+        url = await fetchProtectedPreview({
+          itemType: 'release',
+          itemId: release.id,
+          previewStart,
+          previewDuration,
+        });
+        if (!url) { setPreviewState('idle'); return; }
         setPreviewUrl(url);
       }
       const a = audioRef.current;

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Play, Pause, Lock } from 'lucide-react';
+import { fetchProtectedPreview } from '@/lib/previewAudio';
 
 /**
- * PaidPreview — plays a 30s free excerpt of a paid track.
- * The full file stays protected (private) and is only unlocked after purchase.
+ * PaidPreview — joue un extrait gratuit de 25-30s d'un contenu payant.
+ * L'extrait est récupéré via la fonction backend getProtectedPreview qui
+ * ne renvoie QUE la portion audio tronquée — l'URL du fichier complet
+ * n'est jamais exposée au client.
  */
-export default function PaidPreview({ protectedFileUri, audioUrl, previewStart = 0, duration = 30, isVideo = false }) {
+export default function PaidPreview({ itemType, itemId, previewStart = 0, duration = 30, isVideo = false }) {
   const [url, setUrl] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -15,16 +17,11 @@ export default function PaidPreview({ protectedFileUri, audioUrl, previewStart =
 
   useEffect(() => {
     let active = true;
+    if (!itemType || !itemId) { setLoading(false); return; }
     (async () => {
-      const source = audioUrl || protectedFileUri;
-      if (!source) { if (active) setLoading(false); return; }
       try {
-        if (source.startsWith('http')) {
-          if (active) setUrl(source);
-        } else {
-          const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: source });
-          if (active) setUrl(res.signed_url);
-        }
+        const blobUrl = await fetchProtectedPreview({ itemType, itemId, previewStart, previewDuration: duration });
+        if (active) setUrl(blobUrl);
       } catch {
         /* noop */
       } finally {
@@ -32,7 +29,7 @@ export default function PaidPreview({ protectedFileUri, audioUrl, previewStart =
       }
     })();
     return () => { active = false; };
-  }, [protectedFileUri, audioUrl]);
+  }, [itemType, itemId, previewStart, duration]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -50,7 +47,7 @@ export default function PaidPreview({ protectedFileUri, audioUrl, previewStart =
     setProgress(Math.min(100, ((a.currentTime - previewStart) / duration) * 100));
   };
 
-  if (!protectedFileUri && !audioUrl) return null;
+  if (!itemType || !itemId) return null;
 
   return (
     <div className="bg-card border border-primary/20 rounded-2xl p-5">

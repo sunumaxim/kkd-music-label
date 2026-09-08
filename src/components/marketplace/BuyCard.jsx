@@ -219,11 +219,11 @@ export default function BuyCard({ item, itemType }) {
         Paiement via Wave ({WAVE_MERCHANT}). Ajoutez l'expéditeur à vos contacts pour un lien cliquable. Lecture sur KKD uniquement — téléchargement désactivé.
       </p>
 
-      {/* Aperçu gratuit 30s */}
-      {(item.protected_file_uri || item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)) && (
+      {/* Aperçu gratuit 25-30s — via fonction backend sécurisée (URL du fichier complet jamais exposée) */}
+      {item.protected_file_uri && (
         <PaidPreview
-          protectedFileUri={item.protected_file_uri}
-          audioUrl={item.protected_file_uri ? null : (video ? item.video_file_url : (item.audio_file_url || (item.tracks && item.tracks[0]?.audio_file_url)))}
+          itemType={itemType}
+          itemId={item.id}
           previewStart={item.preview_start || 0}
           duration={item.preview_duration || 30}
           isVideo={video}
