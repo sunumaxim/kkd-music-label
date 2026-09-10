@@ -154,6 +154,28 @@ export async function invokeLocalFunction(name, payload = {}) {
       return { success: true };
     }
 
+    case 'getProtectedPreview': {
+      const { item_type, item_id } = payload;
+      let entity;
+      if (item_type === 'release') {
+        const items = await localDb.filter('Release', { id: item_id });
+        entity = items[0];
+      } else if (item_type === 'video') {
+        const items = await localDb.filter('Video', { id: item_id });
+        entity = items[0];
+      }
+      if (!entity) return { data: { error: 'Entity not found' } };
+
+      // Architecture locale : on retourne l'URL audio directement (pas de trimming serveur)
+      const audioUrl = entity.protected_file_uri
+        || entity.audio_file_url
+        || (entity.tracks && entity.tracks[0]?.audio_file_url)
+        || (item_type === 'video' ? entity.video_file_url : null);
+
+      if (!audioUrl) return { data: { error: 'No audio file' } };
+      return { data: { audio_url: audioUrl, content_type: 'audio/mpeg' } };
+    }
+
     case 'checkArtistDuplicate': {
       const { artist_name } = payload;
       const artists = localDb.getTable('Artist');

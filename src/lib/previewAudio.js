@@ -30,6 +30,13 @@ export async function fetchProtectedPreview({ itemType, itemId, previewStart = 0
     preview_start: previewStart,
     preview_duration: previewDuration,
   });
-  if (!res.data?.audio_base64) return null;
-  return base64ToBlobUrl(res.data.audio_base64, res.data.content_type || 'audio/mpeg');
+  // Architecture production : extrait tronqué en base64 → blob URL local
+  if (res.data?.audio_base64) {
+    return base64ToBlobUrl(res.data.audio_base64, res.data.content_type || 'audio/mpeg');
+  }
+  // Architecture locale autonome : URL audio directe (demo localStorage)
+  if (res.data?.audio_url) {
+    return res.data.audio_url;
+  }
+  return null;
 }
