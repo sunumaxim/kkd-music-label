@@ -33,7 +33,7 @@ export async function invokeLocalFunction(name, payload = {}) {
           artist_name: p.artist_name || item?.artist_name,
           cover_url: item?.cover_url || item?.thumbnail_url,
           audio_file_url: item?.audio_file_url || (item?.tracks && item.tracks[0]?.audio_file_url),
-          protected_url: item?.audio_file_url || (item?.tracks && item.tracks[0]?.audio_file_url) || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          protected_url: item?.protected_file_uri || item?.audio_file_url || (item?.tracks && item.tracks[0]?.audio_file_url) || null,
           external_url: item?.spotify_url || item?.youtube_url || null,
           is_video: p.item_type === 'video',
           amount: p.amount,
@@ -64,7 +64,7 @@ export async function invokeLocalFunction(name, payload = {}) {
       const newLicense = await localDb.create('MusicLicense', {
         license_number: licenseNumber,
         certificate_number: certificateNumber,
-        artist_id: artist_id || 'art_sidy_diop',
+        artist_id: artist_id || null,
         artist_name: artist_name || 'Artiste KKD',
         release_id: release_id || null,
         release_title: work_title || 'Titre Musical',

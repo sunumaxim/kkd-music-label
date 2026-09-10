@@ -148,7 +148,7 @@ export default function BuyCard({ item, itemType }) {
       const res = await base44.functions.invoke('generateMusicLicense', {
         release_id: item.id,
         work_title: item.title,
-        artist_id: item.artist_id || 'art_sidy_diop',
+        artist_id: item.artist_id || null,
         artist_name: item.artist_name || 'Artiste KKD Music',
         license_type: selectedLicenseType === 'cinema' ? 'double' : 'master',
         signatory_name: 'Abdoulaye Sylla',

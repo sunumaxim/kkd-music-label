@@ -10,7 +10,6 @@ const ROLES = [
     key: 'admin',
     title: 'Panneau Administration',
     subtitle: 'Gestion globale de la plateforme entière',
-    email: 'admin@kkdmusic.com',
     icon: Shield,
     color: 'text-purple-400 bg-purple-500/15 border-purple-500/30',
     activeBadge: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
@@ -21,7 +20,6 @@ const ROLES = [
     key: 'label',
     title: 'Le Label KKD Music',
     subtitle: 'Catalogue, signatures & royalties artistes',
-    email: 'label@kkdmusic.com',
     icon: Building2,
     color: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
     activeBadge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
@@ -31,8 +29,7 @@ const ROLES = [
   {
     key: 'artist',
     title: 'Artiste Indépendant',
-    subtitle: 'Sidy Diop — Ventes directes & Licences sync',
-    email: 'sidy@kkdmusic.com',
+    subtitle: 'Ventes directes & Licences sync',
     icon: Mic2,
     color: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30',
     activeBadge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
@@ -42,8 +39,7 @@ const ROLES = [
   {
     key: 'fan',
     title: 'Fan & Acheteur',
-    subtitle: 'Moussa Ndiaye — Achats directs & Billetterie',
-    email: 'fan@kkdmusic.com',
+    subtitle: 'Achats directs & Billetterie',
     icon: Headphones,
     color: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
     activeBadge: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
@@ -58,10 +54,11 @@ export default function PlatformRoleSwitcher() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Find active role
-  const activeRole = ROLES.find(r => r.email === user?.email) || (
-    user?.role === 'admin' ? ROLES[0] : (user?.account_type === 'label' ? ROLES[1] : (user?.account_type === 'artist' ? ROLES[2] : ROLES[3]))
-  );
+  // Find active role based on current user's role/account_type
+  const activeRole = user?.role === 'admin' ? ROLES[0]
+    : user?.account_type === 'label' ? ROLES[1]
+    : user?.account_type === 'artist' ? ROLES[2]
+    : ROLES[3];
 
   const handleSelectRole = (roleItem) => {
     localDb.switchRole(roleItem.key);
@@ -150,7 +147,7 @@ export default function PlatformRoleSwitcher() {
                 </div>
 
                 <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] px-2 text-muted-foreground">
-                  <span>Connecté : <strong className="text-foreground">{user?.email || activeRole.email}</strong></span>
+                  <span>Connecté : <strong className="text-foreground">{user?.email || 'Invité'}</strong></span>
                   <button
                     onClick={() => navigate(activeRole.primaryPath)}
                     className="text-primary font-semibold hover:underline flex items-center gap-1"

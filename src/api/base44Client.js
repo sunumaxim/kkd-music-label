@@ -42,7 +42,18 @@ export const base44 = {
       return user;
     },
     loginWithProvider: async (_provider, redirect = '/') => {
-      const user = localDb.getCurrentUser() || PRESET_USERS.fan;
+      let user = localDb.getCurrentUser();
+      if (!user) {
+        user = {
+          id: `usr_${Date.now()}`,
+          email: `user_${Date.now()}@kkdmusic.com`,
+          full_name: 'Utilisateur KKD',
+          role: 'user',
+          account_type: 'user',
+          created_date: new Date().toISOString()
+        };
+        localDb.upsertUser(user);
+      }
       localDb.setCurrentUser(user);
       if (typeof window !== 'undefined' && redirect) {
         window.location.href = redirect;
