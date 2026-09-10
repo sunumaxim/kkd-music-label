@@ -1,74 +1,287 @@
-// KKD Music — Base44 SDK Client
-// Uses the real Base44 backend (entities, auth, functions, integrations)
-import { createClient } from '@base44/sdk';
+// KKD Music — Client API Layer
+// Mode autonome complet & persistant pour le Label, les Artistes et l'Administration
+import { localDb, createEntityProxy, PRESET_USERS } from './localStore';
+import { invokeLocalFunction } from './localFunctions';
 
-const base44 = createClient();
-
-// ── Integration alias: UploadFile → UploadPublicFile ──
-// Some app code calls UploadFile; the SDK exposes UploadPublicFile
-try {
-  const core = base44.integrations?.Core;
-  if (core && core.UploadPublicFile && !core.UploadFile) {
-    core.UploadFile = core.UploadPublicFile;
+// Proxy dynamically instantiating entity handlers
+const entitiesProxy = new Proxy({}, {
+  get: (_target, prop) => {
+    return createEntityProxy(String(prop));
   }
-} catch (e) { /* Core may be lazy-loaded — alias added on first access below */ }
+});
 
-// ── Auth: switchRole — change current user's role (used by PlatformRoleSwitcher) ──
-try {
-  if (!base44.auth.switchRole) {
-    base44.auth.switchRole = async (roleKey) => {
-      const me = await base44.auth.me();
-      if (!me) return null;
-      const roleMap = {
-        admin: { role: 'admin' },
-        label: { role: 'partner' },
-        artist: { role: 'partner' },
-        fan: { role: 'user' },
+export const base44 = {
+  entities: entitiesProxy,
+  asServiceRole: {
+    entities: entitiesProxy
+  },
+  auth: {
+    me: async () => {
+      return localDb.getCurrentUser();
+    },
+    isAuthenticated: async () => {
+      return Boolean(localDb.getCurrentUser());
+    },
+    loginViaEmailPassword: async (email, _password) => {
+      const normalized = (email || '').toLowerCase().trim();
+      let user = localDb.getUserByEmail(normalized);
+      if (!user) {
+        const isSuperAdmin = normalized === 'admin@kkdmusic.com' || normalized === 'storesmaxim@gmail.com';
+        user = {
+          id: `usr_${Date.now()}`,
+          email: normalized,
+          full_name: normalized.split('@')[0],
+          role: isSuperAdmin ? 'admin' : 'user',
+          account_type: isSuperAdmin ? 'admin' : 'user',
+          avatar_url: `https://images.unsplash.com/photo-${isSuperAdmin ? '1534528741775-53994a69daeb' : '1535713875002-d1d0cf377fde'}?auto=format&fit=crop&w=200&q=80`,
+          created_date: new Date().toISOString()
+        };
+        localDb.upsertUser(user);
+      }
+      localDb.setCurrentUser(user);
+      return user;
+    },
+    loginWithProvider: async (_provider, redirect = '/') => {
+      let user = localDb.getCurrentUser();
+      if (!user) {
+        user = {
+          id: `usr_${Date.now()}`,
+          email: `user_${Date.now()}@kkdmusic.com`,
+          full_name: 'Utilisateur KKD',
+          role: 'user',
+          account_type: 'user',
+          created_date: new Date().toISOString()
+        };
+        localDb.upsertUser(user);
+      }
+      localDb.setCurrentUser(user);
+      if (typeof window !== 'undefined' && redirect) {
+        window.location.href = redirect;
+      }
+      return user;
+    },
+    register: async ({ email, full_name, role = 'user' }) => {
+      const normalized = (email || '').toLowerCase().trim();
+      let user = localDb.getUserByEmail(normalized);
+      if (!user) {
+        const isSuperAdmin = normalized === 'admin@kkdmusic.com' || normalized === 'storesmaxim@gmail.com';
+        user = {
+          id: `usr_${Date.now()}`,
+          email: normalized,
+          full_name: full_name || normalized.split('@')[0],
+          role: isSuperAdmin ? 'admin' : (role === 'partner' ? 'partner' : 'user'),
+          account_type: isSuperAdmin ? 'admin' : (role === 'partner' ? 'artist' : 'user'),
+          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+          created_date: new Date().toISOString()
+        };
+        localDb.upsertUser(user);
+      }
+      localDb.setCurrentUser(user);
+      return { success: true, user };
+    },
+    verifyOtp: async ({ email }) => {
+      const user = localDb.getCurrentUser() || {
+        id: `usr_${Date.now()}`,
+        email: email || 'user@kkdmusic.com',
+        role: 'user',
+        full_name: 'Utilisateur KKD'
       };
-      const updates = roleMap[roleKey] || {};
-      return base44.auth.updateMe(updates);
-    };
-  }
-} catch (e) { /* base44.auth may not be extensible */ }
-
-// ── Users: extend with management methods used by admin pages ──
-try {
-  if (!base44.users.list) {
-    base44.users.list = async () => base44.entities.User.list();
-  }
-  if (!base44.users.get) {
-    base44.users.get = async (idOrEmail) => {
-      const list = await base44.entities.User.list();
-      return list.find(u => u.id === idOrEmail || u.email?.toLowerCase() === idOrEmail?.toLowerCase()) || null;
-    };
-  }
-  if (!base44.users.update) {
-    base44.users.update = async (id, data) => base44.entities.User.update(id, data);
-  }
-  if (!base44.users.delete) {
-    base44.users.delete = async (id) => base44.entities.User.delete(id);
-  }
-  if (!base44.users.promoteToAdmin) {
-    base44.users.promoteToAdmin = async (emailOrId) => {
-      const list = await base44.entities.User.list();
-      const user = list.find(u => u.id === emailOrId || u.email?.toLowerCase() === emailOrId?.toLowerCase());
+      localDb.setCurrentUser(user);
+      return { access_token: 'kkd_local_token_' + Date.now(), user };
+    },
+    resendOtp: async () => ({ success: true }),
+    resetPasswordRequest: async () => ({ success: true }),
+    resetPassword: async () => ({ success: true }),
+    setToken: (token) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('base44_token', token);
+      }
+    },
+    logout: async (redirect) => {
+      localDb.setCurrentUser(null);
+      if (typeof window !== 'undefined' && redirect && typeof redirect === 'string' && redirect.startsWith('/')) {
+        window.location.href = redirect;
+      }
+    },
+    updateMe: async (updates) => {
+      const current = localDb.getCurrentUser() || {};
+      const updated = { ...current, ...updates };
+      localDb.setCurrentUser(updated);
+      return updated;
+    },
+    switchRole: (roleKey) => {
+      return localDb.switchRole(roleKey);
+    },
+    redirectToLogin: (url) => {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login?from=' + encodeURIComponent(url || '/');
+      }
+    }
+  },
+  users: {
+    list: async () => {
+      return localDb.listUsers();
+    },
+    get: async (idOrEmail) => {
+      return localDb.getUserByEmail(idOrEmail) || localDb.listUsers().find(u => u.id === idOrEmail) || null;
+    },
+    update: async (id, data) => {
+      return localDb.upsertUser({ id, ...data });
+    },
+    delete: async (id) => {
+      return localDb.deleteUser(id);
+    },
+    inviteUser: async (email, role = 'user') => {
+      const normalized = (email || '').toLowerCase().trim();
+      let user = localDb.getUserByEmail(normalized);
+      if (!user) {
+        user = {
+          id: `usr_${Date.now()}`,
+          email: normalized,
+          full_name: normalized.split('@')[0],
+          role: role || 'user',
+          account_type: role === 'admin' ? 'admin' : (role === 'partner' ? 'artist' : 'user'),
+          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+          created_date: new Date().toISOString(),
+        };
+        localDb.upsertUser(user);
+      } else if (role && user.role !== role) {
+        user = localDb.upsertUser({ ...user, role, account_type: role === 'admin' ? 'admin' : (role === 'partner' ? 'artist' : 'user') });
+      }
+      return { success: true, user };
+    },
+    promoteToAdmin: async (emailOrId) => {
+      const all = localDb.listUsers();
+      const user = all.find(u => u.id === emailOrId || (u.email && u.email.toLowerCase() === emailOrId?.toLowerCase()));
       if (!user) return null;
-      return base44.entities.User.update(user.id, { role: 'admin' });
-    };
-  }
-  if (!base44.users.updateRole) {
-    base44.users.updateRole = async (emailOrId, newRole) => {
-      const list = await base44.entities.User.list();
-      const user = list.find(u => u.id === emailOrId || u.email?.toLowerCase() === emailOrId?.toLowerCase());
+      const updated = localDb.upsertUser({
+        ...user,
+        role: 'admin',
+        account_type: 'admin',
+        description: 'Super Administrateur KKD Music — Accès total global',
+      });
+      return updated;
+    },
+    updateRole: async (emailOrId, newRole, accountType = null) => {
+      const all = localDb.listUsers();
+      const user = all.find(u => u.id === emailOrId || (u.email && u.email.toLowerCase() === emailOrId?.toLowerCase()));
       if (!user) return null;
-      return base44.entities.User.update(user.id, { role: newRole });
-    };
-  }
-  if (!base44.users.approveArtistAccess) {
-    base44.users.approveArtistAccess = async (requestId) => {
-      return base44.entities.ArtistAccessRequest.update(requestId, { status: 'approuve' });
-    };
-  }
-} catch (e) { /* base44.users may not be extensible */ }
+      const updated = localDb.upsertUser({
+        ...user,
+        role: newRole,
+        account_type: accountType || (newRole === 'admin' ? 'admin' : newRole === 'partner' ? 'artist' : 'user'),
+      });
+      return updated;
+    },
+    approveArtistAccess: async (requestId) => {
+      const req = await localDb.get('ArtistAccessRequest', requestId);
+      if (!req) throw new Error('Demande introuvable');
+      
+      // Update request status
+      await localDb.update('ArtistAccessRequest', requestId, {
+        status: 'approuve',
+        approved_at: new Date().toISOString(),
+      });
 
-export { base44 };
+      // Target user
+      const userEmail = (req.user_email || '').toLowerCase().trim();
+      let user = localDb.getUserByEmail(userEmail);
+      if (!user) {
+        user = {
+          id: req.user_id || `usr_${Date.now()}`,
+          email: userEmail,
+          full_name: req.artist_name || userEmail.split('@')[0],
+          created_date: new Date().toISOString(),
+        };
+      }
+
+      // Check or create artist in Artist table
+      let artistId = req.artist_id;
+      if (!artistId && req.artist_name) {
+        const existingArtists = await localDb.filter('Artist', { name: req.artist_name });
+        if (existingArtists.length > 0) {
+          artistId = existingArtists[0].id;
+        } else {
+          const newArtist = await localDb.create('Artist', {
+            name: req.artist_name,
+            bio: req.message || 'Artiste Vérifié KKD Music',
+            genre: req.genre || 'Afrobeats / Mbalax',
+            is_verified: true,
+            photo_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
+          });
+          artistId = newArtist.id;
+        }
+      }
+
+      // Upgrade user to Partner
+      const accountType = req.request_type || 'artist';
+      const updatedUser = localDb.upsertUser({
+        ...user,
+        role: 'partner',
+        account_type: accountType,
+        artist_name: req.artist_name || user.full_name,
+        artist_id: artistId,
+        payout_phone: req.payout_phone || req.wave_number || user.payout_phone,
+      });
+
+      // Ensure active invite exists
+      const existingInvites = await localDb.filter('ArtistInvite', { email: userEmail });
+      if (existingInvites.length === 0) {
+        await localDb.create('ArtistInvite', {
+          email: userEmail,
+          artist_id: artistId,
+          artist_name: req.artist_name || user.full_name,
+          invite_type: accountType === 'label' ? 'label_partenaire' : 'artiste_kkd',
+          status: 'actif',
+          is_verified: true,
+          created_date: new Date().toISOString(),
+        });
+      } else {
+        await localDb.update('ArtistInvite', existingInvites[0].id, {
+          status: 'actif',
+          artist_id: artistId || existingInvites[0].artist_id,
+          artist_name: req.artist_name || existingInvites[0].artist_name,
+          is_verified: true,
+        });
+      }
+
+      return { request: req, user: updatedUser };
+    }
+  },
+  functions: {
+    invoke: async (name, payload) => {
+      return invokeLocalFunction(name, payload);
+    }
+  },
+  integrations: {
+    Core: {
+      UploadFile: async ({ file }) => {
+        if (!file) return { file_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' };
+        if (typeof file === 'string') return { file_url: file };
+        try {
+          const url = URL.createObjectURL(file);
+          return { file_url: url, url };
+        } catch {
+          return { file_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80' };
+        }
+      },
+      UploadPrivateFile: async ({ file }) => {
+        if (!file) return { file_uri: 'kkd_private_audio_master.wav' };
+        try {
+          const url = URL.createObjectURL(file);
+          return { file_uri: url, signed_url: url };
+        } catch {
+          return { file_uri: 'kkd_private_audio_master.wav' };
+        }
+      },
+      CreateFileSignedUrl: async ({ file_uri }) => {
+        return { signed_url: file_uri || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' };
+      },
+      InvokeLLM: async ({ prompt }) => {
+        return {
+          response: `KKD Music Éditorial : ${prompt ? prompt.slice(0, 100) : 'Analyse musicale de pointe pour les artistes indépendants africains.'}`
+        };
+      }
+    }
+  }
+};

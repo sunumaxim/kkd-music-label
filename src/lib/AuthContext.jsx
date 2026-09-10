@@ -31,26 +31,23 @@ export const AuthProvider = ({ children }) => {
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      // Timeout de sécurité : si me() ne répond pas en 8s, on débloque l'app
-      const currentUser = await Promise.race([
-        base44.auth.me(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('auth_timeout')), 8000)),
-      ]);
+      const currentUser = await base44.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
-      // On a public app, 401/403 just means the user is not logged in — not an error.
-      // Set user to null and let public pages render. ProtectedRoute handles auth-gated pages.
-      setUser(null);
-      setIsAuthenticated(false);
+      console.error('User auth check failed:', error);
       setIsLoadingAuth(false);
+      setIsAuthenticated(false);
       setAuthChecked(true);
-
-      // Only set authError for non-auth errors (e.g., user_not_registered)
-      if (error.status && error.status !== 401 && error.status !== 403) {
-        console.error('User auth check failed:', error);
+      
+      // If user auth fails, it might be an expired token
+      if (error.status === 401 || error.status === 403) {
+        setAuthError({
+          type: 'auth_required',
+          message: 'Authentication required'
+        });
       }
     }
   };
