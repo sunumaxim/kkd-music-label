@@ -35,7 +35,7 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
   };
 
   const handleFileUpload = async (key, file) => {
-    const result = await base44.integrations.Core.UploadFile({ file });
+    const result = await base44.integrations.Core.UploadPublicFile({ file });
     handleChange(key, result.file_url);
   };
 

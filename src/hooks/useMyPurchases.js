@@ -12,7 +12,7 @@ export function useMyPurchases() {
     queryFn: async () => {
       try {
         const res = await base44.functions.invoke('getMyPurchases', {});
-        return res.data?.purchases || [];
+        return res.data?.purchases || res.purchases || [];
       } catch {
         return [];
       }

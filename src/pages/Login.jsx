@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { localDb } from "@/api/localStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, Shield, Building2, Mic2, Headphones, Sparkles } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -26,17 +25,6 @@ export default function Login() {
       setError("Email ou mot de passe incorrect.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = (roleKey) => {
-    const user = localDb.switchRole(roleKey);
-    if (roleKey === 'admin') {
-      window.location.href = "/admin";
-    } else if (roleKey === 'label' || roleKey === 'artist') {
-      window.location.href = "/mon-espace";
-    } else {
-      window.location.href = "/musique";
     }
   };
 
@@ -78,67 +66,6 @@ export default function Login() {
           <div>
             <h1 className="font-display text-2xl font-extrabold mb-1">Connexion</h1>
             <p className="text-muted-foreground text-sm">Accédez aux espaces Label, Artistes ou Fan</p>
-          </div>
-
-          {/* Quick Access Roles Presets */}
-          <div className="bg-secondary/40 border border-border/70 rounded-2xl p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between text-xs font-bold text-foreground">
-              <span className="flex items-center gap-1.5 text-primary">
-                <Sparkles size={14} /> Connexion Rapide Partenaires
-              </span>
-              <span className="text-[10px] text-muted-foreground">1 clic</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin')}
-                className="p-2.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-left transition-all"
-              >
-                <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs mb-0.5">
-                  <Shield size={14} /> Admin
-                </div>
-                <div className="text-[10px] text-muted-foreground truncate">Plateforme globale</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('label')}
-                className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-left transition-all"
-              >
-                <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs mb-0.5">
-                  <Building2 size={14} /> Le Label
-                </div>
-                <div className="text-[10px] text-muted-foreground truncate">KKD Records</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('artist')}
-                className="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-left transition-all"
-              >
-                <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs mb-0.5">
-                  <Mic2 size={14} /> Artiste
-                </div>
-                <div className="text-[10px] text-muted-foreground truncate">Sidy Diop</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('fan')}
-                className="p-2.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-left transition-all"
-              >
-                <div className="flex items-center gap-1.5 text-blue-400 font-bold text-xs mb-0.5">
-                  <Headphones size={14} /> Fan / Acheteur
-                </div>
-                <div className="text-[10px] text-muted-foreground truncate">Moussa Ndiaye</div>
-              </button>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">ou par identifiants</span></div>
           </div>
 
           {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}

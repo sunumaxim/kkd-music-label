@@ -40,7 +40,7 @@ export default function PublishEventForm({ user, onClose }) {
     if (!file) return;
     setUploading(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       set('image_url', res.file_url);
     } finally { setUploading(false); }
   };

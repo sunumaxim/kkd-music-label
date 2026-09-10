@@ -22,12 +22,12 @@ export default function WatermarkUploader({ label, value, onChange, multiple = f
       if (multiple) {
         const urls = [];
         for (const f of Array.from(files)) {
-          const res = await base44.integrations.Core.UploadFile({ file: f });
+          const res = await base44.integrations.Core.UploadPublicFile({ file: f });
           if (res?.file_url) urls.push(res.file_url);
         }
         onChange([...(value || []), ...urls]);
       } else {
-        const res = await base44.integrations.Core.UploadFile({ file: files[0] });
+        const res = await base44.integrations.Core.UploadPublicFile({ file: files[0] });
         if (res?.file_url) onChange(res.file_url);
       }
     } finally {

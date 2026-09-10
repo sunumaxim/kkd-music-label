@@ -85,7 +85,7 @@ export default function EventPublishModal({ isOpen, onClose, user }) {
     if (!file) return;
     setUploadingFlyer(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       if (res?.file_url) {
         setField('image_url', res.file_url);
         toast({ title: 'Affiche enregistrée', description: 'Visuel officiel chargé avec succès.' });

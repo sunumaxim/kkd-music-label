@@ -95,7 +95,7 @@ export default function VideoPublishModal({ isOpen, onClose, user }) {
     if (!file) return;
     setUploadingVideo(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       if (res?.file_url) {
         setField('video_file_url', res.file_url);
         toast({ title: 'Vidéo téléchargée !', description: 'Le master vidéo est hébergé avec succès.' });
@@ -112,7 +112,7 @@ export default function VideoPublishModal({ isOpen, onClose, user }) {
     if (!file) return;
     setUploadingThumb(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       if (res?.file_url) {
         setField('thumbnail_url', res.file_url);
         toast({ title: 'Miniature téléchargée !', description: 'Visuel haute définition enregistré.' });

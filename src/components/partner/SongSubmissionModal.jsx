@@ -183,7 +183,7 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
     if (!file) return;
     setIsUploadingCover(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       const url = res.file_url || URL.createObjectURL(file);
       updateField('cover_url', url);
       updateField('cover_name', file.name);
@@ -209,7 +209,7 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
     if (!file) return;
     setIsUploadingAudio(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       const url = res.file_url || URL.createObjectURL(file);
       updateField('audio_url', url);
       updateField('audio_name', file.name);

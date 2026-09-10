@@ -247,7 +247,7 @@ export default function ShortGenerator({ audioUrl, coverUrl, title, artistName, 
     try {
       const blob = await fetch(resultUrl).then((r) => r.blob());
       const file = new File([blob], `KKD_short_${slug(title)}.${clipExt}`, { type: blob.type || 'video/webm' });
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       const url = res.file_url;
       setClipPublicUrl(url);
       return url;

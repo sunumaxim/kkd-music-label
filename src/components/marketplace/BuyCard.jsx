@@ -61,7 +61,7 @@ export default function BuyCard({ item, itemType }) {
     queryKey: ['my-access', email, item?.id],
     queryFn: async () => {
       const res = await base44.functions.invoke('getMyPurchases', { user_email: email });
-      return (res.data?.purchases || []).find((p) => p.item_id === item.id) || null;
+      return (res.data?.purchases || res.purchases || []).find((p) => p.item_id === item.id) || null;
     },
     enabled: forSale && !!email,
   });
@@ -175,7 +175,7 @@ export default function BuyCard({ item, itemType }) {
     if (!file) return;
     setUploading(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       setProof(res.file_url);
     } finally {
       setUploading(false);

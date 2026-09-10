@@ -71,7 +71,6 @@ import DevenirArtiste from './pages/DevenirArtiste.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
-import PlatformRoleSwitcher from '@/components/shared/PlatformRoleSwitcher';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -200,7 +199,6 @@ function App() {
         <Router>
           <AuthenticatedApp />
           <PublishHost />
-          <PlatformRoleSwitcher />
         </Router>
         <Toaster />
         <InstallPrompt />

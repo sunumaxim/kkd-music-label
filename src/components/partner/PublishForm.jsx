@@ -106,7 +106,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
         set('file_url', res.file_uri);
         toast({ title: 'Fichier audio chargé', description: 'Stockage privé — accessible après achat.' });
       } else {
-        const res = await base44.integrations.Core.UploadFile({ file });
+        const res = await base44.integrations.Core.UploadPublicFile({ file });
         set('file_url', res.file_url);
         toast({ title: 'Fichier audio chargé', description: 'Écoute gratuite disponible.' });
       }
@@ -121,7 +121,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
     if (!file) return;
     setUpload('cover', true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       set('cover_url', res.file_url);
       toast({ title: 'Pochette chargée' });
     } catch (err) {
@@ -136,7 +136,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
     if (!file) return;
     setUpload('photo', true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       set('new_artist_photo_url', res.file_url);
     } catch (err) {
       toast({ title: 'Échec de la photo', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
@@ -153,7 +153,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
     if (!file) return;
     setTrackUpload(idx, true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       set('tracks', form.tracks.map((t, i) => (i === idx ? { ...t, audio_file_url: res.file_url } : t)));
       toast({ title: `Piste ${idx + 1} chargée` });
     } catch (err) {

@@ -149,7 +149,7 @@ export default function PartnerPromoVideo({ artistName }) {
     if (!file) return;
     setUploadingAudio(true);
     try {
-      const res = await base44.integrations.Core.UploadFile({ file });
+      const res = await base44.integrations.Core.UploadPublicFile({ file });
       setUploadedAudioUrl(res.file_url);
     } finally {
       setUploadingAudio(false);
