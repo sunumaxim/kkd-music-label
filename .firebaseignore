@@ -1,0 +1,12 @@
+firebase.json
+**/.*
+**/node_modules/**
+**/src/**
+**/base44/**
+firebaserc
+README.md
+eslint.config.js
+jsconfig.json
+metadata.json
+postcss.config.js
+components.json
