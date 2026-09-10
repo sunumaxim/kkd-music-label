@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { localDb } from '@/api/localStore';
+import { base44 } from '@/api/base44Client';
 import { Shield, Building2, Mic2, Headphones, ChevronDown, Check, ExternalLink, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -60,9 +60,13 @@ export default function PlatformRoleSwitcher() {
     : user?.account_type === 'artist' ? ROLES[2]
     : ROLES[3];
 
-  const handleSelectRole = (roleItem) => {
-    localDb.switchRole(roleItem.key);
+  const handleSelectRole = async (roleItem) => {
+    await base44.auth.switchRole(roleItem.key);
     setIsOpen(false);
+    // Reload to reflect role change
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
     
     // Smoothly redirect to the natural landing view for that role if helpful
     if (roleItem.key === 'admin' && !location.pathname.startsWith('/admin')) {

@@ -37,17 +37,16 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
+      // On a public app, 401/403 just means the user is not logged in — not an error.
+      // Set user to null and let public pages render. ProtectedRoute handles auth-gated pages.
+      setUser(null);
       setIsAuthenticated(false);
+      setIsLoadingAuth(false);
       setAuthChecked(true);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
+
+      // Only set authError for non-auth errors (e.g., user_not_registered)
+      if (error.status && error.status !== 401 && error.status !== 403) {
+        console.error('User auth check failed:', error);
       }
     }
   };
