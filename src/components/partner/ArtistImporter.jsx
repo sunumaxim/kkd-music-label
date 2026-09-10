@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   Search, Music2, Youtube, Loader2, CheckCircle,
   AlertCircle, X, ArrowLeft, Trash2, Import, Check,
-  ChevronRight, Users
+  ChevronRight
 } from 'lucide-react';
 
 const PLATFORMS = [

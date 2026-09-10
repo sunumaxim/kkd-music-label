@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { WAVE_PAY_LINK } from '@/lib/wave';
-import { Loader2, Upload, Calendar, MapPin, Ticket, Plus } from 'lucide-react';
+import { Loader2, Upload, Calendar, Ticket, Plus } from 'lucide-react';
 import TicketThemePicker from '@/components/events/TicketThemePicker';
 
 const TYPES = [

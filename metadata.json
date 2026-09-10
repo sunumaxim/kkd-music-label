@@ -1,0 +1,10 @@
+{
+  "name": "KKD Music",
+  "description": "Plateforme de streaming et distribution musicale pour artistes africains indépendants. Écoutez, achetez, générez licences et certificats d'authenticité, réservez vos concerts et événements.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

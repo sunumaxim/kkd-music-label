@@ -34,7 +34,7 @@ export default function ArtistPopularList({ releases = [], max = 5 }) {
       <h2 className="font-heading font-bold text-xl mb-2">Populaires</h2>
       <div>
         {popular.map((r, i) => {
-          const tracks = getReleaseTracks(r);
+          const tracks = getReleaseTracks(r, { includeLocked: true });
           const hasLocal = tracks.length > 0;
           const isCurrent = hasLocal && tracks.some((t) => t.key === player.current?.key);
           const playing = isCurrent && player.isPlaying;

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
-  Inbox, UserPlus, Clock, ArrowRight, TrendingUp,
+  Inbox, UserPlus, ArrowRight, TrendingUp,
   AlertTriangle, Bell, Megaphone
 } from 'lucide-react';
 

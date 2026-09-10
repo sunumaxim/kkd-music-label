@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import TicketCard from '@/components/events/TicketCard';
-import { Ticket, Loader2, LogIn, CalendarDays, Download } from 'lucide-react';
+import { Ticket, Loader2, LogIn, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -61,7 +61,10 @@ export default function MesBillets() {
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['my-tickets', email],
-    queryFn: () => base44.entities.Ticket.list('-created_date', 100),
+    queryFn: async () => {
+      const list = await base44.entities.Ticket.filter({ buyer_email: email });
+      return list.sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''));
+    },
     enabled: !!email,
   });
 
@@ -98,12 +101,11 @@ export default function MesBillets() {
           <div className="space-y-4">
             {tickets.map((t) => (
               <div key={t.id} className="space-y-2">
-                <TicketCard ticket={t} />
-                {t.status === 'valide' && (
-                  <Button variant="outline" size="sm" onClick={() => download(t.ticket_number)} disabled={downloading === t.ticket_number} className="gap-2 w-full">
-                    {downloading === t.ticket_number ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Télécharger mon billet
-                  </Button>
-                )}
+                <TicketCard
+                  ticket={t}
+                  onDownload={download}
+                  downloading={downloading === t.ticket_number}
+                />
               </div>
             ))}
           </div>

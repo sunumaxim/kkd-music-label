@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Check, X, Clock, Ticket, Loader2, ExternalLink, Wallet } from 'lucide-react';
+import { Check, X, Ticket, Loader2, ExternalLink, Wallet } from 'lucide-react';
 
 const STATUS = {
   en_attente: { label: 'En attente', cls: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },

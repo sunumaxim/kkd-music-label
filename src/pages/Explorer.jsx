@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Music as MusicIcon, Play, ChevronRight, Loader2, SlidersHorizontal, X, TrendingUp, Flame, Clock, Disc3, Users } from 'lucide-react';
+import { Music as MusicIcon, Play, Loader2, SlidersHorizontal, X, TrendingUp, Flame, Clock, Disc3, Users } from 'lucide-react';
 import PageMeta from '@/components/shared/PageMeta';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { usePlayer } from '@/lib/PlayerContext';

@@ -1,61 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
 import { useMyPurchases } from '@/hooks/useMyPurchases';
-import { Play, Pause, Music, ShoppingBag, Loader2 } from 'lucide-react';
+import { Play, Pause, Music, Lock, ShoppingBag, Check, Sparkles } from 'lucide-react';
 import { slugify } from '@/lib/slugify';
 import StreamingChips from '@/components/shared/StreamingChips';
-import { fetchProtectedPreview } from '@/lib/previewAudio';
 
 /**
- * Carte musicale style Spotify (sombre, pochette dessus, pastilles plateformes au bas).
- * - Gratuit : bouton play → lecteur global KKD
- * - Payant non acheté : bouton play → extrait 25-30s sur la carte → bouton "Acheter"
- * - Payant acheté (validé admin) : bouton play → lecture complète via URL signée
- * - Pastilles plateformes : colorées sur les cartes gratuites, discrètes sur les payantes
+ * Carte musicale style Spotify
+ * - Design sombre épuré, transitions fluides Spotify-grade
+ * - Musique Gratuite : Bouton vert Spotify rond pour écouter librement
+ * - Musique En Vente : STRICTEMENT IMPOSSIBLE d'écouter sans achat (Bouton Cadenas / Achat)
+ * - Badge Acheté / Badge Gratuit / Badge Prix
  */
 export default function MusicCard({ release }) {
   const player = usePlayer();
   const navigate = useNavigate();
-  const tracks = getReleaseTracks(release);
-  const freePlayable = tracks.length > 0;
-  const paid = release.is_for_sale && Number(release.price) > 0;
-  const slug = release.slug || slugify(release.title);
 
   const myPurchases = useMyPurchases();
   const myAccess = myPurchases.find((p) => p.item_id === release.id);
   const hasAccess = !!myAccess?.protected_url;
 
+  const paid = Boolean(release.is_for_sale && Number(release.price) > 0);
+  const tracks = getReleaseTracks(release, { hasPurchased: hasAccess });
+  const isPlayable = tracks.length > 0;
+  const slug = release.slug || slugify(release.title);
+
   const currentKey = player.current?.key;
   const isCurrent =
-    (freePlayable && tracks.some((t) => t.key === currentKey)) ||
+    (isPlayable && tracks.some((t) => t.key === currentKey)) ||
     (hasAccess && currentKey === release.id);
   const playing = isCurrent && player.isPlaying;
 
-  // --- État de l'extrait sur carte ---
-  const [previewState, setPreviewState] = useState('idle'); // idle | loading | playing | paused | done
-  const [previewProgress, setPreviewProgress] = useState(0);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const audioRef = useRef(null);
-
-  const previewDuration = release.preview_duration || 30;
-  const previewStart = release.preview_start || 0;
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
-  const handlePlay = async (e) => {
+  const handleAction = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Déjà acheté — lecture complète
+    // 1. Déjà acheté — lecture complète
     if (hasAccess) {
       if (isCurrent) {
         player.togglePlay();
@@ -69,12 +51,14 @@ export default function MusicCard({ release }) {
         audio_url: myAccess.protected_url,
         item_type: 'release',
         item_id: release.id,
+        is_for_sale: true,
+        is_purchased: true,
       });
       return;
     }
 
-    // Gratuit — lecteur global
-    if (freePlayable) {
+    // 2. Musique Gratuite — lecture libre comme sur Spotify
+    if (!paid && isPlayable) {
       if (isCurrent) {
         player.togglePlay();
         return;
@@ -83,74 +67,29 @@ export default function MusicCard({ release }) {
       return;
     }
 
-    // Payant non acheté — extrait sur carte
-    if (previewState === 'playing') {
-      audioRef.current?.pause();
-      setPreviewState('paused');
-      return;
-    }
-    if (previewState === 'paused' && previewUrl) {
-      audioRef.current?.play().catch(() => {});
-      setPreviewState('playing');
-      return;
-    }
-
-    // Démarrer l'extrait — via fonction backend sécurisée (jamais d'URL signée exposée)
-    if (!release.protected_file_uri) {
-      setPreviewState('idle');
-      return;
-    }
-
-    setPreviewState('loading');
-    try {
-      let url = previewUrl;
-      if (!url) {
-        url = await fetchProtectedPreview({
-          itemType: 'release',
-          itemId: release.id,
-          previewStart,
-          previewDuration,
-        });
-        if (!url) { setPreviewState('idle'); return; }
-        setPreviewUrl(url);
-      }
-      const a = audioRef.current;
-      if (!a || !url) return;
-      a.src = url;
-      a.currentTime = previewStart;
-      a.play().catch(() => {});
-      setPreviewState('playing');
-    } catch {
-      setPreviewState('idle');
-    }
+    // 3. Musique En Vente — STRICTEMENT IMPOSSIBLE D'ÉCOUTER SANS ACHAT
+    // Déclenche le service de contrôle d'accès et affiche la modale d'achat/verrouillage
+    player.playTrack({
+      key: release.id,
+      id: release.id,
+      item_id: release.id,
+      item_type: 'release',
+      title: release.title,
+      artist_name: release.artist_name,
+      cover_url: release.cover_url,
+      audio_url: release.audio_file_url || (release.tracks && release.tracks[0]?.audio_file_url),
+      is_for_sale: true,
+      access_mode: 'en_vente',
+      is_free: false,
+      price: release.price,
+    });
   };
-
-  const onTimeUpdate = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.currentTime >= previewStart + previewDuration) {
-      a.pause();
-      setPreviewState('done');
-      setPreviewProgress(100);
-      return;
-    }
-    if (a.currentTime >= previewStart) {
-      setPreviewProgress(
-        Math.min(100, ((a.currentTime - previewStart) / previewDuration) * 100)
-      );
-    }
-  };
-
-  const showBuyButton = previewState === 'done';
-  const showPreviewBar =
-    previewState === 'playing' || previewState === 'paused' || previewState === 'done';
-  const isPreviewing = previewState === 'playing' || previewState === 'paused';
 
   return (
-    <Link to={`/musique/${slug}`} className="group block">
-      <div className="rounded-xl overflow-hidden bg-[#231C18] border border-[#3A302A] transition-all group-hover:shadow-lg group-hover:-translate-y-0.5">
-        {/* Pochette */}
-        <div className="relative aspect-square overflow-hidden">
+    <Link to={`/musique/${slug}`} className="group block h-full select-none">
+      <div className="h-full rounded-2xl overflow-hidden bg-[#121212] hover:bg-[#181818] border border-white/[0.05] hover:border-white/[0.12] transition-all duration-300 group-hover:shadow-[0_16px_32px_rgba(0,0,0,0.8)] group-hover:-translate-y-1 flex flex-col p-3.5">
+        {/* Pochette avec bouton d'action Spotify */}
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-900 shrink-0 shadow-lg">
           {release.cover_url ? (
             <img
               src={release.cover_url}
@@ -159,103 +98,93 @@ export default function MusicCard({ release }) {
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, rgba(228,98,43,0.13), #231C18)' }}
-            >
-              <Music size={32} className="text-[#A6998C]/30" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+              <Music size={36} className="text-zinc-600" />
             </div>
           )}
 
-          {/* Badge prix */}
-          {paid && (
-            <span className="absolute top-2 left-2 bg-[#D9A441] text-[#0E0C0B] text-[10px] font-bold uppercase px-2 py-0.5 rounded-full z-10">
-              {Number(release.price).toLocaleString('fr-FR')} F
-            </span>
-          )}
+          {/* Badges de Statut */}
+          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+            {hasAccess ? (
+              <span className="bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+                <Check size={11} strokeWidth={3} /> Acheté
+              </span>
+            ) : paid ? (
+              <span className="bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md">
+                <Lock size={10} strokeWidth={2.5} /> {Number(release.price).toLocaleString('fr-FR')} F CFA
+              </span>
+            ) : (
+              <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md border border-white/20">
+                <Sparkles size={10} className="text-emerald-400" /> Gratuit
+              </span>
+            )}
+          </div>
 
-          {/* Indicateur lecture en cours */}
+          {/* Equalizer vert si en cours de lecture */}
           {playing && (
-            <div className="absolute top-2 right-2 bg-[#E4622B] text-[#0E0C0B] rounded-full px-2 py-1.5 flex items-end gap-0.5 h-7 z-10">
-              <span className="w-0.5 bg-[#0E0C0B] rounded-full kkd-eq-bar" style={{ height: '50%' }} />
-              <span className="w-0.5 bg-[#0E0C0B] rounded-full kkd-eq-bar" style={{ height: '80%', animationDelay: '0.2s' }} />
-              <span className="w-0.5 bg-[#0E0C0B] rounded-full kkd-eq-bar" style={{ height: '60%', animationDelay: '0.4s' }} />
+            <div className="absolute top-2.5 right-2.5 bg-[#1ed760] text-black rounded-full px-2 py-1 flex items-end gap-0.5 h-6 z-10 shadow-md">
+              <span className="w-0.5 bg-black rounded-full kkd-eq-bar" style={{ height: '50%' }} />
+              <span className="w-0.5 bg-black rounded-full kkd-eq-bar" style={{ height: '90%', animationDelay: '0.2s' }} />
+              <span className="w-0.5 bg-black rounded-full kkd-eq-bar" style={{ height: '60%', animationDelay: '0.4s' }} />
             </div>
           )}
 
-          {/* Barre de progression de l'extrait */}
-          {showPreviewBar && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40 z-10">
-              <div
-                className="h-full bg-[#E4622B] transition-all duration-150"
-                style={{ width: `${previewProgress}%` }}
-              />
-            </div>
-          )}
-
-          {/* Bouton lecture */}
-          {!showBuyButton && (
+          {/* Bouton d'action style Spotify */}
+          {paid && !hasAccess ? (
+            /* Cas Payant non acheté : Bouton Achat / Cadenas */
             <button
-              onClick={handlePlay}
-              className="absolute bottom-2 right-2 w-11 h-11 rounded-full bg-[#E4622B] text-[#0E0C0B] flex items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 z-10"
-              aria-label={playing || isPreviewing ? 'Pause' : 'Lecture'}
+              onClick={handleAction}
+              title="Musique en vente — Cliquez pour acheter"
+              className="absolute bottom-2.5 right-2.5 h-10 px-3 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center gap-1.5 shadow-2xl transition-all duration-200 z-10 opacity-90 group-hover:opacity-100 group-hover:scale-105 active:scale-95"
             >
-              {previewState === 'loading' ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : playing || previewState === 'playing' ? (
-                <Pause size={18} fill="currentColor" />
+              <ShoppingBag size={14} />
+              <span>Acheter</span>
+            </button>
+          ) : (
+            /* Cas Gratuit ou Acheté : Bouton vert Spotify rond classique */
+            <button
+              onClick={handleAction}
+              className={`absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full bg-[#1ed760] text-black flex items-center justify-center shadow-2xl transition-all duration-200 z-10 ${
+                playing
+                  ? 'opacity-100 scale-100'
+                  : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-105'
+              } hover:brightness-110 active:scale-95`}
+              aria-label={playing ? 'Pause' : 'Lecture'}
+            >
+              {playing ? (
+                <Pause size={20} fill="currentColor" />
               ) : (
-                <Play size={18} fill="currentColor" className="ml-0.5" />
+                <Play size={20} fill="currentColor" className="ml-0.5" />
               )}
             </button>
           )}
-
-          {/* Bouton Acheter (après extrait) */}
-          {showBuyButton && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate(`/musique/${slug}`);
-              }}
-              className="absolute inset-x-2 bottom-2 h-10 rounded-full bg-[#E4622B] text-[#0E0C0B] flex items-center justify-center gap-1.5 shadow-xl text-xs font-bold uppercase tracking-wide hover:brightness-110 active:scale-95 transition-all z-10"
-            >
-              <ShoppingBag size={14} /> Acheter
-            </button>
-          )}
         </div>
 
-        {/* Corps */}
-        <div className="p-3">
-          <p
-            className={`font-heading font-bold text-sm truncate ${
-              isCurrent ? 'text-[#E4622B]' : 'text-white'
-            }`}
-          >
-            {release.title}
-          </p>
-          <p className="text-xs text-[#A6998C] truncate">
-            {release.artist_name}
-            {release.release_date ? ` · ${release.release_date.slice(0, 4)}` : ''}
-          </p>
-          <StreamingChips
-            release={release}
-            variant={paid && !hasAccess ? 'discreet' : 'default'}
-          />
+        {/* Détails du morceau */}
+        <div className="pt-3 px-1 flex flex-col flex-1 justify-between gap-1">
+          <div>
+            <p
+              className={`font-display font-bold text-sm leading-snug truncate transition-colors ${
+                isCurrent ? 'text-[#1ed760]' : 'text-white group-hover:text-[#1ed760]'
+              }`}
+            >
+              {release.title}
+            </p>
+            <p className="text-xs text-zinc-400 truncate mt-0.5">
+              {release.artist_name}
+              {release.release_date ? ` · ${release.release_date.slice(0, 4)}` : ''}
+            </p>
+          </div>
+
+          <div className="mt-2 pt-1 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-zinc-500">
+            <span>{release.release_type === 'album' ? 'Album' : release.release_type === 'ep' ? 'EP' : 'Single'}</span>
+            <StreamingChips
+              release={release}
+              variant={paid && !hasAccess ? 'discreet' : 'default'}
+            />
+          </div>
         </div>
       </div>
-
-      {/* Audio caché pour l'extrait */}
-      <audio
-        ref={audioRef}
-        onTimeUpdate={onTimeUpdate}
-        onEnded={() => {
-          setPreviewState('done');
-          setPreviewProgress(100);
-        }}
-        preload="metadata"
-        className="hidden"
-      />
     </Link>
   );
 }

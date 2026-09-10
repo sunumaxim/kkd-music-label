@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Users, Music, Video, Newspaper, CalendarDays,
   LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
-  Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet, Ticket, Mic, Scissors, FileText
+  Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet, Ticket, Mic, Scissors, FileText,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -14,6 +15,12 @@ const navGroups = [
     label: null,
     links: [
       { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+    ]
+  },
+  {
+    label: 'Administration & Rôles',
+    links: [
+      { label: 'Utilisateurs & Accès', path: '/admin/utilisateurs', icon: ShieldCheck },
     ]
   },
   {

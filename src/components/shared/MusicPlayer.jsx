@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
-  Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
+  Play,
   X, Music, ExternalLink, ChevronUp, ChevronDown, ListMusic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

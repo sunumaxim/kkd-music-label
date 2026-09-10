@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, ExternalLink, Play, Pause, Music, User, ShieldCheck, ScanLine, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import TicketPurchase from '@/components/events/TicketPurchase';
+import TicketCard from '@/components/events/TicketCard';
 import BatchTicketGenerator from '@/components/events/BatchTicketGenerator';
 import UniversalPlayer, { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import CommentsSection from '@/components/shared/CommentsSection';
@@ -59,6 +60,52 @@ export default function EventDetail() {
     },
     enabled: !!event?.linked_release_ids?.length,
   });
+
+  // Billets achetés par l'utilisateur pour cet événement
+  const { data: userTickets = [], isLoading: loadingUserTickets } = useQuery({
+    queryKey: ['my-event-tickets', me?.email, event?.id],
+    queryFn: async () => {
+      if (!me?.email || !event?.id) return [];
+      const list = await base44.entities.Ticket.filter({ event_id: event.id, buyer_email: me.email });
+      return list.sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''));
+    },
+    enabled: !!me?.email && !!event?.id,
+  });
+
+  const [selectedTicketIndex, setSelectedTicketIndex] = useState(0);
+  const [showPurchaseMore, setShowPurchaseMore] = useState(false);
+  const [downloadingTicket, setDownloadingTicket] = useState(null);
+  const [showBatchGen, setShowBatchGen] = useState(false);
+
+  const handleDownloadTicket = async (ticket_number) => {
+    setDownloadingTicket(ticket_number);
+    try {
+      const res = await base44.functions.invoke('generateTicketFile', { ticket_number, app_url: window.location.origin });
+      if (res.data?.pdf) {
+        const bin = atob(res.data.pdf);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = res.data.filename || `billet-${ticket_number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDownloadingTicket(null);
+    }
+  };
+
+  const isOrganizerOrAdmin = me && (
+    me.role === 'admin' ||
+    event?.organizer_email === me.email ||
+    (Array.isArray(event?.managers) && event?.managers.includes(me.email))
+  );
 
   const shareUrl = event ? buildShareUrl('/evenements', event.slug || event.title) : '';
   const sharePreviewUrl = event ? buildSharePreviewUrl('event', event.slug || slugify(event.title)) : '';
@@ -241,26 +288,145 @@ export default function EventDetail() {
           </div>
         )}
 
-        {/* Billetterie KKD / CTA */}
-        <div className="mb-8 space-y-3">
-          {event.is_ticketed ? (
-            <TicketPurchase event={event} />
-          ) : event.ticket_url ? (
-            <a
-              href={event.ticket_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-medium px-6 py-3 rounded-full hover:bg-primary/80 transition-colors"
-            >
-              🎟️ Acheter des billets <ExternalLink size={14} />
-            </a>
-          ) : null}
+        {/* ── Client's Official Ticket Section (Quand un client a déjà acheté un ticket) ── */}
+        {userTickets.length > 0 && (
+          <div className="mb-8 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <div>
+                  <h2 className="font-display font-extrabold text-xl text-foreground flex items-center gap-2">
+                    Votre Billet d'Événement Officiel {userTickets.length > 1 && `(${userTickets.length})`}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Présentez ce QR code ou code-barres à l'entrée de la salle</p>
+                </div>
+              </div>
 
-          {/* Génération en lot — organisateurs, admins et contrôleurs autorisés */}
-          {me && (me.role === 'admin' || event.organizer_email === me.email || (event.managers && event.managers.includes(me.email))) && (
-            <BatchTicketGenerator event={event} user={me} />
-          )}
-        </div>
+              {userTickets.length > 1 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                  {userTickets.map((t, idx) => (
+                    <button
+                      key={t.id || idx}
+                      onClick={() => setSelectedTicketIndex(idx)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                        selectedTicketIndex === idx
+                          ? 'bg-primary text-white shadow-xs'
+                          : 'bg-secondary hover:bg-secondary/80 text-muted-foreground border border-border/40'
+                      }`}
+                    >
+                      Billet {idx + 1} ({t.ticket_category || 'Standard'})
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <TicketCard
+              ticket={userTickets[selectedTicketIndex] || userTickets[0]}
+              onDownload={handleDownloadTicket}
+              downloading={downloadingTicket === (userTickets[selectedTicketIndex]?.ticket_number || userTickets[0]?.ticket_number)}
+            />
+
+            {event.is_ticketed && (
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowPurchaseMore(v => !v)}
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 py-1"
+                >
+                  {showPurchaseMore ? '▲ Masquer le formulaire d\'achat' : '＋ Acheter un autre billet pour un proche ou invité'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Billetterie KKD / Formulaire d'achat (si aucun billet ou si demande de rachat) */}
+        {(userTickets.length === 0 || showPurchaseMore) && (
+          <div className="mb-8 space-y-3">
+            {event.is_ticketed ? (
+              <TicketPurchase event={event} />
+            ) : event.ticket_url ? (
+              <a
+                href={event.ticket_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-medium px-6 py-3 rounded-full hover:bg-primary/80 transition-colors"
+              >
+                🎟️ Acheter des billets <ExternalLink size={14} />
+              </a>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── Espace Contrôle d'Accès & Gestion — Strictement réservé aux Organisateurs & Administration ── */}
+        {isOrganizerOrAdmin && (
+          <div className="mb-8 bg-card border-2 border-primary/20 rounded-3xl p-5 sm:p-6 shadow-md space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-primary font-bold">
+                    Espace Sécurisé
+                  </span>
+                  <h3 className="font-display font-black text-base sm:text-lg text-foreground">
+                    Gestion & Contrôle d'Accès de l'Événement
+                  </h3>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto text-xs px-3 py-1 rounded-full font-bold bg-secondary text-foreground border border-border">
+                Rôle : {me?.role === 'admin' ? 'Administrateur' : event.organizer_email === me?.email ? 'Organisateur' : 'Contrôleur'}
+              </span>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="bg-secondary/50 rounded-xl p-3 border border-border/40">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase block">Billetterie</span>
+                <span className="font-bold text-sm text-foreground">{event.is_ticketed ? 'Activée ✅' : 'Désactivée'}</span>
+              </div>
+              <div className="bg-secondary/50 rounded-xl p-3 border border-border/40">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase block">Vendus</span>
+                <span className="font-bold text-sm text-foreground">{event.tickets_sold || 0} places</span>
+              </div>
+              <div className="bg-secondary/50 rounded-xl p-3 border border-border/40">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase block">Capacité Jauge</span>
+                <span className="font-bold text-sm text-foreground">{event.ticket_capacity > 0 ? `${event.ticket_capacity} places` : 'Illimitée'}</span>
+              </div>
+              <div className="bg-secondary/50 rounded-xl p-3 border border-border/40">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase block">Prix Standard</span>
+                <span className="font-bold text-sm text-primary">{Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>
+              </div>
+            </div>
+
+            {/* Direct Action Buttons */}
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link
+                to={`/controle-acces?event=${event.id}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-transform hover:scale-[1.02]"
+              >
+                <ScanLine size={15} /> Contrôle d'accès & Scanner les entrées
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setShowBatchGen(v => !v)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold transition-colors"
+              >
+                <Ticket size={15} className="text-primary" /> {showBatchGen ? 'Masquer le générateur de billets' : 'Générer des billets (Guichet / Lots)'}
+              </button>
+            </div>
+
+            {/* Batch Ticket Generator inside */}
+            {showBatchGen && (
+              <div className="pt-3 border-t border-border/60">
+                <BatchTicketGenerator event={event} user={me} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Share */}
         <div className="mb-8 pb-6 border-b border-border">

@@ -73,11 +73,20 @@ export default function MesAchats() {
       .finally(() => setRedeeming(false));
   }, []);
 
-  // Chargement initial si email déjà connu et pas de retour Stripe
+  // Chargement initial avec utilisateur connecté ou email en mémoire
   useEffect(() => {
-    if (loaded.current) return;
-    loaded.current = true;
-    if (email && !params.get('session_id')) loadPurchases(email);
+    async function initUser() {
+      const u = await base44.auth.me();
+      const targetEmail = u?.email || email || localStorage.getItem('kkd_purchase_email');
+      if (targetEmail) {
+        setEmail(targetEmail);
+        loadPurchases(targetEmail);
+      }
+    }
+    if (!loaded.current) {
+      loaded.current = true;
+      initUser();
+    }
   }, []);
 
   return (

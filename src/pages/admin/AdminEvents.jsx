@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -40,9 +40,10 @@ const FIELDS = [
   { key: 'ticket_theme', label: 'Thème des billets', type: 'select', options: [
     { value: 'classic', label: 'Classic (Rouge/Noir)' },
     { value: 'gold', label: 'Gold (Or/Noir)' },
-    { value: 'emerald', label: 'Emerald (Vert/Noir)' },
+    { value: 'emerald', label: 'Emerald NIA (Vert/Noir)' },
     { value: 'royal', label: 'Royal (Violet/Noir)' },
     { value: 'ocean', label: 'Ocean (Bleu/Noir)' },
+    { value: 'midnight', label: 'Midnight (Graphite/Noir)' },
   ]},
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];

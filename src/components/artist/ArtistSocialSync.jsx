@@ -3,7 +3,7 @@
  * (lecture via lien public — les connecteurs OAuth permettent d'aller plus loin)
  */
 import React, { useState } from 'react';
-import { ExternalLink, Play, Instagram, RefreshCw } from 'lucide-react';
+import { ExternalLink, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function TikTokIcon({ size = 16 }) {
@@ -83,7 +83,6 @@ export default function ArtistSocialSync({ artist }) {
               src={`${artist.instagram_url.replace(/\/$/, '')}/embed`}
               className="w-full"
               style={{ minHeight: '320px', border: 'none' }}
-              allowTransparency
               scrolling="no"
               title="Instagram"
             />

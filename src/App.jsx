@@ -66,9 +66,12 @@ import AdminTickets from './pages/admin/AdminTickets';
 import AdminStudios from './pages/admin/AdminStudios.jsx';
 import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import AdminLicenses from './pages/admin/AdminLicenses.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
+import DevenirArtiste from './pages/DevenirArtiste.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
+import PlatformRoleSwitcher from '@/components/shared/PlatformRoleSwitcher';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -140,6 +143,8 @@ const AuthenticatedApp = () => {
         <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
         <Route path="/explorer" element={<Explorer />} />
+        <Route path="/devenir-artiste" element={<DevenirArtiste />} />
+        <Route path="/demande-artiste" element={<DevenirArtiste />} />
       </Route>
 
       {/* Partner dashboard (protected) */}
@@ -158,6 +163,7 @@ const AuthenticatedApp = () => {
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<Dashboard />} />
+          <Route path="/admin/utilisateurs" element={<AdminUsers />} />
           <Route path="/admin/artistes" element={<AdminArtists />} />
           <Route path="/admin/sorties" element={<AdminReleases />} />
           <Route path="/admin/videos" element={<AdminVideos />} />
@@ -194,6 +200,7 @@ function App() {
         <Router>
           <AuthenticatedApp />
           <PublishHost />
+          <PlatformRoleSwitcher />
         </Router>
         <Toaster />
         <InstallPrompt />

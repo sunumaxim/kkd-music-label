@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, ExternalLink, Music2 } from 'lucide-react';
+import { Play, Pause, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Détection de plateforme et construction de l'URL d'embed ──

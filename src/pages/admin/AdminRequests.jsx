@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, X, Music, Video, Globe, Handshake, Radio, ExternalLink } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 
 const statusColors = {
   en_attente: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',

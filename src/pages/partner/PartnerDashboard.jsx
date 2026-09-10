@@ -3,10 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  FileText, Music, Bell, Clock, CheckCircle, XCircle,
-  ArrowRight, LogOut, Trash2, Plus, ExternalLink, Pencil,
-  User, LayoutDashboard, SendHorizonal, UserCheck, X, Megaphone,
-  Headphones, Heart, ShoppingCart, CalendarDays, Ticket, Wallet, Eye, Video as VideoIcon, Loader2
+  FileText, Music, Clock, CheckCircle, XCircle, LogOut, Trash2, Plus, ExternalLink, Pencil,
+  User, LayoutDashboard, UserCheck, Megaphone, CalendarDays, Ticket, Wallet, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -15,6 +13,7 @@ import ContractDownloader from '@/components/partner/ContractDownloader';
 import GoldLabelBadge from '@/components/shared/GoldLabelBadge';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import PublishForm from '@/components/partner/PublishForm';
+import SongSubmissionModal from '@/components/partner/SongSubmissionModal';
 import PublishEventForm from '@/components/partner/PublishEventForm';
 import PartnerPromotions from '@/components/partner/PartnerPromotions';
 import { format } from 'date-fns';
@@ -211,34 +210,72 @@ export default function PartnerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/30 bg-card/50 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+      {/* Header Spotify for Artists style */}
+      <header className="border-b border-white/[0.08] bg-[#0d1017]/80 backdrop-blur-xl sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={LOGO_URL} alt="KKD Music" className="h-10 w-auto" />
-            <div className="hidden sm:block">
-              <p className="font-heading font-bold text-sm leading-none">Espace Partenaire</p>
-              <p className="text-xs text-muted-foreground">{user?.full_name || user?.email}</p>
-            </div>
+            <Link to="/" className="flex items-center gap-2 group">
+              <img src={LOGO_URL} alt="KKD Music" className="h-9 w-auto" />
+              <div className="hidden sm:block">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-heading font-extrabold text-sm text-white tracking-wide">KKD Creator</span>
+                  <span className="text-[10px] font-mono uppercase bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded border border-primary/30">Artists</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">{user?.full_name || user?.email}</p>
+              </div>
+            </Link>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick link back to player */}
+            <Link
+              to="/"
+              className="text-xs text-zinc-300 hover:text-white px-3 py-1.5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] transition-colors hidden md:inline-flex items-center gap-1.5"
+            >
+              <Music size={13} className="text-primary" /> Voir le lecteur
+            </Link>
+
+            {isPartner && (
+              <Button
+                onClick={() => setShowPublishForm(true)}
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-white rounded-full text-xs font-bold gap-1.5 shadow-lg shadow-primary/25 px-4"
+              >
+                <Plus size={14} /> Publier
+              </Button>
+            )}
+
             {user && <NotificationBell user={user} />}
-            <Button variant="ghost" size="sm" onClick={() => base44.auth.logout('/')}
-              className="text-muted-foreground hover:text-foreground text-xs">
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => base44.auth.logout('/')}
+              className="text-zinc-400 hover:text-white text-xs rounded-full hover:bg-white/[0.08]"
+            >
               <LogOut size={14} className="mr-1" /> Déconnexion
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Overlay PublishForm (création ou édition) */}
-      {(showPublishForm || editingPublication) && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+      {/* Overlay SongSubmissionModal pour nouvelle soumission */}
+      {showPublishForm && !editingPublication && (
+        <SongSubmissionModal
+          isOpen={showPublishForm}
+          user={user}
+          onClose={() => setShowPublishForm(false)}
+        />
+      )}
+
+      {/* Overlay PublishForm pour édition d'une publication existante */}
+      {editingPublication && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-8">
             <PublishForm
               user={user}
               editPublication={editingPublication}
-              onClose={() => { setShowPublishForm(false); setEditingPublication(null); }}
+              onClose={() => setEditingPublication(null)}
             />
           </div>
         </div>
@@ -246,9 +283,9 @@ export default function PartnerDashboard() {
 
       {/* Overlay AccessRequest */}
       {showAccessForm && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl overflow-y-auto">
           <div className="max-w-lg mx-auto px-4 py-12">
-            <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="bg-[#141821] border border-white/[0.08] rounded-3xl p-6 shadow-2xl">
               <ArtistAccessRequestForm user={user} onClose={() => setShowAccessForm(false)} />
             </div>
           </div>
@@ -257,36 +294,41 @@ export default function PartnerDashboard() {
 
       {/* Overlay PublishEventForm */}
       {showPublishEventForm && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-8">
             <PublishEventForm user={user} onClose={() => setShowPublishEventForm(false)} />
           </div>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-border/30 bg-card/30 sticky top-16 z-30">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto scrollbar-none">
+      {/* Navigation tabs (Spotify for Artists style) */}
+      <div className="border-b border-white/[0.08] bg-[#0d1017]/60 backdrop-blur-md sticky top-16 z-30">
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
             {tabs.map(tab => {
               const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => changeTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3.5 text-xs font-medium whitespace-nowrap border-b-2 transition-all ${
-                    activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
                   <Icon size={14} />
                   {tab.label}
                   {tab.id === 'publications' && pendingPubs > 0 && (
-                    <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{pendingPubs}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? 'bg-black/30 text-white' : 'bg-primary text-white'}`}>
+                      {pendingPubs}
+                    </span>
                   )}
                   {tab.id === 'demandes' && pendingReqs > 0 && (
-                    <span className="bg-yellow-500 text-black text-[10px] px-1.5 py-0.5 rounded-full font-bold">{pendingReqs}</span>
+                    <span className="bg-yellow-500 text-black text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                      {pendingReqs}
+                    </span>
                   )}
                 </button>
               );
@@ -295,7 +337,7 @@ export default function PartnerDashboard() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 md:px-8 py-8">
         {!isPartner && partnerStatusResolved && user && (
           <div className="bg-secondary/40 border border-border/50 rounded-xl p-4 mb-6 text-sm text-muted-foreground">
             Vous êtes connecté en simple utilisateur. Vous pouvez soumettre une <strong>demande de service</strong> ; la soumission de contenu (sorties, vidéos, événements, promotions) est réservée aux artistes, partenaires et contributeurs.

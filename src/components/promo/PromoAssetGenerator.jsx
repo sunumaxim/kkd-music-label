@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Image as ImageIcon, Loader2, Megaphone, AlertTriangle } from 'lucide-react';
+import { Download, Loader2, Megaphone, AlertTriangle } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
 const ACCENT = '#E60000';

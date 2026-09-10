@@ -16,11 +16,11 @@ function PublicLayoutInner() {
     <div className="min-h-screen bg-background">
       <PublicSidebar />
       <PublicTopbar />
-      <main className={`pt-16 md:pl-60 ${current ? 'pb-36 md:pb-24' : 'pb-16 md:pb-0'}`}>
+      <main className={`pt-16 md:pl-64 ${current ? 'pb-36 md:pb-24' : 'pb-16 md:pb-0'}`}>
         <PromoZone placement="top_banner" />
         <Outlet />
       </main>
-      <div className={`hidden md:block md:pl-60 ${current ? 'md:pb-24' : ''}`}>
+      <div className={`hidden md:block md:pl-64 ${current ? 'md:pb-24' : ''}`}>
         <Footer />
       </div>
       <AudioAnnouncement />

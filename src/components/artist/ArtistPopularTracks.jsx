@@ -32,8 +32,8 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
     [popular, shuffled]
   );
 
-  const firstPlayable = displayList.find((r) => getReleaseTracks(r).length);
-  const firstTracks = firstPlayable ? getReleaseTracks(firstPlayable) : [];
+  const firstPlayable = displayList.find((r) => getReleaseTracks(r, { includeLocked: true }).length);
+  const firstTracks = firstPlayable ? getReleaseTracks(firstPlayable, { includeLocked: true }) : [];
   const firstIsCurrent = firstTracks.some((t) => t.key === player.current?.key);
   const firstPlaying = firstIsCurrent && player.isPlaying;
 
@@ -83,7 +83,7 @@ export default function ArtistPopularTracks({ releases = [], artist, totalPlays 
       </div>
       <div className="space-y-1">
         {displayList.map((r) => {
-          const tracks = getReleaseTracks(r);
+          const tracks = getReleaseTracks(r, { includeLocked: true });
           const hasLocal = tracks.length > 0;
           const isCurrent = hasLocal && tracks.some((t) => t.key === player.current?.key);
           const playing = isCurrent && player.isPlaying;

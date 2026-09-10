@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import TikTokPublisher from '@/components/admin/TikTokPublisher';
 import { Button } from '@/components/ui/button';
-import { Instagram, Send, CheckCircle2, AlertCircle, Loader2, Image, Music, Video, Newspaper, Calendar } from 'lucide-react';
+import { Instagram, Send, CheckCircle2, AlertCircle, Loader2, Music, Video, Newspaper, Calendar } from 'lucide-react';
 
 const CONTENT_TYPES = [
   { value: 'release', label: 'Sortie musicale', icon: Music, entity: 'Release', titleKey: 'title', subtitleKey: 'artist_name' },

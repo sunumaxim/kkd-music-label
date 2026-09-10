@@ -10,7 +10,7 @@ import QrWithLogo from '@/components/events/QrWithLogo';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Loader2, MapPin, Calendar, CheckCircle2, Ticket, ShieldCheck, LogIn, User, UserPlus, Sparkles } from 'lucide-react';
+import { Loader2, MapPin, Calendar, CheckCircle2, Ticket, ShieldCheck, User, UserPlus, Sparkles } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
 

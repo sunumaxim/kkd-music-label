@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, FileText } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import ContractDocument from './ContractDocument';
 import { downloadContractPdf } from '@/lib/contractPdf';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Copy, Check, Music, Video, Calendar, ExternalLink } from 'lucide-react';
+import { Check, Music, Video, Calendar, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const TikTokIcon = () => (

@@ -19,7 +19,7 @@ import ArtistPopularList from '@/components/artist/ArtistPopularList';
 import CarouselRow from '@/components/home/CarouselRow';
 import { usePlayer } from '@/lib/PlayerContext';
 import { getReleaseTracks } from '@/lib/releaseTracks';
-import { slugify, buildEntitySlug, buildSharePreviewUrl, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildEntitySlug, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 import { resolveEntityBySlug } from '@/lib/resolveEntity';
 
 function compact(n) {
@@ -215,21 +215,30 @@ export default function ArtistDetail() {
           {copied ? 'Copié !' : 'Partager'}
         </button>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 max-w-full">
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight break-words leading-tight">
-              {artist.name}
-            </h1>
-            {artist.is_verified && <VerifiedBadge size={26} />}
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-6xl mx-auto">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-primary font-bold bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-primary/30 flex items-center gap-1.5">
+              <VerifiedBadge size={14} /> Artiste Officiel KKD
+            </span>
+            {artist.genre && (
+              <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-300 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/[0.08]">
+                {artist.genre}
+              </span>
+            )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {compact(followers)} abonné{followers > 1 ? 's' : ''} · {compact(totalPlays)} écoutes
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-black tracking-tight break-words leading-none text-white drop-shadow-lg">
+            {artist.name}
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-300 font-medium mt-3 flex items-center gap-2">
+            <span>{compact(followers)} auditeur{followers > 1 ? 's' : ''} mensuel{followers > 1 ? 's' : ''}</span>
+            <span>•</span>
+            <span>{compact(totalPlays)} écoutes globales</span>
           </p>
         </div>
       </div>
 
-      {/* ── CORPS ── */}
-      <div className="max-w-3xl mx-auto px-4 pb-20">
+      {/* ── CORPS (Max width 6xl pour vraie expérience Spotify) ── */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-24 space-y-6">
         <ArtistActionBar
           artist={artist}
           onPlay={playFirst}
@@ -237,51 +246,129 @@ export default function ArtistDetail() {
           isPlaying={firstPlaying}
           canPlay={firstTracks.length > 0}
           onMore={() => navigate('/mon-espace')}
+          onShare={handleShare}
         />
 
-        {/* Onglets */}
-        <div className="flex items-center gap-5 sm:gap-6 border-b border-border/40 mb-4 overflow-x-auto no-scrollbar">
+        {/* Onglets style Spotify */}
+        <div className="flex items-center gap-4 sm:gap-6 border-b border-white/[0.08] mb-6 overflow-x-auto no-scrollbar">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`relative pb-3 text-sm font-bold whitespace-nowrap transition-colors ${
-                tab === t.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+              className={`relative pb-3 text-sm font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
+                tab === t.key
+                  ? 'text-white'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               {t.label}
-              {tab === t.key && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full" />}
+              {tab === t.key && (
+                <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(229,57,53,0.8)]" />
+              )}
             </button>
           ))}
         </div>
 
-        {/* APERÇU */}
+        {/* APERÇU (2 Colonnes Spotify : Populaires à gauche, À propos à droite) */}
         {tab === 'aperçu' && (
-          <>
-            <ArtistPopularList releases={popular} max={5} />
+          <div className="space-y-10">
+            <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+              {/* Colonne gauche : Titres Populaires */}
+              <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-5 md:p-6 shadow-xl">
+                <ArtistPopularList releases={popular} max={5} />
+              </div>
 
-            {artist.biography && (
-              <section className="py-6 border-t border-border/30">
-                <h2 className="font-heading font-bold text-xl mb-3">Biographie</h2>
-                <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line line-clamp-6">{artist.biography}</p>
-              </section>
-            )}
+              {/* Colonne droite : Carte À propos (Style Spotify "About") */}
+              <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-6 shadow-xl space-y-4">
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-900">
+                  {artist.photo_url ? (
+                    <img
+                      src={artist.photo_url}
+                      alt={artist.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                      <Disc3 size={40} />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+                    <p className="text-white font-bold text-lg">{compact(followers)} abonnés</p>
+                  </div>
+                </div>
 
-            <div className="py-2">
-              <StreamingLinks
-                spotify={artist.spotify_url}
-                youtube={artist.youtube_url}
-                apple_music={artist.apple_music_url}
-                audiomack={artist.audiomack_url}
-                deezer={artist.deezer_url}
-                soundcloud={artist.soundcloud_url}
-              />
+                <div>
+                  <h3 className="text-xs font-mono uppercase tracking-widest text-primary font-bold mb-1">
+                    À propos de l'artiste
+                  </h3>
+                  <p className="text-sm text-zinc-300 leading-relaxed line-clamp-4">
+                    {artist.biography || `Découvrez l'univers musical de ${artist.name} sur KKD Music.`}
+                  </p>
+                </div>
+
+                {/* Liens streaming officiels */}
+                <div className="pt-2 border-t border-white/[0.06]">
+                  <StreamingLinks
+                    spotify={artist.spotify_url}
+                    youtube={artist.youtube_url}
+                    apple_music={artist.apple_music_url}
+                    audiomack={artist.audiomack_url}
+                    deezer={artist.deezer_url}
+                    soundcloud={artist.soundcloud_url}
+                  />
+                </div>
+              </div>
             </div>
 
-            <section className="py-6 border-t border-border/30">
+            {/* Discographie Récente */}
+            {albums.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display font-bold text-xl text-white">Discographie Albums & EPs</h2>
+                  <button
+                    onClick={() => setTab('albums')}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    Tout afficher →
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {albums.slice(0, 5).map((r) => (
+                    <Link
+                      key={r.id}
+                      to={`/musique/${buildEntitySlug(r.title, r.id)}`}
+                      className="group block p-3 rounded-2xl bg-[#141821] hover:bg-[#1c222f] border border-white/[0.06] hover:border-white/[0.14] transition-all"
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-2.5 shadow-md">
+                        {r.cover_url ? (
+                          <img
+                            src={r.cover_url}
+                            alt={r.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Disc3 size={28} className="text-zinc-600" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                        {r.title}
+                      </p>
+                      <p className="text-xs text-zinc-400 capitalize mt-0.5">
+                        {r.release_type === 'ep' ? 'EP' : 'Album'} • {r.release_date ? new Date(r.release_date).getFullYear() : ''}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Artistes similaires */}
+            <section className="pt-6 border-t border-white/[0.08]">
               <SimilarArtists genre={artist.genre} artistId={artist.id} />
             </section>
-          </>
+          </div>
         )}
 
         {/* MORCEAUX */}

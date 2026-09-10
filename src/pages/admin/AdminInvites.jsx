@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, UserPlus, Building2, Calendar, AlertCircle, UserCheck, CheckCircle, XCircle, ShieldCheck, Download } from 'lucide-react';
+import { X, UserPlus, Building2, Calendar, AlertCircle, UserCheck, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
 import ArtistSelector from '@/components/partner/ArtistSelector';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import GoldLabelBadge from '@/components/shared/GoldLabelBadge';
@@ -54,6 +54,16 @@ export default function AdminInvites() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.ArtistInvite.delete(id),
     onSuccess: () => queryClient.invalidateQueries(['admin-invites']),
+  });
+
+  const approveAccessMutation = useMutation({
+    mutationFn: (requestId) => base44.users.approveArtistAccess(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-access-requests']);
+      queryClient.invalidateQueries(['admin-invites']);
+      queryClient.invalidateQueries(['admin-users-list']);
+      queryClient.invalidateQueries(['me']);
+    },
   });
 
   const updateAccessMutation = useMutation({
@@ -313,9 +323,10 @@ export default function AdminInvites() {
                 </div>
                 {req.status === 'en_attente' && (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => updateAccessMutation.mutate({ id: req.id, data: { status: 'approuve' } })}
+                    <Button size="sm" onClick={() => approveAccessMutation.mutate(req.id)}
+                      disabled={approveAccessMutation.isPending}
                       className="bg-green-600 hover:bg-green-700 text-white gap-1.5 h-8">
-                      <CheckCircle size={13} /> Approuver
+                      <CheckCircle size={13} /> {approveAccessMutation.isPending ? 'Activation…' : 'Approuver & Activer Rôle'}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => updateAccessMutation.mutate({ id: req.id, data: { status: 'refuse' } })}
                       className="gap-1.5 text-red-400 border-red-500/30 h-8">

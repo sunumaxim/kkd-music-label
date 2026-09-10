@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Play, X, Eye, ExternalLink } from 'lucide-react';
+import { Play, X, Eye, ExternalLink, Plus } from 'lucide-react';
 import PageMeta from '@/components/shared/PageMeta';
 
 const VIDEO_TYPES = [
@@ -182,14 +182,23 @@ export default function Videos() {
       <PageMeta title="Vidéos — KKD Music" description="Clips officiels, teasers, interviews et making-of KKD Music." />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <span className="text-xs font-mono text-primary tracking-widest uppercase">Visuels</span>
-          <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight mt-2">Vidéos</h1>
-          {!isLoading && (
-            <p className="text-muted-foreground mt-2 text-sm">
-              <span className="text-foreground font-medium">{filtered.length}</span> vidéo{filtered.length !== 1 ? 's' : ''}
-            </p>
-          )}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <span className="text-xs font-mono text-primary tracking-widest uppercase">Visuels & Médias</span>
+            <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight mt-2">Vidéos & Clips</h1>
+            {!isLoading && (
+              <p className="text-muted-foreground mt-2 text-sm">
+                <span className="text-foreground font-medium">{filtered.length}</span> vidéo{filtered.length !== 1 ? 's' : ''} officielle{filtered.length !== 1 ? 's' : ''} & sessions live
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish-video'))}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
+          >
+            <Plus size={16} />
+            <span>Publier un clip / vidéo</span>
+          </button>
         </div>
 
         {/* Filtres type */}

@@ -1,46 +1,69 @@
 import React from 'react';
-import { Play, Pause, Shuffle, MoreHorizontal } from 'lucide-react';
+import { Play, Pause, Shuffle, MoreHorizontal, Share2 } from 'lucide-react';
 import FollowButton from './FollowButton';
 
 /**
- * Barre d'actions du profil artiste (style Spotify) :
- * avatar + pill « Suivre/Abonné » + menu + lecture aléatoire + gros bouton Play.
+ * Barre d'actions du profil artiste (style Spotify standard) :
+ * Gros bouton Play (56px) à gauche + Suivre/Abonné + Shuffle + Partage + Plus.
  */
-export default function ArtistActionBar({ artist, onPlay, onShuffle, isPlaying, canPlay, onMore }) {
+export default function ArtistActionBar({
+  artist,
+  onPlay,
+  onShuffle,
+  isPlaying,
+  canPlay,
+  onMore,
+  onShare,
+}) {
   return (
-    <div className="flex items-center gap-3 py-4">
-      {artist.photo_url && (
-        <img
-          src={artist.photo_url}
-          alt={artist.name}
-          className="w-12 h-12 rounded-full object-cover border border-border/40 shrink-0"
-        />
-      )}
-      <FollowButton artistId={artist.id} artistName={artist.name} variant="pill" />
-
-      <button
-        onClick={onMore}
-        className="ml-auto p-2 text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Plus d'options"
-      >
-        <MoreHorizontal size={22} />
-      </button>
-
-      <button
-        onClick={onShuffle}
-        className="p-2 text-primary hover:text-primary/80 transition-colors"
-        aria-label="Lecture aléatoire"
-      >
-        <Shuffle size={20} />
-      </button>
-
+    <div className="flex items-center gap-4 py-6 flex-wrap">
+      {/* 1. Main 56px Spotify Play Button */}
       <button
         onClick={onPlay}
         disabled={!canPlay}
-        className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100 shrink-0"
+        className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:scale-100 shrink-0 cursor-pointer"
         aria-label={isPlaying ? 'Pause' : 'Lecture'}
       >
-        {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-0.5" />}
+        {isPlaying ? (
+          <Pause size={24} fill="currentColor" />
+        ) : (
+          <Play size={24} fill="currentColor" className="ml-1" />
+        )}
+      </button>
+
+      {/* 2. Follow Button */}
+      <FollowButton artistId={artist.id} artistName={artist.name} variant="pill" />
+
+      {/* 3. Shuffle Button */}
+      <button
+        onClick={onShuffle}
+        className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+        title="Lecture aléatoire"
+        aria-label="Lecture aléatoire"
+      >
+        <Shuffle size={22} />
+      </button>
+
+      {/* 4. Share Button */}
+      {onShare && (
+        <button
+          onClick={onShare}
+          className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+          title="Partager le profil"
+          aria-label="Partager le profil"
+        >
+          <Share2 size={20} />
+        </button>
+      )}
+
+      {/* 5. More Options */}
+      <button
+        onClick={onMore}
+        className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors ml-auto sm:ml-0"
+        title="Plus d'options"
+        aria-label="Plus d'options"
+      >
+        <MoreHorizontal size={22} />
       </button>
     </div>
   );

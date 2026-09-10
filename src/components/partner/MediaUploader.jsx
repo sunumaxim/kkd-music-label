@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Upload, X, Loader2, Image as ImageIcon, Music, Video, CheckCircle2, Lock } from 'lucide-react';
+import { X, Loader2, Image as ImageIcon, Music, Video, CheckCircle2, Lock } from 'lucide-react';
 
 /**
  * Zone de téléversement intuitive avec aperçu (image / audio / vidéo).

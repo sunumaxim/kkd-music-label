@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import {
   Music, Video, Disc, ListMusic, Upload,
-  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Sparkles, Lock, Eye, AlertTriangle
+  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Lock, Eye, AlertTriangle
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
@@ -221,8 +220,34 @@ export default function PublishForm({ user, onClose, editPublication }) {
       description: form.description || '',
       cover_url: form.cover_url || '',
       file_url: isAlbum ? '' : form.file_url || '',
-      tracks: isAlbum ? form.tracks.filter((t) => t.audio_file_url) : [],
-      is_for_sale: isAlbum ? false : form.is_for_sale,
+      tracks: isAlbum
+        ? form.tracks
+            .filter((t) => t.audio_file_url)
+            .map((t) => ({
+              ...t,
+              is_for_sale: Boolean(t.is_for_sale),
+              access_mode: t.is_for_sale ? 'en_vente' : 'gratuit',
+              is_free: !t.is_for_sale,
+              price: t.is_for_sale ? Number(t.price || 0) : 0,
+              access_control: t.is_for_sale ? 'paid_only' : 'free_public',
+            }))
+        : form.file_url
+        ? [
+            {
+              title: form.title.trim(),
+              audio_file_url: form.file_url,
+              is_for_sale: Boolean(form.is_for_sale),
+              access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
+              is_free: !form.is_for_sale,
+              price: form.is_for_sale ? Number(form.price) : 0,
+              access_control: form.is_for_sale ? 'paid_only' : 'free_public',
+            },
+          ]
+        : [],
+      is_for_sale: isAlbum ? false : Boolean(form.is_for_sale),
+      access_mode: isAlbum ? 'gratuit' : form.is_for_sale ? 'en_vente' : 'gratuit',
+      is_free: isAlbum ? true : !form.is_for_sale,
+      access_control: isAlbum ? 'free_public' : form.is_for_sale ? 'paid_only' : 'free_public',
       price: isAlbum ? 0 : form.is_for_sale ? Number(form.price) : 0,
       preview_start: isAlbum ? 0 : form.is_for_sale ? form.preview_start : 0,
       preview_duration: isAlbum ? 30 : form.is_for_sale ? Number(form.preview_duration) || 30 : 30,
@@ -491,10 +516,39 @@ export default function PublishForm({ user, onClose, editPublication }) {
               <div className="bg-card border border-border/50 rounded-xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-heading font-bold text-sm">Mettre en vente (exclusif KKD)</p>
-                    <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète. Payant = extrait 25-30s puis achat obligatoire.</p>
+                    <p className="font-heading font-bold text-sm">Modèle d'accès de la piste</p>
+                    <p className="text-[11px] text-muted-foreground">Gratuit = écoute complète libre. En vente = verrouillé, achat requis.</p>
                   </div>
-                  <Switch checked={form.is_for_sale} onCheckedChange={toggleSale} disabled={isUploading} />
+                  <div className="flex items-center gap-1 bg-secondary p-1 rounded-lg border border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set('is_for_sale', false);
+                        set('price', 0);
+                      }}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                        !form.is_for_sale
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'text-muted-foreground hover:text-white'
+                      }`}
+                    >
+                      Gratuit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set('is_for_sale', true);
+                        if (!form.price) set('price', 500);
+                      }}
+                      className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                        form.is_for_sale
+                          ? 'bg-amber-500 text-black shadow-sm'
+                          : 'text-muted-foreground hover:text-white'
+                      }`}
+                    >
+                      En vente
+                    </button>
+                  </div>
                 </div>
                 {form.is_for_sale && (
                   <>

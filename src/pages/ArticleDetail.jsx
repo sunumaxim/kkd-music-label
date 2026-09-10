@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Tag } from 'lucide-react';
@@ -11,7 +10,7 @@ import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } fr
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
-import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, extractIdFromSlug } from '@/lib/slugify';
 import { resolveEntityBySlug } from '@/lib/resolveEntity';
 
 const CATEGORY_LABELS = {

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import QrScanner from '@/components/shared/QrScanner';
 import ControleTicketDrawer from '@/components/controle/ControleTicketDrawer';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import { useToast } from '@/components/ui/use-toast';
 import {
   QrCode, Search, CheckCircle2, Loader2, UserPlus, Trash2,
   ScanLine, LogIn, Users, XCircle, AlertCircle, ChevronDown, ChevronUp,
-  LogOut, Repeat, ArrowRightLeft, Clock, Ticket as TicketIcon, Download, Send,
+  LogOut, Repeat, ArrowRightLeft, Clock, Ticket as TicketIcon, Download,
+  ShieldCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -32,7 +33,11 @@ const FILTERS = [
 export default function ControleAcces() {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const [selectedId, setSelectedId] = useState(null);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const paramEventId = searchParams.get('event');
+
+  const [selectedId, setSelectedId] = useState(paramEventId || null);
   const [query, setQuery] = useState('');
   const [scanValue, setScanValue] = useState('');
   const [checking, setChecking] = useState(false);
@@ -50,7 +55,7 @@ export default function ControleAcces() {
   const [ticketSearchQuery, setTicketSearchQuery] = useState('');
   const [ticketSearchResults, setTicketSearchResults] = useState([]);
   const [searchingTickets, setSearchingTickets] = useState(false);
-  const [newTicket, setNewTicket] = useState({ buyer_name: '', buyer_email: '', buyer_phone: '', buyer_location: '', amount: '', quantity: 1 });
+  const [newTicket, setNewTicket] = useState({ buyer_name: '', buyer_email: '', buyer_phone: '', buyer_location: '', amount: '', quantity: 1, ticket_category: 'Pass Standard' });
   const [creatingTicket, setCreatingTicket] = useState(false);
   const [lastCreatedTickets, setLastCreatedTickets] = useState(null);
   const [downloadingTicket, setDownloadingTicket] = useState(null);
@@ -82,16 +87,25 @@ export default function ControleAcces() {
 
   const myEvents = allEvents.filter(
     (e) =>
+      me?.role === 'admin' ||
       e.organizer_email === email ||
       (Array.isArray(e.managers) && e.managers.includes(email)) ||
       (e.artist_id && myArtistIds.includes(e.artist_id))
   );
 
+  useEffect(() => {
+    if (paramEventId && !selectedId) {
+      const match = myEvents.find(e => e.id === paramEventId);
+      if (match) setSelectedId(match.id);
+    }
+  }, [paramEventId, myEvents, selectedId]);
+
   const selected = myEvents.find((e) => e.id === selectedId) || null;
 
   // Reconnaissance rapide du lien entre l'utilisateur et l'événement sélectionné
   const accessRole = selected
-    ? selected.organizer_email === email ? 'Organisateur'
+    ? me?.role === 'admin' ? 'Administrateur'
+      : selected.organizer_email === email ? 'Organisateur'
       : (Array.isArray(selected.managers) && selected.managers.includes(email)) ? 'Contrôleur'
       : (selected.artist_id && myArtistIds.includes(selected.artist_id)) ? 'Artiste lié'
       : null
@@ -197,6 +211,8 @@ export default function ControleAcces() {
         buyer_location: newTicket.buyer_location,
         amount: Number(newTicket.amount) || selected.ticket_price || 0,
         quantity: Number(newTicket.quantity) || 1,
+        ticket_category: newTicket.ticket_category || 'Pass Standard',
+        ticket_theme: selected.ticket_theme || 'classic',
       });
       const tickets = res?.tickets || res?.data?.tickets || (res?.ticket ? [res.ticket] : []);
       if (tickets.length > 0) {
@@ -262,6 +278,11 @@ export default function ControleAcces() {
           (t.ticket_number || '').toLowerCase().includes(q)
         );
       }
+      // Filtrage strict : seuls les organisateurs voient les billets de leurs propres événements
+      const myEventIdSet = new Set(myEvents.map(e => e.id));
+      if (me?.role !== 'admin') {
+        results = results.filter(t => myEventIdSet.has(t.event_id));
+      }
       setTicketSearchResults(results);
     } catch (e) {
       setTicketSearchResults([]);
@@ -277,10 +298,26 @@ export default function ControleAcces() {
         <p className="text-sm text-muted-foreground mb-6">Scannez, validez les entrées/sorties et suivez les visiteurs en temps réel.</p>
 
         {myEvents.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
-            <Users size={40} className="mx-auto mb-4 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground mb-2">Vous n'avez aucun événement à contrôler.</p>
-            <Link to="/login"><Button variant="outline" size="sm" className="mt-2">Changer de compte</Button></Link>
+          <div className="text-center py-16 bg-card border border-border/70 rounded-3xl p-8 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto mb-4">
+              <ShieldCheck size={32} />
+            </div>
+            <h2 className="font-display font-extrabold text-xl text-foreground mb-2">
+              Espace Réservé au Contrôle d'Accès
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
+              Cet espace de scan et validation des entrées/sorties est strictement réservé aux organisateurs d'événements, aux contrôleurs de portes désignés et à l'administration.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link to="/mes-billets">
+                <Button className="gap-2 bg-primary">
+                  <TicketIcon size={15} /> Voir mes billets achetés
+                </Button>
+              </Link>
+              <Link to="/evenements">
+                <Button variant="outline">Découvrir les événements</Button>
+              </Link>
+            </div>
           </div>
         ) : !selected ? (
           <div className="space-y-3">

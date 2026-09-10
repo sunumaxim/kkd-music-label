@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
 import {
   Link2, Loader2, Sparkles, CheckCircle, AlertTriangle,
-  Music, Video, ArrowLeft, Eye, Lock
+  Music, Video, ArrowLeft, Eye
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
 import { useToast } from '@/components/ui/use-toast';

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import {
-  Music, Video, X, ArrowLeft, ArrowRight, Check, Upload, Lock,
+  Music, Video, X, ArrowLeft, ArrowRight, Check, Upload,
   UserPlus, CheckCircle, ShoppingBag, Link2, Sparkles, AlertCircle
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
@@ -24,14 +24,16 @@ const PLATFORMS = [
   { value: 'soundcloud', label: 'SoundCloud' },
 ];
 
+const QUICK_PRICES = [500, 1000, 2000, 5000];
+
 export default function PublishWizard({ user, onClose }) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const [step, setStep] = useState(0); // 0:type · 1:sale · 2:artist · 3:content · 4:done
+  const [step, setStep] = useState(0); // 0:type · 1:sale · 2:artist · 3:content
   const [type, setType] = useState(null); // 'son' | 'video'
   const [sale, setSale] = useState(false);
-  const [price, setPrice] = useState(1);
+  const [price, setPrice] = useState(1000); // 1000 F CFA default
 
   const [artistMode, setArtistMode] = useState('linked'); // 'linked' | 'new' | 'request'
   const [pickedLinkedId, setPickedLinkedId] = useState('');
@@ -39,7 +41,16 @@ export default function PublishWizard({ user, onClose }) {
   const [requestArtist, setRequestArtist] = useState({ id: '', name: '', message: '' });
 
   const [form, setForm] = useState({
-    title: '', cover_url: '', file_url: '', streaming_link: '', streaming_platform: 'spotify', description: '',
+    title: '',
+    cover_url: '',
+    file_url: '',
+    genre: 'Afrobeats',
+    isrc: '',
+    release_year: new Date().getFullYear(),
+    lyrics: '',
+    streaming_link: '',
+    streaming_platform: 'spotify',
+    description: '',
   });
   const [uploads, setUploads] = useState({ cover: false, file: false, photo: false });
   const [done, setDone] = useState(null); // {kind:'publication'|'request'}
@@ -172,6 +183,10 @@ export default function PublishWizard({ user, onClose }) {
       artist_id: artistMode === 'linked' ? (linked?.id || '') : '',
       new_artist_genre: artistMode === 'new' ? newArtist.genre.trim() : '',
       new_artist_photo_url: artistMode === 'new' ? newArtist.photo_url : '',
+      genre: form.genre || '',
+      isrc: form.isrc || '',
+      lyrics: form.lyrics || '',
+      release_year: form.release_year,
       streaming_link: form.streaming_link || '',
       streaming_platform: form.streaming_platform,
       description: form.description || '',
@@ -300,12 +315,45 @@ export default function PublishWizard({ user, onClose }) {
               <AnimatePresence>
                 {sale && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                    <div className="pt-4 mt-4 border-t border-border/50">
-                      <Label className="text-xs mb-1.5 block">Prix de vente (€) *</Label>
-                      <Input type="number" min="1" step="1" value={price} onChange={e => setPrice(e.target.value)} className="max-w-[140px]" />
-                      <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1">
-                        <Lock size={10} /> Fichier stocké en privé, délivré après achat.
-                      </p>
+                    <div className="pt-4 mt-4 border-t border-border/50 space-y-3">
+                      <div>
+                        <Label className="text-xs mb-1.5 block font-bold text-white">Prix de vente direct (F CFA) *</Label>
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          {QUICK_PRICES.map(qp => (
+                            <button
+                              key={qp}
+                              type="button"
+                              onClick={() => setPrice(qp)}
+                              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                                Number(price) === qp
+                                  ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                  : 'bg-secondary text-zinc-300 hover:bg-secondary/80'
+                              }`}
+                            >
+                              {qp.toLocaleString('fr-FR')} F CFA
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="100"
+                            step="50"
+                            value={price}
+                            onChange={e => setPrice(e.target.value)}
+                            className="max-w-[160px] font-mono text-base font-bold text-white"
+                          />
+                          <span className="text-xs font-mono font-bold text-zinc-400">F CFA</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-primary/10 border border-primary/25 p-3 text-[11px] text-zinc-300 space-y-1">
+                        <p className="font-bold text-primary flex items-center gap-1.5">
+                          <Sparkles size={12} /> Direct-to-Consumer (D2C) KKD
+                        </p>
+                        <p className="text-muted-foreground leading-tight">
+                          Les auditeurs paient instantanément par Wave, Orange Money ou Carte. 80% des revenus sont reversés directement sur votre solde partenaire.
+                        </p>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -435,15 +483,26 @@ export default function PublishWizard({ user, onClose }) {
                 <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Nom du titre / clip" />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs mb-1.5 block">Genre musical</Label>
+                  <Input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="Afrobeats, Rap, Mbalax…" />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Code ISRC (optionnel)</Label>
+                  <Input value={form.isrc} onChange={e => set('isrc', e.target.value.toUpperCase())} placeholder="SN-KKD-26-00001" className="font-mono text-xs" />
+                </div>
+              </div>
+
               <MediaUploader
-                label="Pochette / Miniature *"
+                label="Pochette / Miniature (1400x1400 recommandé) *"
                 kind="image" accept="image/*"
                 value={form.cover_url} uploading={uploads.cover}
                 onUpload={handleCoverUpload} onClear={() => set('cover_url', '')}
               />
 
               <MediaUploader
-                label={`${isVideo ? 'Fichier vidéo' : 'Fichier audio'} ${sale ? '(privé, vendu)' : '(gratuit)'} *`}
+                label={`${isVideo ? 'Fichier vidéo master (MP4/MOV)' : 'Fichier audio master (WAV / MP3 320kbps)'} ${sale ? '(privé, vendu)' : '(gratuit)'} *`}
                 kind={isVideo ? 'video' : 'audio'} accept={isVideo ? 'video/*' : 'audio/*'}
                 value={form.file_url} uploading={uploads.file} isPrivate={sale}
                 onUpload={handleFileUpload} onClear={() => set('file_url', '')}
@@ -465,7 +524,12 @@ export default function PublishWizard({ user, onClose }) {
               </div>
 
               <div>
-                <Label className="text-xs mb-1.5 block">Description (optionnel)</Label>
+                <Label className="text-xs mb-1.5 block">Paroles (Lyrics, optionnel)</Label>
+                <Textarea value={form.lyrics} onChange={e => set('lyrics', e.target.value)} rows={3} placeholder="Collez les paroles pour l'affichage karaoké / synchronisé…" />
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Description / Note d'intention (optionnel)</Label>
                 <Textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} placeholder="Quelques mots sur votre sortie…" />
               </div>
             </div>

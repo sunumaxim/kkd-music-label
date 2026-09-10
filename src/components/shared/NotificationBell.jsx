@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Bell, Check, CheckCheck, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Bell, CheckCheck, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const TYPE_COLORS = {
   info: 'bg-blue-500/10 text-blue-400',

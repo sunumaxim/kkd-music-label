@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -6,12 +6,11 @@ import { ArrowLeft, User, ExternalLink, Instagram, Eye, Heart, ShoppingCart } fr
 import CommentsSection from '@/components/shared/CommentsSection';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
-import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import LikeButton from '@/components/shared/LikeButton';
-import { slugify, buildShareUrl, buildSharePreviewUrl, buildEntitySlug, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, buildSharePreviewUrl, extractIdFromSlug } from '@/lib/slugify';
 import { resolveEntityBySlug } from '@/lib/resolveEntity';
 import { motion } from 'framer-motion';
 

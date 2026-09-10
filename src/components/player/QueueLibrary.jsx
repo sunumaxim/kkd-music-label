@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePlayer } from '@/lib/PlayerContext';
-import { ListMusic, Trash2, Play, Pause, X, Eraser } from 'lucide-react';
+import { ListMusic, Play, Pause, X, Eraser } from 'lucide-react';
 
 /**
  * Vue « File d'attente » intégrée à la bibliothèque (style Mon Lecteur).

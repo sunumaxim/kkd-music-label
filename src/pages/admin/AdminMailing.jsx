@@ -7,9 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Send, Users, UserCheck, Inbox, Music2, Eye, CheckCircle, Loader2,
-  Sparkles, Image, PlusCircle, X, ChevronDown, Mail, FileText, Video, Calendar, Newspaper
+  Sparkles, Mail, FileText, Video, Calendar, Newspaper
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AUDIENCES = [
   { value: 'partners', label: 'Partenaires (comptes users)', icon: Users, desc: 'Utilisateurs rôle "user"' },
