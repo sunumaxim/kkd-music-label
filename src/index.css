@@ -4,29 +4,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== KKD MUSIC LIGHT & SOPHISTICATED DESIGN SYSTEM ===== */
+/* ===== KKD MUSIC BRAND DESIGN SYSTEM (DARK) ===== */
 @layer base {
   :root {
-    --background: 210 20% 98%;        /* #f8fafc clean daylight canvas */
-    --foreground: 222 47% 11%;        /* #0f172a deep readable slate */
-    --card: 0 0% 100%;               /* #ffffff crisp white card */
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 358 75% 53%;          /* #E53935 KKD Rouge Identité */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 30% 95%;        /* #f1f5f9 subtle surface */
-    --secondary-foreground: 222 47% 11%;
-    --accent: 38 95% 50%;            /* #f59e0b amber/gold */
-    --accent-foreground: 0 0% 100%;
-    --muted: 210 30% 95%;            /* #f1f5f9 */
-    --muted-foreground: 215 16% 47%;  /* #64748b secondary text */
-    --destructive: 0 84% 60%;
+    --background: 22 22% 7%;
+    --foreground: 30 39% 93%;
+    --card: 22 19% 12%;
+    --card-foreground: 30 39% 93%;
+    --popover: 22 19% 12%;
+    --popover-foreground: 30 39% 93%;
+    --primary: 18 77% 53%;
+    --primary-foreground: 20 12% 5%;
+    --secondary: 154 63% 33%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 39 67% 55%;
+    --accent-foreground: 0 0% 9%;
+    --muted: 26 18% 15%;
+    --muted-foreground: 30 13% 60%;
+    --destructive: 0 54% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;           /* #e2e8f0 clean border */
-    --input: 214 32% 91%;
-    --ring: 358 75% 53%;
-    --radius: 12px;
+    --border: 22 16% 20%;
+    --input: 22 16% 20%;
+    --ring: 18 77% 53%;
+    --radius: 10px;
     --font-heading: 'Archivo Black', sans-serif;
     --font-body: 'Work Sans', sans-serif;
     --font-display: 'Archivo Black', sans-serif;
@@ -34,79 +34,87 @@
     --font-heading-line-height: 1.05;
     --font-heading-letter-spacing: 0.01em;
     --font-body-line-height: 1.5;
-    --sidebar-background: 0 0% 100%; /* #ffffff clean sidebar */
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 358 75% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 30% 95%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 358 75% 53%;
-    --chart-1: 358 75% 53%;
-    --chart-2: 38 95% 50%;
-    --chart-3: 0 78% 56%;
+    --sidebar-background: 22 19% 12%;
+    --sidebar-foreground: 30 39% 93%;
+    --sidebar-primary: 18 77% 53%;
+    --sidebar-primary-foreground: 20 12% 5%;
+    --sidebar-accent: 26 18% 15%;
+    --sidebar-accent-foreground: 30 39% 93%;
+    --sidebar-border: 22 16% 20%;
+    --sidebar-ring: 18 77% 53%;
+    --chart-1: 18 77% 53%;
+    --chart-2: 154 63% 33%;
+    --chart-3: 39 67% 55%;
     --chart-4: 217 91% 60%;
     --chart-5: 271 91% 65%;
   }
 
   .dark {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 358 75% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 30% 95%;
-    --secondary-foreground: 222 47% 11%;
-    --accent: 38 95% 50%;
-    --accent-foreground: 0 0% 100%;
-    --muted: 210 30% 95%;
-    --muted-foreground: 215 16% 47%;
-    --destructive: 0 84% 60%;
+    --background: 22 22% 7%;
+    --foreground: 30 39% 93%;
+    --card: 22 19% 12%;
+    --card-foreground: 30 39% 93%;
+    --popover: 22 19% 12%;
+    --popover-foreground: 30 39% 93%;
+    --primary: 18 77% 53%;
+    --primary-foreground: 20 12% 5%;
+    --secondary: 154 63% 33%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 39 67% 55%;
+    --accent-foreground: 0 0% 9%;
+    --muted: 26 18% 15%;
+    --muted-foreground: 30 13% 60%;
+    --destructive: 0 54% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 358 75% 53%;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 358 75% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 30% 95%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 358 75% 53%;
+    --border: 22 16% 20%;
+    --input: 22 16% 20%;
+    --ring: 18 77% 53%;
+    --sidebar-background: 22 19% 12%;
+    --sidebar-foreground: 30 39% 93%;
+    --sidebar-primary: 18 77% 53%;
+    --sidebar-primary-foreground: 20 12% 5%;
+    --sidebar-accent: 26 18% 15%;
+    --sidebar-accent-foreground: 30 39% 93%;
+    --sidebar-border: 22 16% 20%;
+    --sidebar-ring: 18 77% 53%;
   }
 
   :root {
-    --brand-primary: #E53935;
-    --brand-on-primary: #FFFFFF;
-    --brand-secondary: #FF8800;
-    --brand-accent: #E53935;
-    --brand-background: #F8FAFC;
-    --brand-surface: #FFFFFF;
-    --brand-text: #0F172A;
-    --brand-muted: #F1F5F9;
-    --brand-muted-foreground: #64748B;
-    --brand-border: rgba(15, 23, 42, 0.08);
-    --brand-destructive: #EF4444;
+    --brand-primary: #E4622B;
+    --brand-on-primary: #0E0C0B;
+    --brand-secondary: #1F8A5C;
+    --brand-accent: #D9A441;
+    --brand-background: #16110E;
+    --brand-surface: #231C18;
+    --brand-text: #F4EDE6;
+    --brand-muted: #2E2620;
+    --brand-muted-foreground: #A6998C;
+    --brand-border: #3A302A;
+    --brand-destructive: #C43C3C;
     --brand-font-heading: 'Archivo Black', sans-serif;
     --brand-font-body: 'Work Sans', sans-serif;
+    --brand-font-heading-line-height: 1.05;
+    --brand-font-heading-letter-spacing: 0.01em;
+    --brand-font-body-line-height: 1.5;
+    --brand-font-weight-regular: 400;
+    --brand-font-weight-medium: 500;
+    --brand-font-weight-bold: 700;
+    --brand-font-weight-black: 900;
     --brand-sp-1: 4px;
     --brand-sp-2: 8px;
     --brand-sp-3: 16px;
     --brand-sp-4: 24px;
     --brand-sp-5: 40px;
     --brand-radius-none: 0px;
-    --brand-radius-sm: 6px;
-    --brand-radius-md: 12px;
+    --brand-radius-sm: 4px;
+    --brand-radius-md: 10px;
     --brand-radius-full: 9999px;
-    --brand-radius: 12px;
-    --brand-shadow-sm: 0 1px 3px rgba(0,0,0,.06);
-    --brand-shadow-md: 0 4px 14px rgba(0,0,0,.08);
-    --brand-shadow-lg: 0 10px 25px rgba(0,0,0,.1);
-    --brand-shadow: 0 4px 14px rgba(0,0,0,.08);
+    --brand-radius: 10px;
+    --brand-shadow-none: none;
+    --brand-shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+    --brand-shadow-md: 0 4px 10px rgba(0,0,0,.45);
+    --brand-shadow-lg: 0 10px 24px rgba(0,0,0,.55);
+    --brand-shadow: 0 4px 10px rgba(0,0,0,.45);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -128,7 +136,7 @@
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     overflow-x: clip;
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   button, a, nav, [role="tab"], [role="button"], label, header, footer, .select-none {
@@ -141,56 +149,56 @@
   .prose img { max-width: 100%; height: auto; }
 }
 
-/* ===== BRAND COMPONENTS (SPOTIFY / AUDIOMACK ELEVATED) ===== */
+/* ===== BRAND COMPONENTS ===== */
 @layer components {
-  /* Button · Primary — Spotify signature pill with smooth hover */
+  /* Button · Primary */
   .kkd-btn-primary {
     position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    background: #E53935; color: #FFFFFF;
+    background: var(--brand-primary); color: var(--brand-on-primary);
     font-family: var(--brand-font-body); font-weight: 700; font-size: 14px;
     letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
-    padding: 12px 26px; border: none; border-radius: 9999px;
+    padding: 12px 26px; border: none; border-radius: var(--brand-radius-md);
     cursor: pointer; z-index: 0; transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
-    box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-btn-primary:hover {
     transform: scale(1.03);
     filter: brightness(1.08);
-    box-shadow: 0 6px 20px rgba(229, 57, 53, 0.5);
+    box-shadow: var(--brand-shadow-md);
   }
   .kkd-btn-primary:active { transform: scale(0.97); }
   .kkd-btn-primary:disabled { opacity: .5; cursor: default; }
 
-  /* Button · Secondary — Clean slate secondary pill */
+  /* Button · Secondary */
   .kkd-btn-secondary {
     position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    background: #0F172A; color: #FFFFFF;
+    background: transparent; color: var(--brand-secondary);
     font-family: var(--brand-font-body); font-weight: 700; font-size: 14px;
     letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
-    padding: 12px 24px; border: 1px solid #0F172A; border-radius: 9999px;
-    cursor: pointer; transition: background .2s ease, transform .2s ease;
+    padding: 11px 24px; border: 2px solid var(--brand-secondary); border-radius: var(--brand-radius-md);
+    cursor: pointer; transition: background .2s ease, color .2s ease, transform .2s ease;
   }
-  .kkd-btn-secondary:hover { background: #1E293B; transform: scale(1.02); }
+  .kkd-btn-secondary:hover { background: var(--brand-secondary); color: var(--brand-on-primary); transform: scale(1.02); }
   .kkd-btn-secondary:active { transform: scale(0.97); }
 
-  /* Button · Outline — Clean border pill */
+  /* Button · Outline */
   .kkd-btn-outline {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    background: transparent; color: #0F172A;
+    background: transparent; color: var(--brand-text);
     font-family: var(--brand-font-body); font-weight: 600; font-size: 14px;
     text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;
-    padding: 11px 22px; border: 1px solid #CBD5E1; border-radius: 9999px;
-    cursor: pointer; transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    padding: 11px 22px; border: 1px solid var(--brand-border); border-radius: var(--brand-radius-md);
+    cursor: pointer; transition: border-color .2s ease, background .2s ease, color .2s ease, transform .2s ease;
   }
-  .kkd-btn-outline:hover { border-color: #E53935; color: #E53935; background: rgba(229, 57, 53, 0.06); transform: scale(1.02); }
+  .kkd-btn-outline:hover { border-color: var(--brand-primary); color: var(--brand-primary); transform: scale(1.02); }
   .kkd-btn-outline:active { transform: scale(0.97); }
 
-  /* Button · Icon — Circular Play button with drop shadow */
+  /* Button · Icon */
   .kkd-btn-icon {
     display: flex; align-items: center; justify-content: center;
-    width: 46px; height: 46px; background: #E53935; color: #FFFFFF;
-    border: none; border-radius: 9999px; cursor: pointer;
-    box-shadow: 0 4px 12px rgba(229, 57, 53, .35);
+    width: 46px; height: 46px; background: var(--brand-primary); color: var(--brand-on-primary);
+    border: none; border-radius: var(--brand-radius-full); cursor: pointer;
+    box-shadow: var(--brand-shadow-sm);
     transition: transform .2s ease, filter .2s ease;
   }
   .kkd-btn-icon:hover { transform: scale(1.1); filter: brightness(1.1); }
@@ -199,19 +207,19 @@
 
   /* Link */
   .kkd-link {
-    background: none; border: none; color: #E53935;
+    background: none; border: none; color: var(--brand-accent);
     font-family: var(--brand-font-body); font-weight: 600; font-size: 14px;
     letter-spacing: 0.01em; cursor: pointer; padding: 4px 0; white-space: nowrap; position: relative;
     display: inline-flex; align-items: center; gap: 4px;
   }
   .kkd-link:hover { text-decoration: underline; }
 
-  /* ===== Spotify & Audiomack Card · Release ===== */
+  /* ===== Card · Release ===== */
   .kkd-card-release {
     width: 100%;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius-md);
     overflow: hidden;
     font-family: var(--brand-font-body);
     transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -219,20 +227,20 @@
     flex-direction: column;
     height: 100%;
     padding: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-card-release:hover {
-    background: #FFFFFF;
-    border-color: #CBD5E1;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    background: var(--brand-surface);
+    border-color: var(--brand-primary);
+    box-shadow: var(--brand-shadow-lg);
     transform: translateY(-4px);
   }
   .kkd-card-release-media {
     position: relative;
     width: 100%;
     aspect-ratio: 1/1;
-    background: #F1F5F9;
-    border-radius: 8px;
+    background: var(--brand-muted);
+    border-radius: var(--brand-radius-sm);
     overflow: hidden;
   }
   .kkd-card-release-media img {
@@ -248,16 +256,16 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    background: #FF8800;
-    color: #FFFFFF;
+    background: var(--brand-secondary);
+    color: var(--brand-on-primary);
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 3px 8px;
-    border-radius: 9999px;
+    border-radius: var(--brand-radius-sm);
     z-index: 2;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-card-release-play {
     position: absolute;
@@ -281,7 +289,7 @@
   }
   .kkd-card-release-eyebrow {
     font-size: 10px;
-    color: #64748B;
+    color: var(--brand-muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 600;
@@ -291,7 +299,7 @@
     font-family: var(--brand-font-heading);
     font-weight: 800;
     font-size: 15px;
-    color: #0F172A;
+    color: var(--brand-text);
     letter-spacing: 0.01em;
     line-height: 1.15;
     white-space: nowrap;
@@ -301,7 +309,7 @@
   .kkd-card-release-artist {
     margin: 0;
     font-size: 13px;
-    color: #64748B;
+    color: var(--brand-muted-foreground);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -312,18 +320,18 @@
     justify-content: space-between;
     margin-top: 6px;
     padding-top: 6px;
-    border-top: 1px solid #F1F5F9;
+    border-top: 1px solid var(--brand-muted);
   }
   .kkd-card-release-price {
     font-weight: 700;
-    color: #D97706;
+    color: var(--brand-accent);
     font-size: 12px;
   }
   .kkd-card-release-cta {
-    background: rgba(229, 57, 53, 0.1);
-    color: #E53935;
-    border: 1px solid rgba(229, 57, 53, 0.25);
-    border-radius: 9999px;
+    background: rgba(228, 98, 43, 0.15);
+    color: var(--brand-primary);
+    border: 1px solid rgba(228, 98, 43, 0.3);
+    border-radius: var(--brand-radius-sm);
     padding: 4px 10px;
     font-size: 11px;
     font-weight: 700;
@@ -333,34 +341,34 @@
     transition: all .2s ease;
   }
   .kkd-card-release-cta:hover {
-    background: #E53935;
-    color: #FFFFFF;
+    background: var(--brand-primary);
+    color: var(--brand-on-primary);
   }
 
-  /* ===== Card · Clip Vidéo ===== */
+  /* ===== Card · Video ===== */
   .kkd-card-video {
     width: 100%;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius-md);
     overflow: hidden;
     font-family: var(--brand-font-body);
     transition: all .25s ease;
     padding: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-card-video:hover {
-    background: #FFFFFF;
-    border-color: #CBD5E1;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    background: var(--brand-surface);
+    border-color: var(--brand-primary);
+    box-shadow: var(--brand-shadow-lg);
     transform: translateY(-3px);
   }
   .kkd-card-video-media {
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
-    background: #F1F5F9;
-    border-radius: 8px;
+    background: var(--brand-muted);
+    border-radius: var(--brand-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -378,9 +386,9 @@
   .kkd-card-video-play {
     width: 44px;
     height: 44px;
-    border-radius: 9999px;
-    background: rgba(0, 0, 0, 0.65);
-    color: #FFFFFF;
+    border-radius: var(--brand-radius-full);
+    background: rgba(244, 237, 230, 0.15);
+    color: var(--brand-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -389,7 +397,8 @@
     z-index: 2;
   }
   .kkd-card-video:hover .kkd-card-video-play {
-    background: #E53935;
+    background: var(--brand-primary);
+    color: var(--brand-on-primary);
     transform: scale(1.1);
   }
   .kkd-card-video-dur {
@@ -397,11 +406,10 @@
     bottom: 8px;
     right: 8px;
     font-size: 10px;
-    color: #FFFFFF;
-    background: rgba(0,0,0,0.75);
+    color: var(--brand-text);
+    background: rgba(0,0,0,0.65);
     padding: 2px 6px;
-    border-radius: 4px;
-    font-mono: true;
+    border-radius: var(--brand-radius-sm);
     z-index: 2;
   }
   .kkd-card-video-body {
@@ -415,7 +423,7 @@
     font-family: var(--brand-font-heading);
     font-weight: 800;
     font-size: 15px;
-    color: #0F172A;
+    color: var(--brand-text);
     line-height: 1.15;
     white-space: nowrap;
     overflow: hidden;
@@ -424,15 +432,15 @@
   .kkd-card-video-artist {
     margin: 0;
     font-size: 12px;
-    color: #64748B;
+    color: var(--brand-muted-foreground);
   }
 
-  /* ===== Card · Événement ===== */
+  /* ===== Card · Event ===== */
   .kkd-card-event {
     width: 100%;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius-md);
     overflow: hidden;
     font-family: var(--brand-font-body);
     transition: all .25s ease;
@@ -440,20 +448,20 @@
     flex-direction: column;
     height: 100%;
     padding: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-card-event:hover {
-    background: #FFFFFF;
-    border-color: #CBD5E1;
+    background: var(--brand-surface);
+    border-color: var(--brand-primary);
     transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    box-shadow: var(--brand-shadow-lg);
   }
   .kkd-card-event-media {
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
-    background: #F1F5F9;
-    border-radius: 8px;
+    background: var(--brand-muted);
+    border-radius: var(--brand-radius-sm);
     overflow: hidden;
   }
   .kkd-card-event-media img {
@@ -465,13 +473,13 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    background: #E53935;
-    color: #FFFFFF;
+    background: var(--brand-primary);
+    color: var(--brand-on-primary);
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
     padding: 3px 8px;
-    border-radius: 9999px;
+    border-radius: var(--brand-radius-sm);
     letter-spacing: 0.04em;
     z-index: 2;
   }
@@ -481,10 +489,10 @@
     right: 8px;
     font-family: var(--brand-font-heading);
     font-size: 11px;
-    color: #FFFFFF;
-    background: rgba(0,0,0,0.75);
+    color: var(--brand-text);
+    background: rgba(0,0,0,0.65);
     padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: var(--brand-radius-sm);
     z-index: 2;
   }
   .kkd-card-event-body {
@@ -499,20 +507,20 @@
     font-family: var(--brand-font-heading);
     font-weight: 800;
     font-size: 16px;
-    color: #0F172A;
+    color: var(--brand-text);
     line-height: 1.15;
   }
   .kkd-card-event-place {
     margin: 0;
     font-size: 12px;
-    color: #64748B;
+    color: var(--brand-muted-foreground);
   }
   .kkd-card-event-cta {
     margin-top: 4px;
-    background: rgba(229, 57, 53, 0.1);
-    border: 1px solid rgba(229, 57, 53, 0.25);
-    color: #E53935;
-    border-radius: 9999px;
+    background: transparent;
+    border: 2px solid var(--brand-secondary);
+    color: var(--brand-secondary);
+    border-radius: var(--brand-radius-md);
     padding: 8px 14px;
     font-size: 12px;
     font-weight: 700;
@@ -522,16 +530,16 @@
     transition: all .2s ease;
   }
   .kkd-card-event-cta:hover {
-    background: #E53935;
-    color: #FFFFFF;
+    background: var(--brand-secondary);
+    color: var(--brand-on-primary);
   }
 
-  /* ===== Card · Artiste ===== */
+  /* ===== Card · Artist ===== */
   .kkd-card-artist {
     width: 100%;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius-md);
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -541,21 +549,21 @@
     font-family: var(--brand-font-body);
     transition: all .25s ease;
     height: 100%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    box-shadow: var(--brand-shadow-sm);
   }
   .kkd-card-artist:hover {
-    background: #FFFFFF;
-    border-color: #CBD5E1;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    background: var(--brand-surface);
+    border-color: var(--brand-primary);
+    box-shadow: var(--brand-shadow-md);
     transform: translateY(-3px);
   }
   .kkd-card-artist-avatar {
     width: 88px;
     height: 88px;
-    border-radius: 9999px;
+    border-radius: var(--brand-radius-full);
     overflow: hidden;
-    background: #F1F5F9;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: var(--brand-muted);
+    box-shadow: var(--brand-shadow-sm);
     transition: transform .3s ease;
   }
   .kkd-card-artist:hover .kkd-card-artist-avatar {
@@ -574,19 +582,19 @@
     font-family: var(--brand-font-heading);
     font-weight: 800;
     font-size: 15px;
-    color: #0F172A;
+    color: var(--brand-text);
   }
   .kkd-card-artist-genre {
     margin: 0;
     font-size: 12px;
-    color: #64748B;
+    color: var(--brand-muted-foreground);
   }
   .kkd-card-artist-follow {
     margin-top: 4px;
-    background: #F1F5F9;
-    border: 1px solid #E2E8F0;
-    color: #0F172A;
-    border-radius: 9999px;
+    background: transparent;
+    border: 1px solid var(--brand-primary);
+    color: var(--brand-primary);
+    border-radius: var(--brand-radius-md);
     padding: 6px 18px;
     font-size: 12px;
     font-weight: 700;
@@ -596,23 +604,23 @@
     transition: all .2s ease;
   }
   .kkd-card-artist-follow:hover {
-    background: #E53935;
-    color: #FFFFFF;
-    border-color: #E53935;
+    background: var(--brand-primary);
+    color: var(--brand-on-primary);
+    border-color: var(--brand-primary);
   }
 
   .kkd-badge-live {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #E53935;
-    color: #FFFFFF;
+    background: var(--brand-primary);
+    color: var(--brand-on-primary);
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     padding: 3px 8px;
-    border-radius: 9999px;
+    border-radius: var(--brand-radius-sm);
   }
 }
 
@@ -625,6 +633,6 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F8FAFC; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+::-webkit-scrollbar-track { background: var(--brand-background); }
+::-webkit-scrollbar-thumb { background: var(--brand-border); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-muted-foreground); }

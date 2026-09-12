@@ -22,7 +22,7 @@ export default function MobileBottomTabs() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#0a0d13]/95 backdrop-blur-2xl border-t border-white/[0.08] select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-2xl border-t border-border select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)]"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2px)' }}
     >
       <div className="flex items-center justify-around h-14">
@@ -38,7 +38,7 @@ export default function MobileBottomTabs() {
               to={tab.path}
               onClick={(e) => handleTabPress(e, tab)}
               className={`flex-1 flex flex-col items-center justify-center h-full gap-1 transition-all ${
-                isActive ? 'text-primary' : 'text-zinc-400 hover:text-zinc-200'
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <div className="relative">
@@ -47,7 +47,7 @@ export default function MobileBottomTabs() {
                   <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-primary rounded-full" />
                 )}
               </div>
-              <span className={`text-[10px] tracking-tight ${isActive ? 'font-bold text-white' : 'font-medium'}`}>
+              <span className={`text-[10px] tracking-tight ${isActive ? 'font-bold text-foreground' : 'font-medium'}`}>
                 {tab.label}
               </span>
             </Link>
