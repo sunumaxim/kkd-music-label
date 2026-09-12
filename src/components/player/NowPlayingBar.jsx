@@ -3,7 +3,7 @@ import { usePlayer } from '@/lib/PlayerContext';
 import {
   Play, Pause, SkipBack, SkipForward, Repeat, Repeat1, Shuffle,
   Volume2, VolumeX, X, AlertCircle, Loader2, ListMusic, Heart,
-  Info
+  Info, Lock
 } from 'lucide-react';
 import QueuePanel from '@/components/player/QueuePanel';
 import NowPlayingView from '@/components/player/NowPlayingView';
@@ -113,9 +113,15 @@ export default function NowPlayingBar() {
                 {current.artist_name || 'KKD Music'}
               </p>
               <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono font-bold border border-primary/25">
-                  HQ MASTER 320K
-                </span>
+                {player.isPreview ? (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 font-mono font-bold border border-amber-500/30 flex items-center gap-1">
+                    <Lock size={8} /> EXTRAIT 30S
+                  </span>
+                ) : (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-primary/10 text-primary font-mono font-bold border border-primary/25">
+                    HQ MASTER 320K
+                  </span>
+                )}
                 {isPlaying && (
                   <span className="flex items-center gap-0.5 text-primary text-[10px]">
                     <span className="w-1 h-2 bg-primary rounded-full kkd-eq-bar" />

@@ -3,6 +3,7 @@ import { recordPlay } from '@/hooks/useListeningHistory';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { accessControlService } from '@/services/accessControlService';
+import { fetchProtectedPreview } from '@/lib/previewAudio';
 import TrackLockPurchaseModal from '@/components/marketplace/TrackLockPurchaseModal';
 
 const PlayerContext = createContext(null);
@@ -60,6 +61,8 @@ export function PlayerProvider({ children }) {
   const purchases = purchasesData || [];
 
   const current = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
+  const currentRef = useRef(null);
+  useEffect(() => { currentRef.current = current; }, [current]);
 
   // Historique d'écoute local + compteur d'écoutes (plays_count) côté serveur
   useEffect(() => {
@@ -121,7 +124,13 @@ export function PlayerProvider({ children }) {
 
   const seek = useCallback((t) => {
     const a = audioRef.current;
-    if (a) { a.currentTime = t; setCurrentTime(t); }
+    if (!a) return;
+    // En mode extrait : empêcher de seek au-delà de la durée de l'extrait
+    const c = currentRef.current;
+    const maxT = c?.is_preview ? (c.preview_duration || 30) : Infinity;
+    const clamped = Math.min(Math.max(0, t), maxT);
+    a.currentTime = clamped;
+    setCurrentTime(clamped);
   }, []);
 
   const retry = useCallback(() => {
@@ -192,7 +201,23 @@ export function PlayerProvider({ children }) {
     return status.canPlay;
   }, [purchases, me]);
 
-  const playTrack = useCallback((track) => {
+  // Charge l'extrait gratuit (30s) d'un titre verrouillé via la fonction backend sécurisée.
+  // Le fichier complet n'est jamais exposé au client — seul le segment tronqué est renvoyé.
+  const loadPreviewForTrack = useCallback(async (track) => {
+    const itemType = track.item_type || 'release';
+    const itemId = track.item_id || track.id;
+    if (!itemType || !itemId) return null;
+    const previewStart = Number(track.preview_start) || 0;
+    const previewDuration = Number(track.preview_duration) || 30;
+    try {
+      const blobUrl = await fetchProtectedPreview({ itemType, itemId, previewStart, previewDuration });
+      return blobUrl ? { blobUrl, previewDuration, previewStart } : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const playTrack = useCallback(async (track) => {
     if (!track) return false;
 
     const status = accessControlService.getTrackAccessStatus(track, {
@@ -201,15 +226,25 @@ export function PlayerProvider({ children }) {
       isAdmin: me?.role === 'admin',
     });
 
-    // Si 'En vente' et verrouillé : afficher l'interface d'achat ou de verrouillage AVANT l'accès au lecteur audio
+    // Si 'En vente' et verrouillé : charger l'extrait gratuit 30s au lieu de bloquer totalement
     if (status.isLocked) {
-      console.warn(`KKD Access Control: Titre "${track.title}" en vente exclusive. Verrouillage activé.`);
+      const preview = await loadPreviewForTrack(track);
+      if (preview) {
+        const playable = {
+          ...track,
+          audio_url: preview.blobUrl,
+          is_preview: true,
+          preview_duration: preview.previewDuration,
+          price: status.price,
+        };
+        setQueue([playable]);
+        setCurrentIndex(0);
+        return true;
+      }
+      // Fallback : extrait indisponible → interface d'achat
       setLockedModal({
         isOpen: true,
-        track: {
-          ...track,
-          price: status.price,
-        },
+        track: { ...track, price: status.price },
         pendingQueue: [track],
         pendingIndex: 0,
       });
@@ -219,14 +254,15 @@ export function PlayerProvider({ children }) {
     const playable = {
       ...track,
       audio_url: track.audio_url || track.audio_file_url,
+      is_preview: false,
     };
 
     setQueue([playable]);
     setCurrentIndex(0);
     return true;
-  }, [purchases, me]);
+  }, [purchases, me, loadPreviewForTrack]);
 
-  const playQueue = useCallback((tracks, startIndex = 0) => {
+  const playQueue = useCallback(async (tracks, startIndex = 0) => {
     if (!tracks || !tracks.length) return false;
 
     const targetIndex = Math.max(0, Math.min(startIndex, tracks.length - 1));
@@ -239,15 +275,25 @@ export function PlayerProvider({ children }) {
         isAdmin: me?.role === 'admin',
       });
 
-      // Si la piste sélectionnée est en vente et non achetée, ouvrir l'interface de verrouillage / achat
+      // Si la piste sélectionnée est en vente et non achetée : charger l'extrait 30s
       if (targetStatus.isLocked) {
-        console.warn(`KKD Access Control: Titre "${targetTrack.title}" en vente exclusive. Verrouillage activé.`);
+        const preview = await loadPreviewForTrack(targetTrack);
+        if (preview) {
+          const playable = {
+            ...targetTrack,
+            audio_url: preview.blobUrl,
+            is_preview: true,
+            preview_duration: preview.previewDuration,
+            price: targetStatus.price,
+          };
+          setQueue([playable]);
+          setCurrentIndex(0);
+          return true;
+        }
+        // Fallback : extrait indisponible → interface d'achat
         setLockedModal({
           isOpen: true,
-          track: {
-            ...targetTrack,
-            price: targetStatus.price,
-          },
+          track: { ...targetTrack, price: targetStatus.price },
           pendingQueue: tracks,
           pendingIndex: targetIndex,
         });
@@ -293,7 +339,7 @@ export function PlayerProvider({ children }) {
     setQueue(sanitized);
     setCurrentIndex(Math.max(0, Math.min(startIndex, sanitized.length - 1)));
     return true;
-  }, [purchases, me]);
+  }, [purchases, me, loadPreviewForTrack]);
 
   // Callback de déblocage après achat direct réussi dans la modale
   const handleTrackUnlocked = useCallback((unlockedTrack) => {
@@ -314,6 +360,7 @@ export function PlayerProvider({ children }) {
                 is_for_sale: true,
                 is_purchased: true,
                 is_locked: false,
+                is_preview: false,
               };
             }
             return t;
@@ -335,6 +382,7 @@ export function PlayerProvider({ children }) {
           audio_url: unlockedTrack.audio_url || unlockedTrack.audio_file_url,
           is_purchased: true,
           is_locked: false,
+          is_preview: false,
         };
         setQueue([playable]);
         setCurrentIndex(0);
@@ -411,8 +459,10 @@ export function PlayerProvider({ children }) {
     setQueue([]); setCurrentIndex(-1); setIsPlaying(false); setCurrentTime(0); setDuration(0);
   }, []);
 
+  const effectiveDuration = current?.is_preview ? (current.preview_duration || 30) : duration;
   const value = {
-    queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration, volume, playbackRate, repeatMode, shuffle,
+    queue, currentIndex, current, isPlaying, isBuffering, error, currentTime, duration: effectiveDuration, volume, playbackRate, repeatMode, shuffle,
+    isPreview: Boolean(current?.is_preview),
     playTrack, playQueue, playAt, addToQueue, playNext, removeFromQueue, togglePlay, next, prev, seek, retry, setVolume, setPlaybackRate, setRepeatMode, setShuffle, stop,
     isPlayableTrack, openLockModal, closeLockModal, lockedTrack: lockedModal.track, isLockedModalOpen: lockedModal.isOpen,
   };
@@ -430,7 +480,17 @@ export function PlayerProvider({ children }) {
         ref={audioRef}
         src={current?.audio_url || ''}
         preload="auto"
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime || 0)}
+        onTimeUpdate={(e) => {
+          const t = e.currentTarget.currentTime || 0;
+          setCurrentTime(t);
+          // Mode extrait : arrêter à la fin de l'extrait et afficher l'interface d'achat
+          const c = currentRef.current;
+          if (c?.is_preview && t >= (c.preview_duration || 30)) {
+            e.currentTarget.pause();
+            setIsPlaying(false);
+            setLockedModal({ isOpen: true, track: c, pendingQueue: null, pendingIndex: 0 });
+          }
+        }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
         onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
         onPlay={() => setIsPlaying(true)}
