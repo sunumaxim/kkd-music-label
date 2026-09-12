@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { storageService } from '@/services';
 
 /**
  * usePlayableUrl — résout une URL lisible pour un fichier audio/vidéo.
@@ -17,8 +17,8 @@ export function usePlayableUrl(fileUrl) {
     setLoading(true);
     (async () => {
       try {
-        const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: fileUrl });
-        if (active) setUrl(res.signed_url);
+        const signedUrl = await storageService.getSignedUrl(fileUrl);
+        if (active) setUrl(signedUrl);
       } catch {
         if (active) setUrl(null);
       } finally {

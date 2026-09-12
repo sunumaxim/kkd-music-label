@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { purchaseService } from '@/services';
 
 /**
  * Récupère les achats validés de l'utilisateur courant (mis en cache par react-query).
@@ -9,14 +9,7 @@ import { base44 } from '@/api/base44Client';
 export function useMyPurchases() {
   const { data: purchases = [] } = useQuery({
     queryKey: ['my-purchases-summary'],
-    queryFn: async () => {
-      try {
-        const res = await base44.functions.invoke('getMyPurchases', {});
-        return res.data?.purchases || res.purchases || [];
-      } catch {
-        return [];
-      }
-    },
+    queryFn: () => purchaseService.getMyPurchases(),
     staleTime: 30000,
     retry: false,
   });
