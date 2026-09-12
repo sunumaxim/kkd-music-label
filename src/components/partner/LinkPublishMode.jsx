@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
 import {
   Link2, Loader2, Sparkles, CheckCircle, AlertTriangle,
-  Music, Video, ArrowLeft, Eye
+  Music, Video, Disc, ArrowLeft, Eye, Headphones
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
+import EmbeddedPlayer from '@/components/shared/UniversalPlayer';
 import { useToast } from '@/components/ui/use-toast';
 
 const PLATFORM_LABELS = {
@@ -22,6 +23,13 @@ const PLATFORM_LABELS = {
   soundcloud: 'SoundCloud',
 };
 
+const TYPE_META = {
+  track:  { label: 'Titre',  icon: Music, content_type: 'sortie_musicale' },
+  album:  { label: 'Album', icon: Disc,  content_type: 'album' },
+  video:  { label: 'Vidéo', icon: Video, content_type: 'video_clip' },
+  artist: { label: 'Artiste', icon: Music, content_type: 'sortie_musicale' },
+};
+
 export default function LinkPublishMode({ user, onClose }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -31,6 +39,7 @@ export default function LinkPublishMode({ user, onClose }) {
   const [extractError, setExtractError] = useState('');
   const [artistId, setArtistId] = useState('');
   const [artistName, setArtistName] = useState('');
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isForSale, setIsForSale] = useState(false);
   const [price, setPrice] = useState(0);
@@ -48,6 +57,7 @@ export default function LinkPublishMode({ user, onClose }) {
       } else {
         setMetadata(res.data);
         setArtistName(res.data.artist_name || '');
+        setTitle(res.data.title || '');
         if (res.data.duplicate_warning) {
           toast({
             title: 'Doublon détecté',
@@ -71,22 +81,25 @@ export default function LinkPublishMode({ user, onClose }) {
     },
   });
 
-  const canSubmit = metadata && (artistId || artistName.trim()) && metadata.title;
+  const canSubmit = metadata && (artistId || artistName.trim()) && title.trim();
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    const platformField = metadata.platform === 'spotify' ? 'spotify_url'
-      : metadata.platform === 'youtube' ? 'youtube_url'
-      : metadata.platform === 'deezer' ? 'deezer_url'
-      : metadata.platform === 'audiomack' ? 'audiomack_url'
-      : metadata.platform === 'apple_music' ? 'apple_music_url'
-      : metadata.platform === 'soundcloud' ? 'soundcloud_url' : 'streaming_link';
+    const contentType = TYPE_META[metadata.type]?.content_type || 'sortie_musicale';
+    const tracks = metadata.tracks
+      ? metadata.tracks.map((t) => ({
+          title: t.title || '',
+          streaming_link: t.spotify_url || t.deezer_url || t.youtube_url || t.streaming_link || '',
+          streaming_platform: metadata.platform,
+          duration_ms: t.duration_ms || 0,
+        }))
+      : [];
 
     mutation.mutate({
       partner_email: user.email,
       partner_name: user.full_name || user.email,
-      content_type: metadata.type === 'video' ? 'video_clip' : 'sortie_musicale',
-      title: metadata.title,
+      content_type: contentType,
+      title: title.trim(),
       artist_name: artistName.trim(),
       artist_id: artistId || '',
       streaming_link: url.trim(),
@@ -95,6 +108,7 @@ export default function LinkPublishMode({ user, onClose }) {
       description: description || metadata.description || '',
       is_for_sale: isForSale,
       price: isForSale ? Number(price) : 0,
+      tracks,
     });
   };
 
@@ -106,12 +120,15 @@ export default function LinkPublishMode({ user, onClose }) {
         </div>
         <h3 className="font-display text-xl font-extrabold mb-2">Publication envoyée !</h3>
         <p className="text-sm text-muted-foreground max-w-xs mb-6">
-          Votre contenu « {metadata?.title} » est en attente de validation par l'équipe KKD.
+          Votre contenu « {title} » est en attente de validation par l'équipe KKD.
         </p>
         <Button onClick={onClose} variant="outline">Retour au tableau de bord</Button>
       </motion.div>
     );
   }
+
+  const detectedType = metadata ? TYPE_META[metadata.type] : null;
+  const TypeIcon = detectedType?.icon || Music;
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -159,7 +176,7 @@ export default function LinkPublishMode({ user, onClose }) {
           )}
         </div>
 
-        {/* Étape 2 : Métadonnées extraites */}
+        {/* Étape 2 : Métadonnées extraites + lecteur intégré */}
         {metadata && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="flex items-center gap-2 text-xs text-green-400 font-medium">
@@ -167,16 +184,16 @@ export default function LinkPublishMode({ user, onClose }) {
               Métadonnées extraites depuis {PLATFORM_LABELS[metadata.platform] || metadata.platform}
             </div>
 
-            {/* Aperçu pochette + infos */}
+            {/* Aperçu pochette + infos + type détecté */}
             <div className="flex gap-4 bg-card border border-border/50 rounded-xl p-4">
               {metadata.cover_url && (
                 <img src={metadata.cover_url} alt="" className="w-20 h-20 rounded-lg object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
-                  {metadata.type === 'video' ? <Video size={13} className="text-primary" /> : <Music size={13} className="text-primary" />}
+                  <TypeIcon size={13} className="text-primary" />
                   <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {metadata.type === 'video' ? 'Vidéo' : metadata.type === 'album' ? 'Album' : metadata.type === 'artist' ? 'Artiste' : 'Titre'}
+                    {detectedType?.label || 'Contenu'} · {PLATFORM_LABELS[metadata.platform]}
                   </span>
                 </div>
                 <p className="font-heading font-bold text-sm truncate">{metadata.title}</p>
@@ -187,6 +204,36 @@ export default function LinkPublishMode({ user, onClose }) {
               </div>
             </div>
 
+            {/* Lecteur intégré — écouter / regarder avant de publier */}
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Headphones size={12} className="text-primary" /> Aperçu lecteur — vérifiez le contenu
+              </Label>
+              <EmbeddedPlayer url={url.trim()} />
+            </div>
+
+            {/* Pistes extraites (album) */}
+            {metadata.tracks && metadata.tracks.length > 0 && (
+              <div className="bg-card border border-border/50 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-semibold flex items-center gap-1.5">
+                  <Disc size={12} className="text-primary" /> {metadata.tracks.length} piste(s) extraite(s)
+                </p>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {metadata.tracks.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs py-1">
+                      <span className="text-muted-foreground w-5 text-right">{i + 1}.</span>
+                      <span className="flex-1 truncate">{t.title}</span>
+                      {t.duration_ms > 0 && (
+                        <span className="text-muted-foreground shrink-0">
+                          {Math.floor(t.duration_ms / 60000)}:{String(Math.floor((t.duration_ms % 60000) / 1000)).padStart(2, '0')}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {metadata.duplicate_warning && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
                 <AlertTriangle size={14} className="shrink-0 mt-0.5" />
@@ -196,6 +243,12 @@ export default function LinkPublishMode({ user, onClose }) {
                 </div>
               </div>
             )}
+
+            {/* Titre (éditable) */}
+            <div>
+              <Label className="text-xs mb-1.5 block">Titre *</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titre du contenu" />
+            </div>
 
             {/* Artiste : lier au catalogue */}
             <div className="space-y-2">
@@ -266,7 +319,8 @@ export default function LinkPublishMode({ user, onClose }) {
             <Link2 size={32} className="mx-auto mb-3 text-muted-foreground/30" />
             Collez un lien de streaming ci-dessus et cliquez sur « Extraire ».
             <br />
-            Le système récupère automatiquement le titre, l'artiste et la pochette.
+            Le système récupère automatiquement le titre, l'artiste et la pochette,
+            <br />avec un aperçu lecteur pour vérifier le contenu.
           </div>
         )}
       </div>
