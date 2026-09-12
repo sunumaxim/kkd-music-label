@@ -7,9 +7,9 @@ import MobileBottomTabs from '@/components/mobile/MobileBottomTabs';
 import NowPlayingBar from '@/components/player/NowPlayingBar';
 import PromoZone from '@/components/shared/PromoZone';
 import AudioAnnouncement from '@/components/shared/AudioAnnouncement';
-import { PlayerProvider, usePlayer } from '@/lib/PlayerContext';
+import { usePlayer } from '@/lib/PlayerContext';
 
-function PublicLayoutInner() {
+export default function PublicLayout() {
   const { current } = usePlayer();
 
   return (
@@ -27,13 +27,5 @@ function PublicLayoutInner() {
       <NowPlayingBar />
       <MobileBottomTabs />
     </div>
-  );
-}
-
-export default function PublicLayout() {
-  return (
-    <PlayerProvider>
-      <PublicLayoutInner />
-    </PlayerProvider>
   );
 }

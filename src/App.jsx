@@ -5,6 +5,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { PlayerProvider } from '@/lib/PlayerContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
@@ -195,13 +196,15 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <SplashScreen onDone={() => setSplashDone(true)} />
-        <Router>
-          <AuthenticatedApp />
-          <PublishHost />
-        </Router>
-        <Toaster />
-        <InstallPrompt />
+        <PlayerProvider>
+          <SplashScreen onDone={() => setSplashDone(true)} />
+          <Router>
+            <AuthenticatedApp />
+            <PublishHost />
+          </Router>
+          <Toaster />
+          <InstallPrompt />
+        </PlayerProvider>
       </QueryClientProvider>
     </AuthProvider>
   )
