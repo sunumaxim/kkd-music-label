@@ -52,6 +52,11 @@ async function extractSpotify(url) {
     };
   }
   if (kind === 'album') {
+    const tracks = (data.tracks?.items || []).map((t, i) => ({
+      title: t.name || `Piste ${i + 1}`,
+      spotify_url: t.external_urls?.spotify || '',
+      duration_ms: t.duration_ms || 0,
+    }));
     return {
       platform: 'spotify',
       type: 'album',
@@ -60,6 +65,7 @@ async function extractSpotify(url) {
       cover_url: data.images?.[0]?.url || '',
       description: `Album · ${data.total_tracks || 0} pistes · ${data.release_date || ''}`,
       spotify_url: data.external_urls?.spotify || url,
+      tracks,
     };
   }
   // artist
@@ -114,6 +120,11 @@ async function extractDeezer(url) {
     };
   }
   if (kind === 'album') {
+    const tracks = (data.tracks?.data || []).map((t) => ({
+      title: t.title || '',
+      deezer_url: `https://www.deezer.com/track/${t.id}`,
+      duration_ms: (t.duration || 0) * 1000,
+    }));
     return {
       platform: 'deezer',
       type: 'album',
@@ -122,6 +133,7 @@ async function extractDeezer(url) {
       cover_url: data.cover_xl || data.cover || '',
       description: `Album · ${data.nb_tracks || 0} pistes · ${data.release_date || ''}`,
       deezer_url: url,
+      tracks,
     };
   }
   return {

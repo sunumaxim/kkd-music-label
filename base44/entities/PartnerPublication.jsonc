@@ -43,6 +43,38 @@
       "type": "string",
       "description": "ID de l'artiste en featuring (si s\u00e9lectionn\u00e9 dans le catalogue)"
     },
+    "credits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "producteur",
+              "realisateur",
+              "auteur",
+              "compositeur",
+              "mixage",
+              "mastering",
+              "arrangements",
+              "autre"
+            ],
+            "description": "R\u00f4le / fonction"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nom de la personne cr\u00e9dit\u00e9e"
+          }
+        },
+        "required": [
+          "role",
+          "name"
+        ]
+      },
+      "default": [],
+      "description": "Cr\u00e9dits (producteur, r\u00e9alisateur, auteur, compositeur, etc.)"
+    },
     "new_artist_genre": {
       "type": "string",
       "description": "Genre du nouveau profil artiste (si cr\u00e9ation \u00e0 la publication)"
@@ -92,14 +124,31 @@
         "type": "object",
         "properties": {
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "Titre de la piste"
           },
           "audio_file_url": {
-            "type": "string"
+            "type": "string",
+            "description": "Fichier audio de la piste (upload KKD)"
+          },
+          "streaming_link": {
+            "type": "string",
+            "description": "Lien streaming externe de la piste (Spotify, YouTube, Deezer, etc.) si import\u00e9 depuis une plateforme"
+          },
+          "streaming_platform": {
+            "type": "string",
+            "description": "Plateforme d'origine de la piste (spotify, deezer, youtube, audiomack, etc.)"
+          },
+          "duration_ms": {
+            "type": "number",
+            "description": "Dur\u00e9e de la piste en millisecondes (si import\u00e9e)"
           }
-        }
+        },
+        "required": [
+          "title"
+        ]
       },
-      "description": "Pistes d'un album / EP (une par fichier audio)"
+      "description": "Pistes d'un album / EP (fichier audio KKD ou lien streaming externe import\u00e9)"
     },
     "description": {
       "type": "string",

@@ -8,13 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'framer-motion';
 import {
   Music, Video, Disc, ListMusic, Upload,
-  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Lock, Eye, AlertTriangle
+  Link2, CheckCircle, ArrowLeft, Loader2, Plus, X, User, Lock, Eye, AlertTriangle, Import
 } from 'lucide-react';
 import ArtistSelector from './ArtistSelector';
 import PreviewSnippetSelector from './PreviewSnippetSelector';
 import PublishPreview from './PublishPreview';
 import MediaUploader from './MediaUploader';
 import LinkPublishMode from './LinkPublishMode';
+import PlatformImporter from './PlatformImporter';
 import { usePlayableUrl } from '@/hooks/usePlayableUrl';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -46,6 +47,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
   const setTrackUpload = (idx, val) => setUploads((prev) => ({ ...prev, tracks: { ...prev.tracks, [idx]: val } }));
   const [done, setDone] = useState(false);
   const [showLinks, setShowLinks] = useState(!!editPublication?.streaming_link);
+  const [showImporter, setShowImporter] = useState(false);
   const [newArtist, setNewArtist] = useState(isEditing ? !editPublication?.artist_id : false);
   const [dupCheck, setDupCheck] = useState({ loading: false, duplicates: [], checked: false });
 
@@ -65,6 +67,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
     preview_duration: editPublication?.preview_duration || 30,
     streaming_platform: editPublication?.streaming_platform || 'spotify',
     streaming_link: editPublication?.streaming_link || '',
+    credits: editPublication?.credits || [],
     new_artist_genre: editPublication?.new_artist_genre || '',
     new_artist_photo_url: editPublication?.new_artist_photo_url || '',
   });
@@ -169,6 +172,23 @@ export default function PublishForm({ user, onClose, editPublication }) {
     set('preview_start', 0);
   };
 
+  // Import de pistes depuis des plateformes externes (Spotify, Deezer, YouTube, etc.)
+  const handleImportTracks = (importedTracks) => {
+    const newTracks = importedTracks.map((t) => ({
+      title: t.title || '',
+      audio_file_url: '',
+      streaming_link: t.streaming_link || '',
+      streaming_platform: t.streaming_platform || '',
+      duration_ms: t.duration_ms || 0,
+    }));
+    set('tracks', [...form.tracks, ...newTracks]);
+  };
+
+  // Crédits (producteur, réalisateur, etc.)
+  const addCredit = () => set('credits', [...form.credits, { role: 'producteur', name: '' }]);
+  const removeCredit = (idx) => set('credits', form.credits.filter((_, i) => i !== idx));
+  const setCredit = (idx, field, val) => set('credits', form.credits.map((c, i) => (i === idx ? { ...c, [field]: val } : c)));
+
   const mutation = useMutation({
     mutationFn: (data) => isEditing
       ? base44.entities.PartnerPublication.update(editPublication.id, data)
@@ -213,6 +233,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
       artist_id: form.artist_id || '',
       featuring_artist: form.featuring_artist.trim(),
       featuring_artist_id: form.featuring_artist_id || '',
+      credits: form.credits.filter((c) => c.name.trim()),
       new_artist_genre: newArtist ? form.new_artist_genre.trim() : '',
       new_artist_photo_url: newArtist ? form.new_artist_photo_url : '',
       streaming_link: form.streaming_link || '',
@@ -468,23 +489,86 @@ export default function PublishForm({ user, onClose, editPublication }) {
           )}
         </div>
 
+        {/* Crédits (producteur, réalisateur, etc.) */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs flex items-center gap-1.5">
+              <User size={12} className="text-primary" /> Crédits (producteur, réalisateur…)
+            </Label>
+            <button type="button" onClick={addCredit} className="text-xs text-primary hover:underline flex items-center gap-1">
+              <Plus size={11} /> Ajouter un crédit
+            </button>
+          </div>
+          {form.credits.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Aucun crédit ajouté. Créditez le producteur, réalisateur, auteur, compositeur, etc.</p>
+          )}
+          {form.credits.map((credit, idx) => (
+            <div key={idx} className="flex gap-2 items-center bg-card border border-border/50 rounded-xl p-2">
+              <select
+                value={credit.role}
+                onChange={(e) => setCredit(idx, 'role', e.target.value)}
+                className="text-xs rounded-lg border border-border/50 bg-secondary px-2 py-1.5 shrink-0 capitalize"
+              >
+                <option value="producteur">Producteur</option>
+                <option value="realisateur">Réalisateur</option>
+                <option value="auteur">Auteur</option>
+                <option value="compositeur">Compositeur</option>
+                <option value="mixage">Mixage</option>
+                <option value="mastering">Mastering</option>
+                <option value="arrangements">Arrangements</option>
+                <option value="autre">Autre</option>
+              </select>
+              <Input
+                value={credit.name}
+                onChange={(e) => setCredit(idx, 'name', e.target.value)}
+                placeholder="Nom de la personne"
+                className="text-sm flex-1"
+              />
+              <button type="button" onClick={() => removeCredit(idx)} className="text-muted-foreground hover:text-destructive shrink-0 p-1">
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+
         {isAlbum ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-xs block">Pistes de l'album *</Label>
-              <button type="button" onClick={addTrack} className="text-xs text-primary hover:underline flex items-center gap-1">
-                <Plus size={11} /> Ajouter une piste
-              </button>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setShowImporter(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <Import size={11} /> Importer depuis Spotify/YouTube…
+                </button>
+                <button type="button" onClick={addTrack} className="text-xs text-primary hover:underline flex items-center gap-1">
+                  <Plus size={11} /> Ajouter une piste
+                </button>
+              </div>
             </div>
-            <p className="text-[11px] text-muted-foreground -mt-1">Ajoutez chaque titre avec son fichier audio. L'album sera gratuit et écoutable en entier.</p>
+            {showImporter && (
+              <PlatformImporter
+                onImport={handleImportTracks}
+                onClose={() => setShowImporter(false)}
+              />
+            )}
+            <p className="text-[11px] text-muted-foreground -mt-1">Importez vos pistes depuis Spotify/Deezer/YouTube, ou ajoutez-les manuellement avec un fichier audio.</p>
             {form.tracks.map((t, idx) => (
               <div key={idx} className="flex flex-col sm:flex-row gap-2 bg-card border border-border/50 rounded-xl p-3">
                 <Input value={t.title} onChange={(e) => setTrackTitle(idx, e.target.value)} placeholder={`Piste ${idx + 1} — titre`} className="text-sm sm:w-44" />
-                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors shrink-0">
-                  <Upload size={14} />
-                  {uploads.tracks[idx] ? 'Envoi…' : t.audio_file_url ? 'Audio ✓' : 'Audio'}
-                  <input type="file" className="hidden" onChange={(e) => handleTrackUpload(idx, e)} accept="audio/*" />
-                </label>
+                {t.streaming_link ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-500/30 bg-green-500/10 text-xs text-green-400 shrink-0">
+                    <Link2 size={12} />
+                    <span className="capitalize">{t.streaming_platform}</span>
+                    <button type="button" onClick={() => set('tracks', form.tracks.map((tr, i) => i === idx ? { ...tr, streaming_link: '', streaming_platform: '' } : tr))} className="hover:text-destructive">
+                      <X size={11} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs transition-colors shrink-0">
+                    <Upload size={14} />
+                    {uploads.tracks[idx] ? 'Envoi…' : t.audio_file_url ? 'Audio ✓' : 'Audio'}
+                    <input type="file" className="hidden" onChange={(e) => handleTrackUpload(idx, e)} accept="audio/*" />
+                  </label>
+                )}
                 <button type="button" onClick={() => removeTrack(idx)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 sm:self-center">
                   <X size={15} />
                 </button>
