@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Instagram } from 'lucide-react';
 import { ReleaseCard, VideoCard, PlaylistPlayer } from '@/components/shared/MusicPlayer';
+import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import { isArtistCertified } from '@/services/artistCertification';
 
 const STREAMING_LINKS = [
   { key: 'spotify_url', label: 'Spotify', color: 'text-green-400', bg: 'bg-green-500/10 hover:bg-green-500/20' },
@@ -66,7 +68,17 @@ export default function ArtistProfileView({ artistId }) {
               </div>
             )}
             <div className="pb-1">
-              <h2 className="font-display text-xl font-extrabold">{artist.name}</h2>
+              <h2 className="font-display text-xl font-extrabold flex items-center gap-2">
+                <span>{artist.name}</span>
+                {isArtistCertified(artist) && (
+                  <VerifiedBadge
+                    size={20}
+                    interactive
+                    artistName={artist.name}
+                    labelName={artist.label || 'KKD Music'}
+                  />
+                )}
+              </h2>
               {artist.genre && <p className="text-xs text-muted-foreground">{artist.genre}</p>}
             </div>
           </div>

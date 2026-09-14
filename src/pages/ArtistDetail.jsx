@@ -15,6 +15,7 @@ import ArtistGallery from '@/components/artist/ArtistGallery';
 import ArtistInfoCard from '@/components/artist/ArtistInfoCard';
 import SimilarArtists from '@/components/artist/SimilarArtists';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import { isArtistCertified, checkArtistCertifiedInDb } from '@/services/artistCertification';
 import ArtistActionBar from '@/components/artist/ArtistActionBar';
 import ArtistPopularList from '@/components/artist/ArtistPopularList';
 import CarouselRow from '@/components/home/CarouselRow';
@@ -65,6 +66,17 @@ export default function ArtistDetail() {
   const { data: artist, isLoading } = useQuery({
     queryKey: ['artist', id],
     queryFn: () => resolveEntityBySlug('Artist', slugParam, 'name'),
+  });
+
+  // Vérification du statut certifié dans la base de données via la fonction helper
+  const { data: isCertified = false } = useQuery({
+    queryKey: ['artist-certified-status', artist?.id, artist?.name, slugParam],
+    queryFn: async () => {
+      if (!artist && !slugParam) return false;
+      return checkArtistCertifiedInDb(artist || slugParam);
+    },
+    enabled: Boolean(artist || slugParam),
+    initialData: () => isArtistCertified(artist),
   });
 
   const { data: allReleasesRaw = [] } = useQuery({
@@ -239,18 +251,24 @@ export default function ArtistDetail() {
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-6xl mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-primary font-bold bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-primary/30 flex items-center gap-1.5">
-              <VerifiedBadge size={14} /> Artiste Officiel KKD
-            </span>
-            {artist.genre && (
-              <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-300 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/[0.08]">
+          {artist.genre && (
+            <div className="mb-2">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-300/90 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/[0.08]">
                 {artist.genre}
               </span>
+            </div>
+          )}
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight break-words leading-tight text-white drop-shadow-lg flex items-center gap-2.5 sm:gap-3 flex-wrap">
+            <span>{artist.name}</span>
+            {isCertified && (
+              <VerifiedBadge
+                size={28}
+                interactive
+                artistName={artist.name}
+                labelName={artist.label || 'KKD Music'}
+                className="translate-y-0.5"
+              />
             )}
-          </div>
-          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-black tracking-tight break-words leading-none text-white drop-shadow-lg">
-            {artist.name}
           </h1>
           <p className="text-xs sm:text-sm text-zinc-300 font-medium mt-3 flex items-center gap-2">
             <span>{compact(followers)} auditeur{followers > 1 ? 's' : ''} mensuel{followers > 1 ? 's' : ''}</span>

@@ -367,4 +367,6 @@ export const artistSyncService = {
   },
 };
 
+export { isArtistCertified, checkArtistCertifiedInDb } from './artistCertification';
+
 export default artistSyncService;
