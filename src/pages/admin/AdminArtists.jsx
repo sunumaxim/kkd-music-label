@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ArrowLeft, Star, Download, ShieldCheck } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, Star, Download, ShieldCheck, Sparkles } from 'lucide-react';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
 import ArtistImporter from '@/components/partner/ArtistImporter';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
@@ -112,15 +112,10 @@ export default function AdminArtists() {
   // ── IMPORTER OVERLAY ──
   if (importing !== null) {
     return (
-      <div className="max-w-2xl space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={() => setImporting(null)} className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft size={18} />
-          </button>
-          <h1 className="font-display text-xl font-extrabold">Import contenu — {importing.name}</h1>
-        </div>
-        <ArtistImporter artist={importing} onClose={() => setImporting(null)} />
-      </div>
+      <ArtistImporter
+        artist={importing?.name ? importing : null}
+        onClose={() => setImporting(null)}
+      />
     );
   }
 
@@ -317,11 +312,20 @@ export default function AdminArtists() {
   // ── LIST ──
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="font-display text-2xl font-extrabold">Artistes</h1>
-        <Button onClick={openNew} className="bg-primary hover:bg-primary/80">
-          <Plus size={16} className="mr-1" /> Ajouter un artiste
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setImporting({ name: '' })}
+            variant="outline"
+            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold"
+          >
+            <Sparkles size={16} /> Alimenter le catalogue (Spotify / YouTube)
+          </Button>
+          <Button onClick={openNew} className="bg-primary hover:bg-primary/80">
+            <Plus size={16} className="mr-1" /> Ajouter un artiste
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (

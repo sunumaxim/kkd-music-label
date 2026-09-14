@@ -13,6 +13,7 @@ import {
 import ArtistSelector from './ArtistSelector';
 import EmbeddedPlayer from '@/components/shared/UniversalPlayer';
 import { useToast } from '@/components/ui/use-toast';
+import { catalogImporterService } from '@/services/catalogImporterService';
 
 const PLATFORM_LABELS = {
   spotify: 'Spotify',
@@ -51,20 +52,32 @@ export default function LinkPublishMode({ user, onClose }) {
     setExtractError('');
     setMetadata(null);
     try {
-      const res = await base44.functions.invoke('extractLinkMetadata', { url: url.trim() });
-      if (res.data?.error) {
-        setExtractError(res.data.error);
-      } else {
-        setMetadata(res.data);
-        setArtistName(res.data.artist_name || '');
-        setTitle(res.data.title || '');
-        if (res.data.duplicate_warning) {
-          toast({
-            title: 'Doublon détecté',
-            description: res.data.duplicate_warning,
-            variant: 'destructive',
-          });
-        }
+      // 1. Extraction optimisée multi-sources (résout 403 Spotify et extrait featurings)
+      let data = null;
+      try {
+        data = await catalogImporterService.extractFromUrl(url.trim());
+      } catch (e) {
+        console.warn('Fallback vers Base44 extractLinkMetadata:', e);
+      }
+
+      if (!data) {
+        const res = await base44.functions.invoke('extractLinkMetadata', { url: url.trim() });
+        if (res.data?.error) throw new Error(res.data.error);
+        data = res.data;
+      }
+
+      if (!data) throw new Error("Impossible d'extraire les données du lien.");
+
+      setMetadata(data);
+      setArtistName(data.artist_name || '');
+      setTitle(data.title || '');
+      if (data.description) setDescription(data.description);
+      if (data.duplicate_warning) {
+        toast({
+          title: 'Doublon détecté',
+          description: data.duplicate_warning,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       setExtractError(err?.message || 'Extraction échouée');

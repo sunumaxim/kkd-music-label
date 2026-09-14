@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ArrowLeft, Play } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, Play, Youtube } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
+import QuickCatalogImporterModal from '../../components/admin/QuickCatalogImporterModal';
 
 const VIDEO_TYPES = [
   { value: 'clip_officiel', label: 'Clip officiel' },
@@ -34,6 +35,7 @@ function getYoutubeId(url) {
 
 export default function AdminVideos() {
   const [editing, setEditing] = useState(null);
+  const [showImporter, setShowImporter] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const queryClient = useQueryClient();
 
@@ -208,12 +210,31 @@ export default function AdminVideos() {
   // ── LIST ──
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="font-display text-2xl font-extrabold">Vidéos</h1>
-        <Button onClick={openNew} className="bg-primary hover:bg-primary/80">
-          <Plus size={16} className="mr-1" /> Publier une vidéo
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowImporter(true)}
+            variant="outline"
+            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold"
+          >
+            <Youtube size={16} className="text-red-500" /> Importer clips YouTube / Artiste
+          </Button>
+          <Button onClick={openNew} className="bg-primary hover:bg-primary/80">
+            <Plus size={16} className="mr-1" /> Publier une vidéo
+          </Button>
+        </div>
       </div>
+
+      <QuickCatalogImporterModal
+        isOpen={showImporter}
+        onClose={() => setShowImporter(false)}
+        initialMode="search"
+        onSuccess={() => {
+          setShowImporter(false);
+          queryClient.invalidateQueries({ queryKey: ['admin-videos'] });
+        }}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

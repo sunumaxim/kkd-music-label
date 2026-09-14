@@ -100,12 +100,17 @@ export const tiktokService = {
    * Récupère le compte TikTok officiel actuellement connecté.
    */
   getOfficialAccount() {
-    const saved = localDb.getItem(OFFICIAL_ACCOUNT_KEY);
-    if (saved) {
-      return saved;
+    try {
+      if (typeof localDb?.getItem === 'function') {
+        const saved = localDb.getItem(OFFICIAL_ACCOUNT_KEY);
+        if (saved) return saved;
+        if (typeof localDb?.setItem === 'function') {
+          localDb.setItem(OFFICIAL_ACCOUNT_KEY, INITIAL_OFFICIAL_ACCOUNT);
+        }
+      }
+    } catch (e) {
+      console.warn('[tiktokService] getOfficialAccount error:', e);
     }
-    // Si premier chargement, initialiser avec le compte officiel KKD
-    localDb.setItem(OFFICIAL_ACCOUNT_KEY, INITIAL_OFFICIAL_ACCOUNT);
     return INITIAL_OFFICIAL_ACCOUNT;
   },
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { catalogImporterService } from '@/services/catalogImporterService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -44,15 +45,27 @@ export default function PlatformImporter({ onImport, onClose }) {
     setLinkData(null);
     setLinkSelected(new Set());
     try {
-      const res = await base44.functions.invoke('extractLinkMetadata', { url: url.trim() });
-      if (res.data?.error) {
-        setLinkError(res.data.error);
+      let data = null;
+      try {
+        data = await catalogImporterService.extractFromUrl(url.trim());
+      } catch (e) {
+        console.warn('Fallback vers Base44 extractLinkMetadata:', e);
+      }
+
+      if (!data) {
+        const res = await base44.functions.invoke('extractLinkMetadata', { url: url.trim() });
+        if (res.data?.error) throw new Error(res.data.error);
+        data = res.data;
+      }
+
+      if (!data) throw new Error("Impossible d'extraire les données du lien.");
+
+      setLinkData(data);
+      // Pré-sélectionner toutes les pistes si c'est un album
+      if (data?.tracks?.length) {
+        setLinkSelected(new Set(data.tracks.map((_, i) => i)));
       } else {
-        setLinkData(res.data);
-        // Pré-sélectionner toutes les pistes si c'est un album
-        if (res.data?.tracks?.length) {
-          setLinkSelected(new Set(res.data.tracks.map((_, i) => i)));
-        }
+        setLinkSelected(new Set([0]));
       }
     } catch (err) {
       setLinkError(err?.message || 'Extraction échouée');

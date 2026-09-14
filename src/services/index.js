@@ -19,3 +19,4 @@ export { analyticsService } from './analyticsService';
 export { platformConfigService } from './platformConfigService';
 export { accessControlService } from './accessControlService';
 export { tiktokService } from './tiktokService';
+export { catalogImporterService } from './catalogImporterService';

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import EntityForm from '../../components/admin/EntityForm';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
+import QuickCatalogImporterModal from '../../components/admin/QuickCatalogImporterModal';
 
 const FIELDS = [
   { key: 'title', label: 'Titre', type: 'text', required: true },
@@ -38,6 +39,7 @@ const FIELDS = [
 
 export default function AdminReleases() {
   const [editing, setEditing] = useState(null);
+  const [showImporter, setShowImporter] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: releases, isLoading } = useQuery({
@@ -90,12 +92,30 @@ export default function AdminReleases() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="font-display text-2xl font-extrabold">Sorties musicales</h1>
-        <Button onClick={() => setEditing('new')} className="bg-primary hover:bg-primary/80">
-          <Plus size={16} className="mr-1" /> Publier
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowImporter(true)}
+            variant="outline"
+            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold"
+          >
+            <Sparkles size={16} /> Importer (Spotify / Artiste / Lien)
+          </Button>
+          <Button onClick={() => setEditing('new')} className="bg-primary hover:bg-primary/80">
+            <Plus size={16} className="mr-1" /> Publier
+          </Button>
+        </div>
       </div>
+
+      <QuickCatalogImporterModal
+        isOpen={showImporter}
+        onClose={() => setShowImporter(false)}
+        onSuccess={() => {
+          setShowImporter(false);
+          queryClient.invalidateQueries({ queryKey: ['admin-releases'] });
+        }}
+      />
 
       {isLoading ? (
         <div className="space-y-3">

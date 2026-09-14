@@ -65,7 +65,7 @@ export default function TikTokPublishButton({ item, type }) {
   const [isDistributing, setIsDistributing] = useState(false);
   const [distributedResult, setDistributedResult] = useState(null);
 
-  const officialAccount = tiktokService.getOfficialAccount();
+  const officialAccount = tiktokService.getOfficialAccount() || { connected: false, permissions: [] };
 
   const handleOpen = () => {
     setCaption(generateCaption(item, type, 'trending'));

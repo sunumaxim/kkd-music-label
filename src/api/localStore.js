@@ -165,14 +165,40 @@ class LocalDatabase {
   }
 
   getItem(key) {
-    const data = this._read();
-    return data[key] !== undefined ? data[key] : null;
+    try {
+      if (typeof window === 'undefined') return null;
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
+      }
+    } catch (e) {
+      console.warn('[LocalDb] getItem warning:', e);
+      return null;
+    }
   }
 
   setItem(key, value) {
-    const data = this._read();
-    data[key] = value;
-    this._write(data);
+    try {
+      if (typeof window === 'undefined') return;
+      const str = typeof value === 'string' ? value : JSON.stringify(value);
+      localStorage.setItem(key, str);
+      this.broadcastUpdate();
+    } catch (e) {
+      console.warn('[LocalDb] setItem warning:', e);
+    }
+  }
+
+  removeItem(key) {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem(key);
+      this.broadcastUpdate();
+    } catch (e) {
+      console.warn('[LocalDb] removeItem warning:', e);
+    }
   }
 
   getCollection(name) {
