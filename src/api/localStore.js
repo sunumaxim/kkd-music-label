@@ -164,6 +164,17 @@ class LocalDatabase {
     }
   }
 
+  getItem(key) {
+    const data = this._read();
+    return data[key] !== undefined ? data[key] : null;
+  }
+
+  setItem(key, value) {
+    const data = this._read();
+    data[key] = value;
+    this._write(data);
+  }
+
   getCollection(name) {
     const data = this._read();
     return Array.isArray(data[name]) ? data[name] : [];
