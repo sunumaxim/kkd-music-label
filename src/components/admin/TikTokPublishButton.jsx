@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Copy, Music2, Share2, UploadCloud, Radio, ExternalLink, Loader2, Sparkles } from 'lucide-react';
+import { Check, Copy, Music2, Share2, UploadCloud, Radio, ExternalLink, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { tiktokService } from '@/services';
@@ -56,7 +56,6 @@ export default function TikTokPublishButton({ item, type }) {
   const [copied, setCopied] = useState(false);
   
   // Direct publish state
-  const [selectedAccount, setSelectedAccount] = useState('');
   const [privacy, setPrivacy] = useState('PUBLIC_TO_EVERYONE');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedResult, setPublishedResult] = useState(null);
@@ -66,13 +65,7 @@ export default function TikTokPublishButton({ item, type }) {
   const [isDistributing, setIsDistributing] = useState(false);
   const [distributedResult, setDistributedResult] = useState(null);
 
-  const accounts = tiktokService.getConnectedAccounts();
-
-  useEffect(() => {
-    if (accounts.length > 0 && !selectedAccount) {
-      setSelectedAccount(accounts[0].id);
-    }
-  }, [accounts, selectedAccount]);
+  const officialAccount = tiktokService.getOfficialAccount();
 
   const handleOpen = () => {
     setCaption(generateCaption(item, type, 'trending'));
@@ -97,6 +90,11 @@ export default function TikTokPublishButton({ item, type }) {
 
   // Publication directe via l'API TikTok
   const handleDirectPublish = async () => {
+    if (!officialAccount || !officialAccount.connected) {
+      toast.error('Veuillez connecter notre compte officiel TikTok avant de publier.');
+      return;
+    }
+
     setIsPublishing(true);
     try {
       const res = await tiktokService.publishDirectVideo({
@@ -104,13 +102,12 @@ export default function TikTokPublishButton({ item, type }) {
         caption: caption,
         videoUrl: item.video_url || item.youtube_url || null,
         coverUrl: item.cover_url || item.image_url || null,
-        accountId: selectedAccount,
         privacyLevel: privacy,
       });
 
       setPublishedResult(res.post);
       toast.success('Publication TikTok réussie !', {
-        description: 'Le contenu a été transmis directement au compte TikTok.',
+        description: `Contenu transmis directement au compte @${officialAccount.username}.`,
       });
     } catch (err) {
       toast.error('Erreur lors de la publication TikTok', {
@@ -123,6 +120,11 @@ export default function TikTokPublishButton({ item, type }) {
 
   // Transmission au répertoire TikTok Sounds
   const handleDistributeSound = async () => {
+    if (!officialAccount || !officialAccount.connected) {
+      toast.error('Veuillez connecter notre compte officiel TikTok d\'abord.');
+      return;
+    }
+
     setIsDistributing(true);
     try {
       const res = await tiktokService.distributeTrackToTikTokSounds({
@@ -137,7 +139,7 @@ export default function TikTokPublishButton({ item, type }) {
 
       setDistributedResult(res.submission);
       toast.success('Morceau transmis au répertoire TikTok !', {
-        description: 'La musique est enregistrée dans le catalogue commercial TikTok.',
+        description: `Enregistré dans le catalogue commercial TikTok Sounds sous ${res.submission.isrc}.`,
       });
     } catch (err) {
       toast.error('Erreur lors de la transmission musicale', {
@@ -154,7 +156,7 @@ export default function TikTokPublishButton({ item, type }) {
         variant="ghost"
         size="icon"
         onClick={handleOpen}
-        title="Publier sur TikTok"
+        title="Diffuser sur TikTok"
         className="text-muted-foreground hover:text-foreground hover:bg-black/10"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -171,7 +173,7 @@ export default function TikTokPublishButton({ item, type }) {
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.87a8.17 8.17 0 004.79 1.53V7.05a4.85 4.85 0 01-1.02-.36z"/>
                 </svg>
               </div>
-              <span>TikTok Hub — {item.title}</span>
+              <span className="truncate">TikTok Hub — {item.title}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -208,32 +210,16 @@ export default function TikTokPublishButton({ item, type }) {
           {/* Contenu Onglet 1: Publication directe API */}
           {activeTab === 'direct' && (
             <div className="space-y-4 pt-1">
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs flex items-center justify-between">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="font-semibold text-foreground">API TikTok active</span>
-                  <span className="text-muted-foreground font-mono">({tiktokService.getConfig().clientKey.slice(0, 6)}...)</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="font-semibold text-foreground">
+                    Compte : @{officialAccount?.username || 'kkdmusiclabel'}
+                  </span>
                 </div>
-                <span className="text-[11px] bg-green-500/10 text-green-600 dark:text-green-400 font-semibold px-2 py-0.5 rounded">
-                  Direct Post Ready
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <ShieldCheck size={11} /> Sécurisé
                 </span>
-              </div>
-
-              {/* Sélection du compte */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">Compte TikTok de destination</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                  <SelectTrigger className="text-xs">
-                    <SelectValue placeholder="Sélectionner un compte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map(acc => (
-                      <SelectItem key={acc.id} value={acc.id} className="text-xs">
-                        @{acc.username} {acc.account_type === 'label_official' ? '(Label KKD Officiel)' : `(Artiste: ${acc.artist_name || acc.display_name})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Caption */}

@@ -3,6 +3,27 @@
 import { createClient } from '@base44/sdk';
 import { localDb } from './localStore';
 
+// Interception préventive des logs d'erreurs réseau de l'intercepteur Axios du SDK Base44
+if (typeof window !== 'undefined' && console && console.error) {
+  const originalConsoleError = console.error.bind(console);
+  console.error = (...args) => {
+    const firstStr = String(args[0] || '');
+    if (firstStr.includes('[Base44 SDK Error]') && (firstStr.includes('Network Error') || firstStr.includes('undefined'))) {
+      console.warn('[Base44 SDK Handled Status]:', ...args);
+      return;
+    }
+    originalConsoleError(...args);
+  };
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event?.reason;
+    if (reason && (reason.name === 'Base44Error' || String(reason?.message).includes('Network Error'))) {
+      event.preventDefault();
+      console.warn('[Base44 Handled Rejection]:', reason?.message || reason);
+    }
+  });
+}
+
 const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
 const APP_ID = env.VITE_BASE44_APP_ID || "6a1cbc29f199c6e829efde07";
 const BACKEND_URL = env.VITE_BASE44_BACKEND_URL || env.VITE_BASE44_APP_BASE_URL || 'https://base44.app';
@@ -13,6 +34,9 @@ export const base44 = createClient({
   appId: APP_ID,
   serverUrl: BACKEND_URL,
   token: ACCESS_TOKEN,
+  analytics: {
+    enabled: false, // Désactivé pour éliminer les requêtes POST /analytics/track/batch invalides au démarrage
+  },
   headers: {
     "api_key": API_KEY,
     "Authorization": `Bearer ${ACCESS_TOKEN}`,

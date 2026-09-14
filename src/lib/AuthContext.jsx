@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('User auth check failed:', error);
+      console.warn('User auth check fallback:', error?.message || error);
       const localUser = localDb.getCurrentUser();
       if (localUser) {
         setUser(localUser);

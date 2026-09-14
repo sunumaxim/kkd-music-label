@@ -69,6 +69,7 @@ import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import AdminLicenses from './pages/admin/AdminLicenses.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import DevenirArtiste from './pages/DevenirArtiste.jsx';
+import TikTokOAuthCallback from './pages/TikTokOAuthCallback';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
@@ -185,6 +186,8 @@ const AuthenticatedApp = () => {
       </Route>
 
       <Route path="/document/:id" element={<DocumentViewer />} />
+      <Route path="/auth/tiktok/callback" element={<TikTokOAuthCallback />} />
+      <Route path="/auth/callback" element={<TikTokOAuthCallback />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
