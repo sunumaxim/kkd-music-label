@@ -66,7 +66,7 @@ export function getReleaseTracks(release, options = {}) {
 
   if (Array.isArray(release.tracks) && release.tracks.length) {
     return release.tracks
-      .filter((t) => t && (t.audio_file_url || t.file_url || t.url))
+      .filter((t) => t && (t.audio_file_url || t.file_url || t.url || release.audio_file_url || includeLocked))
       .filter((t) => {
         if (includeLocked) return true;
         const access = getTrackAccessInfo(t, release);
@@ -80,8 +80,10 @@ export function getReleaseTracks(release, options = {}) {
         return {
           ...base,
           key: `${release.id}-${i}`,
-          title: t.title || release.title,
-          audio_url: t.audio_file_url || t.file_url || t.url,
+          title: t.title || `${release.title} - Piste ${i + 1}`,
+          artist_name: t.artist_name || (t.featuring_artist ? `${release.artist_name} feat. ${t.featuring_artist}` : release.artist_name),
+          featuring_artist: t.featuring_artist || '',
+          audio_url: t.audio_file_url || t.file_url || t.url || release.audio_file_url || '',
           duration: t.duration,
           is_for_sale: access.is_for_sale,
           access_mode: access.access_mode,

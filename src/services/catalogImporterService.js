@@ -13,6 +13,7 @@
 
 import { base44 } from '@/api/base44Client';
 import { artistSyncService } from '@/services/artistSyncService';
+import { resolveMusicLink } from '@/services/musicLinkResolverService';
 
 // Helper pour nettoyer et extraire les featurings
 export function extractFeaturing(rawTitle = '', defaultArtist = '') {
@@ -284,8 +285,8 @@ export const catalogImporterService = {
         apple_music_url: itMatch?.collectionViewUrl || itMatch?.trackViewUrl || '',
         youtube_url: '',
         duration_ms: itMatch?.trackTimeMillis || 0,
-        distributor: item.distributor || item.label || 'Distribution Numérique Certifiée',
-        record_label: item.record_label || item.label || 'KKD Music / Label Partenaire',
+        distributor: item.distributor || '',
+        record_label: item.record_label || item.label || '',
         isrc: item.isrc || itMatch?.isrc || '',
         copyright: item.copyright || (releaseDate ? `© ${releaseDate.slice(0, 4)} ${name}` : ''),
         selected: false,
@@ -317,8 +318,8 @@ export const catalogImporterService = {
         apple_music_url: s.trackViewUrl || s.collectionViewUrl || '',
         youtube_url: '',
         duration_ms: s.trackTimeMillis || 0,
-        distributor: s.collectionCensoredName ? `Apple Music / ${s.collectionCensoredName}` : 'Distribution Numérique Certifiée',
-        record_label: s.collectionArtistName || 'KKD Music / Label Partenaire',
+        distributor: '',
+        record_label: s.collectionArtistName || '',
         isrc: s.isrc || '',
         copyright: `© ${relDate.slice(0, 4)} ${name}`,
         selected: false,
@@ -360,122 +361,21 @@ export const catalogImporterService = {
     if (!rawUrl || !rawUrl.trim()) throw new Error('Veuillez entrer une URL valide.');
     const url = rawUrl.trim();
 
-    // ── SPOTIFY ──
-    const spotifyInfo = parseSpotifyUrl(url);
-    if (spotifyInfo) {
-      try {
-        const oembedRes = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-        if (!oembedRes.ok) throw new Error('Lien Spotify inaccessible via oEmbed');
-        const oembed = await oembedRes.json();
-
-        const rawTitle = oembed.title || '';
-        let artistName = '';
-        let trackTitle = rawTitle;
-
-        // Le titre Spotify oEmbed est souvent "Titre" ou "Artiste - Titre"
-        if (rawTitle.includes(' - ')) {
-          const parts = rawTitle.split(' - ');
-          artistName = parts[0].trim();
-          trackTitle = parts.slice(1).join(' - ').trim();
-        }
-
-        const featData = extractFeaturing(trackTitle, artistName);
-
-        // Enrichir avec iTunes pour avoir la date exacte et l'audio preview
-        let previewAudio = '';
-        let releaseDate = new Date().toISOString().split('T')[0];
-        try {
-          const itSearch = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(`${artistName} ${featData.cleanTitle}`)}&entity=song&limit=1`).then(r => r.json());
-          if (itSearch.results?.[0]) {
-            const first = itSearch.results[0];
-            previewAudio = first.previewUrl || '';
-            if (first.releaseDate) releaseDate = first.releaseDate.slice(0, 10);
-            if (!artistName) artistName = first.artistName;
-            if (!featData.featuring) {
-              const extraFeat = extractFeaturing(first.trackName, artistName).featuring;
-              if (extraFeat) featData.featuring = extraFeat;
-            }
-          }
-        } catch {
-          // Ignorer si iTunes indisponible
-        }
-
+    try {
+      const resolved = await resolveMusicLink(url);
+      if (resolved && resolved.success) {
         return {
-          success: true,
-          platform: 'spotify',
-          type: spotifyInfo.type === 'album' ? 'album' : 'single',
-          title: featData.fullTitle,
-          cleanTitle: featData.cleanTitle,
-          featuring: featData.featuring,
-          artist_name: artistName || 'Artiste',
-          cover_url: oembed.thumbnail_url || '',
-          release_date: releaseDate,
-          spotify_url: url,
-          audio_file_url: previewAudio,
-          description: `Sortie importée depuis Spotify · ${artistName}${featData.featuring ? ` (feat. ${featData.featuring})` : ''}`,
+          ...resolved,
+          type: resolved.format === 'single' ? 'single' : (resolved.format === 'ep' ? 'ep' : 'album'),
+          release_type: resolved.format || 'single',
+          distributor: '',
+          record_label: '',
+          isrc: '',
+          description: '',
         };
-      } catch (err) {
-        // Fallback Base44
-        const res = await base44.functions.invoke('extractLinkMetadata', { url });
-        if (res.data && !res.data.error) return res.data;
-        throw new Error(err.message || "Impossible d'extraire les informations de ce lien Spotify.");
       }
-    }
-
-    // ── YOUTUBE ──
-    const ytId = getYoutubeId(url);
-    if (ytId) {
-      try {
-        const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
-        if (!oembedRes.ok) throw new Error('Vidéo YouTube introuvable');
-        const oembed = await oembedRes.json();
-
-        const featData = extractFeaturing(oembed.title, oembed.author_name);
-
-        return {
-          success: true,
-          platform: 'youtube',
-          type: 'video',
-          title: featData.fullTitle,
-          cleanTitle: featData.cleanTitle,
-          featuring: featData.featuring,
-          artist_name: oembed.author_name || 'Artiste',
-          thumbnail_url: `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`,
-          youtube_url: `https://www.youtube.com/watch?v=${ytId}`,
-          video_type: 'clip_officiel',
-          publish_date: new Date().toISOString().split('T')[0],
-          description: `Clip officiel de ${oembed.author_name || ''} · KKD Video`,
-        };
-      } catch (err) {
-        const res = await base44.functions.invoke('extractLinkMetadata', { url });
-        if (res.data && !res.data.error) return res.data;
-        throw new Error(err.message || 'Impossible d’extraire cette vidéo YouTube.');
-      }
-    }
-
-    // ── DEEZER ──
-    if (url.includes('deezer.com')) {
-      try {
-        const oembedRes = await fetch(`https://api.deezer.com/oembed?url=${encodeURIComponent(url)}`);
-        const oembed = await oembedRes.json();
-        const featData = extractFeaturing(oembed.title, oembed.author_name);
-
-        return {
-          success: true,
-          platform: 'deezer',
-          type: oembed.entity === 'album' ? 'album' : 'single',
-          title: featData.fullTitle,
-          cleanTitle: featData.cleanTitle,
-          featuring: featData.featuring,
-          artist_name: oembed.author_name || 'Artiste',
-          cover_url: oembed.thumbnail_url || '',
-          deezer_url: url,
-          release_date: new Date().toISOString().split('T')[0],
-          description: `Sortie officielle de ${oembed.author_name}`,
-        };
-      } catch (err) {
-        throw new Error(err.message || 'Extraction Deezer échouée.');
-      }
+    } catch (err) {
+      console.warn('[catalogImporterService] resolveMusicLink fallback:', err);
     }
 
     // Fallback générique Base44
@@ -557,17 +457,18 @@ export const catalogImporterService = {
               featuring_artist_id: featSync.primaryFeaturingArtistId || '',
               cover_url: rel.cover_url || '',
               release_date: rel.release_date || new Date().toISOString().split('T')[0],
-              release_type: rel.release_type || 'single',
+              release_type: rel.release_type || (rel.tracks?.length > 6 ? 'album' : rel.tracks?.length > 1 ? 'ep' : 'single'),
               spotify_url: rel.spotify_url || '',
               deezer_url: rel.deezer_url || '',
               apple_music_url: rel.apple_music_url || '',
               youtube_url: rel.youtube_url || '',
-              audio_file_url: rel.audio_preview_url || '',
-              distributor: rel.distributor || 'Distribution Numérique Certifiée',
-              record_label: rel.record_label || 'KKD Music / Label Partenaire',
+              audio_file_url: rel.audio_preview_url || (rel.tracks?.[0]?.audio_file_url) || '',
+              tracks: Array.isArray(rel.tracks) ? rel.tracks : [],
+              distributor: rel.distributor || '',
+              record_label: rel.record_label || '',
               isrc: rel.isrc || '',
               copyright: rel.copyright || '',
-              description: rel.description || `Sortie officielle de ${artistName}${featSync.featuringArtistString ? ` (feat. ${featSync.featuringArtistString})` : ''}`,
+              description: rel.description || '',
               is_featured: false,
               is_for_sale: false,
               price: 0,

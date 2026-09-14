@@ -433,11 +433,6 @@ export default function ArtistDetail() {
                         <p className="text-xs text-zinc-400 truncate mt-0.5">
                           {r.artist_name} <span className="text-primary font-semibold">feat. {artist.name}</span>
                         </p>
-                        {r.distributor && (
-                          <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-                            Distr: {r.distributor}
-                          </p>
-                        )}
                       </div>
                     </Link>
                   ))}
@@ -495,11 +490,6 @@ export default function ArtistDetail() {
                     <p className="text-xs text-zinc-400 truncate mt-0.5">
                       Artiste principal : <span className="text-zinc-200 font-semibold">{r.artist_name}</span>
                     </p>
-                    {r.distributor && (
-                      <p className="text-[10px] text-zinc-400 truncate mt-1">
-                        Distr : {r.distributor}
-                      </p>
-                    )}
                   </Link>
                   <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between">
                     <Link

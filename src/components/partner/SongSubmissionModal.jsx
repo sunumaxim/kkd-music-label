@@ -4,6 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { usePlayer } from '@/lib/PlayerContext';
+import { artistSyncService } from '@/services/artistSyncService';
+import SubmissionLinkImporter from '@/components/partner/SubmissionLinkImporter';
+import SubmissionTracklistEditor from '@/components/partner/SubmissionTracklistEditor';
 import {
   Music,
   X,
@@ -24,6 +27,8 @@ import {
   Headphones,
   Sliders,
   Disc,
+  Layers,
+  ListMusic,
 } from 'lucide-react';
 
 const PRESET_GENRES = [
@@ -87,6 +92,18 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
   // Form State
   const [form, setForm] = useState({
     title: '',
+    format: 'single', // 'single' | 'ep' | 'album'
+    tracks: [
+      {
+        id: 'trk_init_1',
+        track_number: 1,
+        title: '',
+        featuring_artist: '',
+        audio_file_url: '',
+        duration: 180,
+        is_for_sale: false,
+      },
+    ],
     artistMode: 'existing', // 'existing' | 'new'
     artist_id: '',
     artist_name: '',
@@ -121,6 +138,57 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
     streaming_link: '',
     terms_accepted: true,
   });
+
+  // Handler for link resolution (Spotify, Deezer, Apple Music, YouTube)
+  const handleLinkResolved = (resolved) => {
+    if (!resolved) return;
+    const isAlbum = resolved.format === 'album' || (resolved.tracks && resolved.tracks.length > 6);
+    const isEp = resolved.format === 'ep' || (resolved.tracks && resolved.tracks.length > 1 && resolved.tracks.length <= 6);
+    const detectedFormat = isAlbum ? 'album' : isEp ? 'ep' : 'single';
+
+    const cleanTracks = (resolved.tracks && resolved.tracks.length > 0)
+      ? resolved.tracks.map((t, idx) => ({
+          id: `trk_resolved_${idx + 1}`,
+          track_number: idx + 1,
+          title: t.title || `Piste ${idx + 1}`,
+          featuring_artist: t.featuring_artist || '',
+          audio_file_url: t.audio_file_url || '',
+          duration: t.duration || 180,
+          is_for_sale: false,
+        }))
+      : [
+          {
+            id: 'trk_resolved_1',
+            track_number: 1,
+            title: resolved.title || form.title,
+            featuring_artist: resolved.featuring || '',
+            audio_file_url: resolved.audio_file_url || '',
+            duration: 180,
+            is_for_sale: false,
+          },
+        ];
+
+    setForm((prev) => ({
+      ...prev,
+      title: resolved.title || prev.title,
+      artist_name: resolved.artist_name || prev.artist_name,
+      featuring: resolved.featuring || prev.featuring,
+      cover_url: resolved.cover_url || prev.cover_url,
+      cover_name: resolved.cover_url ? `${resolved.title} (Pochette)` : prev.cover_name,
+      release_year: resolved.release_year || prev.release_year,
+      format: detectedFormat,
+      streaming_link: resolved.spotify_url || resolved.deezer_url || resolved.apple_music_url || resolved.youtube_url || prev.streaming_link,
+      streaming_platform: resolved.platform || prev.streaming_platform,
+      audio_url: resolved.audio_file_url || cleanTracks[0]?.audio_file_url || prev.audio_url,
+      audio_name: cleanTracks[0]?.title || 'Extrait audio officiel',
+      tracks: cleanTracks,
+    }));
+
+    toast({
+      title: 'Projet importé avec succès !',
+      description: `${resolved.title} (${detectedFormat === 'single' ? 'Single' : `${cleanTracks.length} morceaux regroupés`}) a été pré-rempli.`,
+    });
+  };
 
   // Fetch official label artists
   const { data: artists = [] } = useQuery({
@@ -275,7 +343,14 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
 
   // Validation
   const isStep1Valid = Boolean(form.title.trim() && form.artist_name.trim() && form.genre);
-  const isStep2Valid = Boolean(form.cover_url && form.audio_url);
+  const isStep2Valid = Boolean(
+    form.cover_url &&
+      (form.format === 'single'
+        ? form.audio_url
+        : form.tracks &&
+          form.tracks.length > 0 &&
+          form.tracks.some((t) => t.audio_file_url || (t.title && t.title.trim())))
+  );
   const isStep3Valid = form.terms_accepted;
 
   // Final Submission
@@ -289,10 +364,50 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
         ? `${form.artist_name.trim()} feat. ${form.featuring.trim()}`
         : form.artist_name.trim();
 
+      // Format tracks for publication & release (Architecture Album / EP)
+      const finalTracks =
+        form.format === 'single'
+          ? [
+              {
+                track_number: 1,
+                title: form.title.trim(),
+                artist_name: fullArtistTitle,
+                audio_file_url: form.audio_url,
+                duration: form.audio_duration || 180,
+                is_for_sale: Boolean(form.is_for_sale),
+                access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
+                is_free: !form.is_for_sale,
+                access_control: form.is_for_sale ? 'paid_only' : 'free_public',
+                price: form.is_for_sale ? Number(form.price) : 0,
+              },
+            ]
+          : form.tracks.map((trk, idx) => {
+              const trkFeat = trk.featuring_artist ? trk.featuring_artist.trim() : '';
+              const trkArtist = trkFeat
+                ? `${form.artist_name.trim()} feat. ${trkFeat}`
+                : form.artist_name.trim();
+              return {
+                track_number: idx + 1,
+                title: (trk.title && trk.title.trim()) || `Piste ${idx + 1}`,
+                artist_name: trkArtist,
+                featuring_artist: trkFeat,
+                audio_file_url: trk.audio_file_url || form.audio_url || '',
+                duration: trk.duration || 180,
+                is_for_sale: Boolean(form.is_for_sale),
+                access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
+                is_free: !form.is_for_sale,
+                access_control: form.is_for_sale ? 'paid_only' : 'free_public',
+                price: form.is_for_sale ? Number(form.price) : 0,
+              };
+            });
+
+      const primaryAudioUrl = form.audio_url || finalTracks[0]?.audio_file_url || '';
+
       const publicationData = {
         partner_email: user?.email || 'artiste@kkdmusic.com',
         partner_name: user?.full_name || form.artist_name,
         content_type: 'sortie_musicale',
+        release_type: form.format,
         title: form.title.trim(),
         artist_name: fullArtistTitle,
         artist_id: form.artistMode === 'existing' ? form.artist_id : '',
@@ -305,8 +420,8 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
         isrc: form.isrc.trim(),
         is_explicit: form.is_explicit,
         cover_url: form.cover_url,
-        file_url: form.audio_url,
-        audio_file_url: form.audio_url,
+        file_url: primaryAudioUrl,
+        audio_file_url: primaryAudioUrl,
         description: form.description.trim(),
         lyrics: form.lyrics.trim(),
         is_for_sale: Boolean(form.is_for_sale),
@@ -318,61 +433,114 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
         streaming_link: form.streaming_link.trim(),
         status: 'publie', // Immediately available
         created_date: new Date().toISOString(),
-        tracks: [
-          {
-            title: form.title.trim(),
-            artist_name: fullArtistTitle,
-            audio_file_url: form.audio_url,
-            duration: form.audio_duration || 180,
-            is_for_sale: Boolean(form.is_for_sale),
-            access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
-            is_free: !form.is_for_sale,
-            access_control: form.is_for_sale ? 'paid_only' : 'free_public',
-            price: form.is_for_sale ? Number(form.price) : 0,
-          },
-        ],
+        tracks: finalTracks,
       };
 
       // 1. Create PartnerPublication record
       const pubRecord = await base44.entities.PartnerPublication.create(publicationData);
 
-      // 2. Also register directly as playable Release in the platform
-      const trackProfile = {
-        title: form.title.trim(),
-        artist_name: fullArtistTitle,
-        audio_file_url: form.audio_url,
-        duration: form.audio_duration || 180,
-        is_for_sale: Boolean(form.is_for_sale),
-        access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
-        is_free: !form.is_for_sale,
-        access_control: form.is_for_sale ? 'paid_only' : 'free_public',
-        price: form.is_for_sale ? Number(form.price) : 0,
-      };
+      // 2. Synchronize collaborating & featuring artist profiles
+      try {
+        await artistSyncService.syncFeaturingArtists({
+          mainArtistName: form.artist_name.trim(),
+          featuringString: form.featuring.trim(),
+          releaseTitle: form.title.trim(),
+          releaseId: pubRecord.id,
+          coverUrl: form.cover_url,
+        });
 
-      const releaseRecord = await base44.entities.Release.create({
-        title: form.title.trim(),
-        artist_name: fullArtistTitle,
-        artist_id: form.artistMode === 'existing' ? form.artist_id : `art_custom_${Date.now()}`,
-        genre: selectedGenre,
-        release_type: 'single',
-        cover_url: form.cover_url,
-        audio_file_url: form.audio_url,
-        release_date: new Date().toISOString(),
-        description: form.description.trim(),
-        lyrics: form.lyrics.trim(),
-        is_for_sale: Boolean(form.is_for_sale),
-        access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
-        is_free: !form.is_for_sale,
-        access_control: form.is_for_sale ? 'paid_only' : 'free_public',
-        price: form.is_for_sale ? Number(form.price) : 0,
-        plays_count: 1,
-        likes_count: 0,
-        is_featured: false,
-        status: 'publie',
-        streaming_link: form.streaming_link.trim(),
-        streaming_platform: form.streaming_platform,
-        tracks: [trackProfile],
-      });
+        // Also synchronize featuring artists from specific tracks
+        for (const trk of finalTracks) {
+          if (trk.featuring_artist) {
+            await artistSyncService.syncFeaturingArtists({
+              mainArtistName: form.artist_name.trim(),
+              featuringString: trk.featuring_artist,
+              releaseTitle: trk.title,
+              releaseId: pubRecord.id,
+              coverUrl: form.cover_url,
+            });
+          }
+        }
+      } catch (syncErr) {
+        console.warn('Featuring sync non-blocking warning:', syncErr);
+      }
+
+      // 3. Check for existing release to prevent duplicates (même titre, ISRC ou lien streaming)
+      let existingReleases = [];
+      try {
+        existingReleases = await base44.entities.Release.list();
+      } catch {
+        existingReleases = [];
+      }
+
+      const duplicateCheck = artistSyncService.checkDuplicateRelease(
+        {
+          title: form.title.trim(),
+          artist_name: form.artist_name.trim(),
+          isrc: form.isrc.trim(),
+          streaming_link: form.streaming_link.trim(),
+          spotify_url: form.streaming_platform === 'spotify' ? form.streaming_link.trim() : '',
+          deezer_url: form.streaming_platform === 'deezer' ? form.streaming_link.trim() : '',
+          apple_music_url: form.streaming_platform === 'apple_music' ? form.streaming_link.trim() : '',
+          youtube_url: form.streaming_platform === 'youtube' ? form.streaming_link.trim() : '',
+          tracks: finalTracks,
+        },
+        existingReleases
+      );
+
+      let releaseRecord;
+      let wasUpdatedDuplicate = false;
+
+      if (duplicateCheck.isDuplicate && duplicateCheck.existingRelease) {
+        // Mettre à jour la chanson existante au lieu de créer un doublon
+        releaseRecord = await base44.entities.Release.update(duplicateCheck.existingRelease.id, {
+          ...duplicateCheck.mergedUpdates,
+          title: form.title.trim(),
+          artist_name: fullArtistTitle,
+          genre: selectedGenre,
+          release_type: form.format,
+          cover_url: form.cover_url || duplicateCheck.existingRelease.cover_url,
+          audio_file_url: primaryAudioUrl || duplicateCheck.existingRelease.audio_file_url,
+          description: form.description.trim() || duplicateCheck.existingRelease.description,
+          lyrics: form.lyrics.trim() || duplicateCheck.existingRelease.lyrics,
+          is_for_sale: Boolean(form.is_for_sale),
+          access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
+          is_free: !form.is_for_sale,
+          access_control: form.is_for_sale ? 'paid_only' : 'free_public',
+          price: form.is_for_sale ? Number(form.price) : 0,
+          status: 'publie',
+          streaming_link: form.streaming_link.trim() || duplicateCheck.existingRelease.streaming_link,
+          streaming_platform: form.streaming_platform || duplicateCheck.existingRelease.streaming_platform,
+          tracks: finalTracks.length > 0 ? finalTracks : (duplicateCheck.existingRelease.tracks || []),
+        });
+        wasUpdatedDuplicate = true;
+      } else {
+        // Register new playable Release on the platform with grouped tracks
+        releaseRecord = await base44.entities.Release.create({
+          title: form.title.trim(),
+          artist_name: fullArtistTitle,
+          artist_id: form.artistMode === 'existing' ? form.artist_id : `art_custom_${Date.now()}`,
+          genre: selectedGenre,
+          release_type: form.format,
+          cover_url: form.cover_url,
+          audio_file_url: primaryAudioUrl,
+          release_date: new Date().toISOString(),
+          description: form.description.trim(),
+          lyrics: form.lyrics.trim(),
+          is_for_sale: Boolean(form.is_for_sale),
+          access_mode: form.is_for_sale ? 'en_vente' : 'gratuit',
+          is_free: !form.is_for_sale,
+          access_control: form.is_for_sale ? 'paid_only' : 'free_public',
+          price: form.is_for_sale ? Number(form.price) : 0,
+          plays_count: 1,
+          likes_count: 0,
+          is_featured: false,
+          status: 'publie',
+          streaming_link: form.streaming_link.trim(),
+          streaming_platform: form.streaming_platform,
+          tracks: finalTracks,
+        });
+      }
 
       // Invalidate relevant React Query caches for instantaneous UI updates
       queryClient.invalidateQueries({ queryKey: ['partner-publications'] });
@@ -385,8 +553,14 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
       setStep(4); // Move to success step
 
       toast({
-        title: 'Morceau soumis et publié avec succès !',
-        description: `"${form.title}" est désormais disponible sur KKD Music.`,
+        title: wasUpdatedDuplicate
+          ? 'Morceau mis à jour (Doublon évité) !'
+          : form.format === 'single'
+          ? 'Morceau soumis et publié avec succès !'
+          : 'Projet soumis et publié avec succès !',
+        description: wasUpdatedDuplicate
+          ? `"${form.title}" existait déjà sur la plateforme (${duplicateCheck.matchReason}). Ses données et pistes ont été mises à jour sans doublon.`
+          : `"${form.title}" (${finalTracks.length} titre${finalTracks.length > 1 ? 's' : ''}) est désormais disponible sur KKD Music.`,
       });
     } catch (err) {
       console.error('Submission error:', err);
@@ -527,18 +701,99 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                 <div className="rounded-2xl bg-primary/10 border border-primary/20 p-4 flex items-start gap-3">
                   <Sparkles size={18} className="text-primary shrink-0 mt-0.5" />
                   <div className="text-xs text-zinc-300 leading-relaxed">
-                    <p className="font-bold text-white mb-0.5">Distribution officielle KKD Music</p>
-                    Renseignez scrupuleusement les informations de votre morceau. Ces métadonnées
-                    garantissent le bon référencement sur la plateforme et les calculs des droits
-                    d'auteur.
+                    <p className="font-bold text-white mb-0.5">Publication & Référencement de Musique</p>
+                    Renseignez les informations de votre sortie musicale ou importez-la directement via un lien streaming. Les morceaux d'un album ou d'un EP restent rigoureusement groupés ensemble.
                   </div>
                 </div>
 
-                {/* Song Title */}
+                {/* Direct Link Importer (Spotify, Deezer, Apple Music, YouTube) */}
+                <SubmissionLinkImporter
+                  onResolved={handleLinkResolved}
+                  currentFormat={form.format}
+                />
+
+                {/* Format / Architecture Selector: Single vs EP vs Album */}
+                <div className="space-y-2">
+                  <label className="text-xs font-mono uppercase tracking-widest text-zinc-300 font-bold flex items-center justify-between">
+                    <span>Architecture de la Sortie <span className="text-primary">*</span></span>
+                    <span className="text-[11px] text-zinc-400 lowercase">
+                      {form.format === 'single'
+                        ? '1 morceau'
+                        : form.format === 'ep'
+                        ? `${form.tracks.length} titres (EP)`
+                        : `${form.tracks.length} titres (Album)`}
+                    </span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => updateField('format', 'single')}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+                        form.format === 'single'
+                          ? 'bg-primary/15 border-primary text-white shadow-lg shadow-primary/15 ring-1 ring-primary/40'
+                          : 'bg-[#181d29] border-white/[0.08] text-zinc-400 hover:border-white/[0.2] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Disc size={18} className={form.format === 'single' ? 'text-primary' : 'text-zinc-400'} />
+                        {form.format === 'single' && <CheckCircle2 size={14} className="text-primary" />}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">Single</p>
+                        <p className="text-[10px] text-zinc-400">1 seul titre individuel</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateField('format', 'ep')}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+                        form.format === 'ep'
+                          ? 'bg-primary/15 border-primary text-white shadow-lg shadow-primary/15 ring-1 ring-primary/40'
+                          : 'bg-[#181d29] border-white/[0.08] text-zinc-400 hover:border-white/[0.2] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Layers size={18} className={form.format === 'ep' ? 'text-primary' : 'text-zinc-400'} />
+                        {form.format === 'ep' && <CheckCircle2 size={14} className="text-primary" />}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">EP (Mini-album)</p>
+                        <p className="text-[10px] text-zinc-400">2 à 6 titres groupés</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => updateField('format', 'album')}
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col gap-1.5 cursor-pointer ${
+                        form.format === 'album'
+                          ? 'bg-primary/15 border-primary text-white shadow-lg shadow-primary/15 ring-1 ring-primary/40'
+                          : 'bg-[#181d29] border-white/[0.08] text-zinc-400 hover:border-white/[0.2] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <ListMusic size={18} className={form.format === 'album' ? 'text-primary' : 'text-zinc-400'} />
+                        {form.format === 'album' && <CheckCircle2 size={14} className="text-primary" />}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">Album Complet</p>
+                        <p className="text-[10px] text-zinc-400">7 titres et plus</p>
+                      </div>
+                    </button>
+                  </div>
+                  {form.format !== 'single' && (
+                    <p className="text-[11px] text-emerald-400/90 font-medium pt-0.5">
+                      ✓ Architecture Album garantie : tous les titres seront groupés ensemble sous cette sortie.
+                    </p>
+                  )}
+                </div>
+
+                {/* Song / Album Title */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-mono uppercase tracking-widest text-zinc-300 font-bold">
-                      Titre du morceau <span className="text-primary">*</span>
+                      {form.format === 'single' ? 'Titre du morceau' : 'Titre du projet / Album'} <span className="text-primary">*</span>
                     </label>
                     <span className="text-[11px] text-zinc-500">{form.title.length}/80</span>
                   </div>
@@ -547,7 +802,7 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                     maxLength={80}
                     value={form.title}
                     onChange={(e) => updateField('title', e.target.value)}
-                    placeholder="Ex : Sama Guèl, Dakar Nights, Bamba…"
+                    placeholder={form.format === 'single' ? "Ex : Sama Guèl, Dakar Nights, Bamba…" : "Ex : Bamba Reloaded (Album), Timis (EP)…"}
                     className="w-full bg-[#181d29] border border-white/[0.1] focus:border-primary rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                   />
                 </div>
@@ -877,156 +1132,167 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                   )}
                 </div>
 
-                {/* 2. AUDIO MASTER FILE SECTION */}
-                <div className="space-y-3 pt-4 border-t border-white/[0.06]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-mono uppercase tracking-widest text-zinc-300 font-bold flex items-center gap-2">
-                        <FileAudio size={15} className="text-primary" /> Fichier Audio Master{' '}
-                        <span className="text-primary">*</span>
-                      </h3>
-                      <p className="text-[11px] text-zinc-400">
-                        WAV, FLAC ou MP3 320 kbps (sans perte pour une qualité optimale).
-                      </p>
-                    </div>
-
-                    {form.audio_url && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (audioPreviewRef.current) audioPreviewRef.current.pause();
-                          setIsPlayingAudio(false);
-                          updateField('audio_url', '');
-                          updateField('audio_name', '');
-                        }}
-                        className="text-xs text-rose-400 hover:underline flex items-center gap-1"
-                      >
-                        <Trash2 size={13} /> Retirer
-                      </button>
-                    )}
-                  </div>
-
-                  {form.audio_url ? (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-[#151924] border border-white/[0.1] space-y-4 shadow-xl">
-                      {/* File Details Bar */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
-                            <Headphones size={20} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-white truncate max-w-[240px] sm:max-w-md">
-                              {form.audio_name || 'Master audio chargé'}
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-zinc-400">
-                              <span>HQ Audio 24-bit / 44.1kHz</span>
-                              {form.audio_size_mb && (
-                                <>
-                                  <span>•</span>
-                                  <span>{form.audio_size_mb}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => audioInputRef.current?.click()}
-                          className="text-xs text-primary hover:underline font-bold"
-                        >
-                          Remplacer
-                        </button>
+                {/* 2. AUDIO / TRACKLIST ARCHITECTURE SECTION */}
+                {form.format === 'single' ? (
+                  <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xs font-mono uppercase tracking-widest text-zinc-300 font-bold flex items-center gap-2">
+                          <FileAudio size={15} className="text-primary" /> Fichier Audio Master{' '}
+                          <span className="text-primary">*</span>
+                        </h3>
+                        <p className="text-[11px] text-zinc-400">
+                          WAV, FLAC ou MP3 320 kbps (ou extrait déjà lié par votre lien streaming).
+                        </p>
                       </div>
 
-                      {/* In-Modal Audio Player Controls */}
-                      <div className="bg-black/40 rounded-xl p-3.5 border border-white/[0.06] flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={togglePlayAudioPreview}
-                          className="w-11 h-11 rounded-full bg-primary hover:scale-105 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-primary/30 transition-all shrink-0 cursor-pointer"
-                          aria-label={isPlayingAudio ? 'Pause' : 'Play'}
-                        >
-                          {isPlayingAudio ? (
-                            <Pause size={18} fill="currentColor" />
-                          ) : (
-                            <Play size={18} fill="currentColor" className="ml-0.5" />
-                          )}
-                        </button>
-
-                        {/* Animated Waveform Simulation */}
-                        <div className="flex-1 space-y-1.5">
-                          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                            <span className="text-white font-bold">
-                              {formatSeconds(audioCurrentTime)}
-                            </span>
-                            <span>{formatSeconds(audioDuration)}</span>
-                          </div>
-
-                          <input
-                            type="range"
-                            min="0"
-                            max={audioDuration || 100}
-                            value={audioCurrentTime}
-                            onChange={handleAudioSeek}
-                            className="w-full h-1.5 bg-white/[0.1] rounded-full accent-primary cursor-pointer"
-                          />
-                        </div>
-
-                        {/* Mute toggle */}
+                      {form.audio_url && (
                         <button
                           type="button"
                           onClick={() => {
-                            if (audioPreviewRef.current) {
-                              audioPreviewRef.current.muted = !isMuted;
-                              setIsMuted(!isMuted);
-                            }
+                            if (audioPreviewRef.current) audioPreviewRef.current.pause();
+                            setIsPlayingAudio(false);
+                            updateField('audio_url', '');
+                            updateField('audio_name', '');
                           }}
-                          className="text-zinc-400 hover:text-white p-2"
+                          className="text-xs text-rose-400 hover:underline flex items-center gap-1"
                         >
-                          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                          <Trash2 size={13} /> Retirer
+                        </button>
+                      )}
+                    </div>
+
+                    {form.audio_url ? (
+                      <div className="p-4 sm:p-5 rounded-2xl bg-[#151924] border border-white/[0.1] space-y-4 shadow-xl">
+                        {/* File Details Bar */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
+                              <Headphones size={20} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white truncate max-w-[240px] sm:max-w-md">
+                                {form.audio_name || 'Master audio chargé'}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <span>HQ Audio 24-bit / 44.1kHz</span>
+                                {form.audio_size_mb && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{form.audio_size_mb}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => audioInputRef.current?.click()}
+                            className="text-xs text-primary hover:underline font-bold"
+                          >
+                            Remplacer
+                          </button>
+                        </div>
+
+                        {/* In-Modal Audio Player Controls */}
+                        <div className="bg-black/40 rounded-xl p-3.5 border border-white/[0.06] flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={togglePlayAudioPreview}
+                            className="w-11 h-11 rounded-full bg-primary hover:scale-105 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-primary/30 transition-all shrink-0 cursor-pointer"
+                            aria-label={isPlayingAudio ? 'Pause' : 'Play'}
+                          >
+                            {isPlayingAudio ? (
+                              <Pause size={18} fill="currentColor" />
+                            ) : (
+                              <Play size={18} fill="currentColor" className="ml-0.5" />
+                            )}
+                          </button>
+
+                          {/* Animated Waveform Simulation */}
+                          <div className="flex-1 space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                              <span className="text-white font-bold">
+                                {formatSeconds(audioCurrentTime)}
+                              </span>
+                              <span>{formatSeconds(audioDuration)}</span>
+                            </div>
+
+                            <input
+                              type="range"
+                              min="0"
+                              max={audioDuration || 100}
+                              value={audioCurrentTime}
+                              onChange={handleAudioSeek}
+                              className="w-full h-1.5 bg-white/[0.1] rounded-full accent-primary cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Mute toggle */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (audioPreviewRef.current) {
+                                audioPreviewRef.current.muted = !isMuted;
+                                setIsMuted(!isMuted);
+                              }
+                            }}
+                            className="text-zinc-400 hover:text-white p-2"
+                          >
+                            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => audioInputRef.current?.click()}
+                        className="border-2 border-dashed border-white/20 hover:border-primary/60 bg-white/[0.02] hover:bg-primary/[0.03] rounded-2xl p-6 text-center cursor-pointer transition-all group"
+                      >
+                        <input
+                          ref={audioInputRef}
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleAudioFileChange}
+                          className="hidden"
+                        />
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.06] group-hover:bg-primary/20 text-zinc-300 group-hover:text-primary flex items-center justify-center mx-auto mb-3 transition-colors">
+                          <Upload size={22} />
+                        </div>
+                        <p className="text-sm font-bold text-white mb-1">
+                          {isUploadingAudio
+                            ? 'Téléversement du fichier audio en cours…'
+                            : 'Cliquez ou glissez-déposez le master audio'}
+                        </p>
+                        <p className="text-xs text-zinc-500">WAV, FLAC ou MP3 jusqu'à 80 Mo</p>
+
+                        {/* Quick test demo audio button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateField('audio_url', SAMPLE_AUDIO_URL);
+                            updateField('audio_name', 'KKD_Studio_Master_Demo.wav');
+                            updateField('audio_size_mb', '34.2 Mo');
+                            updateField('audio_duration', 214);
+                          }}
+                          className="mt-3 text-xs text-primary hover:underline font-bold inline-flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-full border border-primary/20"
+                        >
+                          <Sparkles size={13} /> Utiliser un audio de démonstration pour tester
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => audioInputRef.current?.click()}
-                      className="border-2 border-dashed border-white/20 hover:border-primary/60 bg-white/[0.02] hover:bg-primary/[0.03] rounded-2xl p-6 text-center cursor-pointer transition-all group"
-                    >
-                      <input
-                        ref={audioInputRef}
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleAudioFileChange}
-                        className="hidden"
-                      />
-                      <div className="w-12 h-12 rounded-2xl bg-white/[0.06] group-hover:bg-primary/20 text-zinc-300 group-hover:text-primary flex items-center justify-center mx-auto mb-3 transition-colors">
-                        <Upload size={22} />
-                      </div>
-                      <p className="text-sm font-bold text-white mb-1">
-                        {isUploadingAudio
-                          ? 'Téléversement du fichier audio en cours…'
-                          : 'Cliquez ou glissez-déposez le master audio'}
-                      </p>
-                      <p className="text-xs text-zinc-500">WAV, FLAC ou MP3 jusqu'à 80 Mo</p>
-
-                      {/* Quick test demo audio button */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateField('audio_url', SAMPLE_AUDIO_URL);
-                          updateField('audio_name', 'KKD_Studio_Master_Demo.wav');
-                          updateField('audio_size_mb', '34.2 Mo');
-                          updateField('audio_duration', 214);
-                        }}
-                        className="mt-3 text-xs text-primary hover:underline font-bold inline-flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-full border border-primary/20"
-                      >
-                        <Sparkles size={13} /> Utiliser un audio de démonstration pour tester
-                      </button>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="pt-4 border-t border-white/[0.06]">
+                    <SubmissionTracklistEditor
+                      tracks={form.tracks}
+                      onChange={(updatedTracks) => updateField('tracks', updatedTracks)}
+                      artistName={form.artist_name}
+                      format={form.format}
+                    />
+                  </div>
+                )}
 
                 {/* 3. CONTRÔLE D'ACCÈS DE LA PISTE : GRATUIT OU EN VENTE */}
                 <div className="p-4 sm:p-5 rounded-2xl bg-[#151924] border border-white/[0.08] space-y-3">
@@ -1214,7 +1480,7 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                     <div className="flex-1 text-center sm:text-left min-w-0 space-y-1.5">
                       <div className="flex items-center justify-center sm:justify-start gap-2">
                         <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold border border-primary/30">
-                          Single • {form.release_year}
+                          {form.format === 'single' ? 'Single' : form.format === 'ep' ? 'EP' : 'Album'} • {form.release_year}
                         </span>
                         <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-white/[0.08] text-zinc-300">
                           {form.custom_genre || form.genre}
@@ -1236,7 +1502,11 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                       </p>
 
                       <div className="pt-1 flex items-center justify-center sm:justify-start gap-3 text-xs text-zinc-400">
-                        <span>Audio Master HQ</span>
+                        <span>
+                          {form.format === 'single'
+                            ? 'Audio Master HQ'
+                            : `${form.tracks.length} titres groupés`}
+                        </span>
                         <span>•</span>
                         <span className="text-primary font-bold">
                           {form.is_for_sale ? `${form.price} F CFA (Vente)` : 'Streaming Libre'}
@@ -1244,6 +1514,52 @@ export default function SongSubmissionModal({ isOpen, onClose, user }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Grouped Tracks List for Album / EP */}
+                  {form.format !== 'single' && form.tracks && form.tracks.length > 0 && (
+                    <div className="mt-4 p-4 rounded-2xl bg-[#151924] border border-white/[0.08] space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-mono uppercase tracking-widest text-zinc-300 font-bold flex items-center gap-2">
+                          <ListMusic size={15} className="text-primary" />
+                          Morceaux regroupés dans ce projet ({form.tracks.length} pistes)
+                        </h4>
+                        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+                          Architecture {form.format === 'ep' ? 'EP' : 'Album'}
+                        </span>
+                      </div>
+                      <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                        {form.tracks.map((t, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-black/30 border border-white/[0.05] text-xs"
+                          >
+                            <div className="flex items-center gap-2.5 truncate min-w-0">
+                              <span className="text-zinc-500 font-mono text-[11px] w-5 shrink-0">
+                                #{idx + 1}
+                              </span>
+                              <span className="font-semibold text-white truncate">
+                                {t.title || `Piste ${idx + 1}`}
+                              </span>
+                              {t.featuring_artist && (
+                                <span className="text-[10px] text-amber-400 font-medium shrink-0">
+                                  feat. {t.featuring_artist}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-zinc-400 shrink-0 ml-2">
+                              {t.audio_file_url ? (
+                                <span className="text-emerald-400 flex items-center gap-1 font-medium">
+                                  <CheckCircle2 size={12} /> Audio prêt
+                                </span>
+                              ) : (
+                                <span className="text-zinc-500">Audio lié</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 2. CHOIX DU MODE DE DIFFUSION : GRATUIT OU EN VENTE */}

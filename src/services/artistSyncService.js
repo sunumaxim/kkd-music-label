@@ -48,6 +48,43 @@ export function parseFeaturingNames(rawFeat = '') {
   return result;
 }
 
+// Extraction automatique des featurings depuis les chaînes titre et artiste
+export function extractFeaturing(rawTitle = '', rawArtist = '') {
+  let cleanTitle = (rawTitle || '').trim();
+  let cleanArtist = cleanArtistName(rawArtist || '');
+  const featStrings = [];
+
+  // 1. Détecter dans le titre : (feat. XYZ) ou [feat. XYZ] ou feat. XYZ
+  const titleFeatMatch = cleanTitle.match(/[(\[]\s*(?:feat\.?|featuring|ft\.?|with|avec)\s+([^\])]+)[)\]]/i);
+  if (titleFeatMatch) {
+    featStrings.push(titleFeatMatch[1]);
+    cleanTitle = cleanTitle.replace(titleFeatMatch[0], '').trim();
+  } else {
+    const trailingFeat = cleanTitle.match(/\s+(?:feat\.?|featuring|ft\.?)\s+(.+)$/i);
+    if (trailingFeat) {
+      featStrings.push(trailingFeat[1]);
+      cleanTitle = cleanTitle.replace(trailingFeat[0], '').trim();
+    }
+  }
+
+  // 2. Détecter dans l'artiste : "Artist A feat. Artist B"
+  const artistFeatMatch = cleanArtist.match(/\s+(?:feat\.?|featuring|ft\.?|with|avec)\s+(.+)$/i);
+  if (artistFeatMatch) {
+    featStrings.push(artistFeatMatch[1]);
+    cleanArtist = cleanArtist.replace(artistFeatMatch[0], '').trim();
+  }
+
+  const allNames = featStrings.flatMap(s => parseFeaturingNames(s));
+  const uniqueFeats = Array.from(new Set(allNames.map(n => cleanArtistName(n)))).filter(Boolean);
+
+  return {
+    cleanTitle,
+    cleanArtist,
+    featuring: uniqueFeats.join(', '),
+    featuringList: uniqueFeats,
+  };
+}
+
 export const artistSyncService = {
   /**
    * Trouve un artiste dans la base (locale ou cloud) par son nom
@@ -184,26 +221,48 @@ export const artistSyncService = {
 
   /**
    * Dédoublonnage intelligent multi-plateformes :
-   * Vérifie si une sortie existe déjà (même titre + même artiste, ou même ISRC/UPC).
-   * Retourne les données fusionnées à mettre à jour si elle existe déjà.
+   * Vérifie si une sortie existe déjà (même lien streaming, même ISRC/UPC, ou même titre + artiste).
+   * Si elle existe déjà, fusionne et met à jour les informations au lieu de créer un doublon.
    */
   checkDuplicateRelease(incoming, existingReleases = []) {
-    const inTitle = (incoming.title || incoming.cleanTitle || '').toLowerCase().trim();
-    const inArtist = (incoming.artist_name || '').toLowerCase().trim();
+    const normalize = (str) =>
+      (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\W_]+/g, ' ')
+        .trim();
+
+    const inTitle = normalize(incoming.title || incoming.cleanTitle);
+    const inArtist = normalize(incoming.artist_name);
     const inIsrc = (incoming.isrc || '').toLowerCase().trim();
     const inUpc = (incoming.upc || '').toLowerCase().trim();
+    const inSpotify = (incoming.spotify_url || incoming.streaming_link || '').toLowerCase().trim();
+    const inDeezer = (incoming.deezer_url || '').toLowerCase().trim();
+    const inYoutube = (incoming.youtube_url || '').toLowerCase().trim();
+    const inApple = (incoming.apple_music_url || '').toLowerCase().trim();
 
     for (const ex of existingReleases) {
-      const exTitle = (ex.title || '').toLowerCase().trim();
-      const exArtist = (ex.artist_name || '').toLowerCase().trim();
+      const exTitle = normalize(ex.title);
+      const exArtist = normalize(ex.artist_name);
       const exIsrc = (ex.isrc || '').toLowerCase().trim();
       const exUpc = (ex.upc || '').toLowerCase().trim();
+      const exSpotify = (ex.spotify_url || ex.streaming_link || '').toLowerCase().trim();
+      const exDeezer = (ex.deezer_url || '').toLowerCase().trim();
+      const exYoutube = (ex.youtube_url || '').toLowerCase().trim();
+      const exApple = (ex.apple_music_url || '').toLowerCase().trim();
 
-      // 1. Match par code ISRC ou UPC officiel (fiabilité 100%)
+      // 1. Match par URL streaming directe (exact match)
+      const spotifyMatch = inSpotify && exSpotify && inSpotify === exSpotify;
+      const deezerMatch = inDeezer && exDeezer && inDeezer === exDeezer;
+      const youtubeMatch = inYoutube && exYoutube && inYoutube === exYoutube;
+      const appleMatch = inApple && exApple && inApple === exApple;
+
+      // 2. Match par code ISRC ou UPC officiel (fiabilité 100%)
       const isrcMatch = inIsrc && exIsrc && inIsrc === exIsrc;
       const upcMatch = inUpc && exUpc && inUpc === exUpc;
 
-      // 2. Match par titre et nom d'artiste
+      // 3. Match par titre et artiste normalisés
       const titleMatch = inTitle && exTitle && (
         inTitle === exTitle ||
         inTitle.startsWith(exTitle) ||
@@ -215,29 +274,38 @@ export const artistSyncService = {
         exArtist.includes(inArtist)
       );
 
-      if (isrcMatch || upcMatch || (titleMatch && artistMatch)) {
-        // Détecté comme doublon ! Créer la mise à jour enrichie
+      if (spotifyMatch || deezerMatch || youtubeMatch || appleMatch || isrcMatch || upcMatch || (titleMatch && artistMatch)) {
+        // Détecté comme doublon ! Créer la mise à jour enrichie sans écraser les données nobles existantes
         const mergedUpdates = {
-          // Conserver ou enrichir les métadonnées de distribution & conformité
-          distributor: incoming.distributor || incoming.record_label || ex.distributor || ex.record_label || 'Distribution Numérique Certifiée',
-          record_label: incoming.record_label || incoming.label || ex.record_label || 'KKD Music',
-          isrc: incoming.isrc || ex.isrc || '',
-          upc: incoming.upc || ex.upc || '',
+          distributor: incoming.distributor || ex.distributor || '',
+          record_label: incoming.record_label || incoming.label || ex.record_label || '',
           copyright: incoming.copyright || ex.copyright || '',
           // Compléter les liens de streaming croisés (Spotify + Deezer + Apple + YouTube)
           spotify_url: ex.spotify_url || incoming.spotify_url || '',
           deezer_url: ex.deezer_url || incoming.deezer_url || '',
           apple_music_url: ex.apple_music_url || incoming.apple_music_url || '',
           youtube_url: ex.youtube_url || incoming.youtube_url || '',
+          streaming_link: ex.streaming_link || incoming.streaming_link || '',
           audio_file_url: ex.audio_file_url || incoming.audio_preview_url || incoming.audio_file_url || '',
           cover_url: ex.cover_url || incoming.cover_url || '',
           featuring_artist: ex.featuring_artist || incoming.featuring || incoming.featuring_artist || '',
           featuring_artist_id: ex.featuring_artist_id || incoming.featuring_artist_id || '',
         };
 
+        // Si l'élément arrivant possède des pistes (album/EP) et que l'existant n'en a pas ou en a moins, fusionner les pistes
+        if (Array.isArray(incoming.tracks) && incoming.tracks.length > (ex.tracks?.length || 0)) {
+          mergedUpdates.tracks = incoming.tracks;
+          mergedUpdates.release_type = incoming.tracks.length > 6 ? 'album' : incoming.tracks.length > 1 ? 'ep' : ex.release_type || 'single';
+        }
+
         return {
           isDuplicate: true,
           existingRelease: ex,
+          matchReason: isrcMatch
+            ? 'ISRC identique'
+            : (spotifyMatch || deezerMatch || youtubeMatch || appleMatch)
+            ? 'Lien de streaming identique'
+            : 'Titre et Artiste correspondants',
           mergedUpdates,
         };
       }

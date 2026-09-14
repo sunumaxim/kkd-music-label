@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Music, User, Headphones, ShieldCheck, Building2, Disc3, Radio, FileText, CheckCircle2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Music, User, Headphones, CheckCircle2, ExternalLink } from 'lucide-react';
 import { cleanArtistName } from '@/services/artistSyncService';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
@@ -312,68 +312,57 @@ export default function ReleaseDetail() {
         {/* Achat exclusif D2C (Wave / Orange Money) */}
         {effectivelyPaid && <BuyCard item={release} itemType="release" />}
 
-        {/* Notice claire sur les extraits légaux 30s et écoute intégrale */}
+        {/* Notice discrète sur les extraits audio (30s) avec accès aux plateformes officielles */}
         {isAudioPreviewOnly && (
-          <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-primary/10 to-[#141821] border border-amber-500/30 p-4 sm:p-5 shadow-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 flex items-center gap-1">
-                    <Radio size={11} className="animate-pulse" /> Extrait Découverte (30s)
-                  </span>
-                  <span className="text-xs text-zinc-400">Flux officiel des plateformes</span>
-                </div>
-                <p className="text-sm font-semibold text-white">
-                  Écoutez l'œuvre en intégralité (100% complet) sur les plateformes de streaming :
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap shrink-0">
-                {release.spotify_url && (
-                  <a
-                    href={release.spotify_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1db954]/20 hover:bg-[#1db954]/30 border border-[#1db954]/40 text-[#1db954] text-xs font-bold transition-colors"
-                  >
-                    <span>Spotify Intégral</span>
-                    <ExternalLink size={11} />
-                  </a>
-                )}
-                {release.apple_music_url && (
-                  <a
-                    href={release.apple_music_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fc3c44]/20 hover:bg-[#fc3c44]/30 border border-[#fc3c44]/40 text-[#fc3c44] text-xs font-bold transition-colors"
-                  >
-                    <span>Apple Music</span>
-                    <ExternalLink size={11} />
-                  </a>
-                )}
-                {release.deezer_url && (
-                  <a
-                    href={release.deezer_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#a238ff]/20 hover:bg-[#a238ff]/30 border border-[#a238ff]/40 text-[#a238ff] text-xs font-bold transition-colors"
-                  >
-                    <span>Deezer</span>
-                    <ExternalLink size={11} />
-                  </a>
-                )}
-                {release.youtube_url && (
-                  <a
-                    href={release.youtube_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff0000]/20 hover:bg-[#ff0000]/30 border border-[#ff0000]/40 text-[#ff0000] text-xs font-bold transition-colors"
-                  >
-                    <span>YouTube</span>
-                    <ExternalLink size={11} />
-                  </a>
-                )}
-              </div>
+          <div className="rounded-xl bg-[#141821] border border-white/[0.08] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+            <p className="text-xs text-zinc-300">
+              <span className="font-semibold text-white">Extrait audio (30s)</span> — Écoutez l'œuvre complète sur les plateformes officielles :
+            </p>
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {release.spotify_url && (
+                <a
+                  href={release.spotify_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1db954]/15 hover:bg-[#1db954]/25 border border-[#1db954]/30 text-[#1db954] text-xs font-semibold transition-colors"
+                >
+                  <span>Spotify</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
+              {release.apple_music_url && (
+                <a
+                  href={release.apple_music_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fc3c44]/15 hover:bg-[#fc3c44]/25 border border-[#fc3c44]/30 text-[#fc3c44] text-xs font-semibold transition-colors"
+                >
+                  <span>Apple Music</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
+              {release.deezer_url && (
+                <a
+                  href={release.deezer_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#a238ff]/15 hover:bg-[#a238ff]/25 border border-[#a238ff]/30 text-[#a238ff] text-xs font-semibold transition-colors"
+                >
+                  <span>Deezer</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
+              {release.youtube_url && (
+                <a
+                  href={release.youtube_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff0000]/15 hover:bg-[#ff0000]/25 border border-[#ff0000]/30 text-[#ff0000] text-xs font-semibold transition-colors"
+                >
+                  <span>YouTube</span>
+                  <ExternalLink size={11} />
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -384,7 +373,7 @@ export default function ReleaseDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display font-bold text-lg text-white">Pistes audio</h2>
               <span className="text-xs font-mono uppercase text-zinc-400">
-                {release.tracks && release.tracks.length ? `${release.tracks.length} titre(s)` : isAudioPreviewOnly ? 'Extrait audio légal (30s)' : 'Master complet HD'}
+                {release.tracks && release.tracks.length ? `${release.tracks.length} titre(s)` : isAudioPreviewOnly ? 'Extrait audio (30s)' : 'Master audio'}
               </span>
             </div>
             <ReleaseTracklist release={release} hasPurchased={hasPurchased} />
@@ -415,74 +404,6 @@ export default function ReleaseDetail() {
             />
           </div>
         )}
-
-        {/* Métadonnées de Distribution & Conformité (Mis en avant comme exigé) */}
-        <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-5 md:p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-base text-white">
-                  Détails de Distribution & Conformité
-                </h3>
-                <p className="text-xs text-zinc-400">
-                  Transparence, traçabilité et conformité officielle des ayants droit KKD / NIA
-                </p>
-              </div>
-            </div>
-            <span className="text-[10px] font-mono uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center gap-1">
-              <CheckCircle2 size={12} /> Distribution Conforme
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-            {/* Distributeur */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.04] space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Building2 size={13} className="text-primary" /> Distributeur Officiel
-              </p>
-              <p className="text-sm font-bold text-white truncate">
-                {release.distributor || 'Distribution Numérique Certifiée KKD / NIA'}
-              </p>
-              <p className="text-[11px] text-zinc-400">Canal certifié mondial</p>
-            </div>
-
-            {/* Label / Maison de Disque */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.04] space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Disc3 size={13} className="text-primary" /> Label / Production
-              </p>
-              <p className="text-sm font-bold text-white truncate">
-                {release.record_label || 'KKD Music / Label Partenaire'}
-              </p>
-              <p className="text-[11px] text-zinc-400">Production enregistrée</p>
-            </div>
-
-            {/* ISRC / UPC */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.04] space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <FileText size={13} className="text-primary" /> Code ISRC / Traçabilité
-              </p>
-              <p className="text-sm font-mono font-bold text-white truncate">
-                {release.isrc || 'ISRC-KKD-' + (release.id?.slice(0, 8).toUpperCase() || 'OFFICIAL')}
-              </p>
-              <p className="text-[11px] text-zinc-400">Identifiant d'enregistrement unique</p>
-            </div>
-
-            {/* Droits & Copyright */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.04] space-y-1">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <ShieldCheck size={13} className="text-primary" /> Droits & Propriété
-              </p>
-              <p className="text-sm font-bold text-white truncate">
-                {release.copyright || `© ${release.release_date ? new Date(release.release_date).getFullYear() : new Date().getFullYear()} ${release.artist_name}`}
-              </p>
-              <p className="text-[11px] text-zinc-400">Tous droits réservés</p>
-            </div>
-          </div>
-        </div>
 
         {/* Description & Paroles (Audiomack / SoundCloud) */}
         <div className="grid md:grid-cols-2 gap-6">

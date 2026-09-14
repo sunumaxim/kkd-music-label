@@ -772,6 +772,43 @@ export default function QuickCatalogImporterModal({
                       </button>
                     </div>
                   )}
+
+                  {extractedData.tracks && extractedData.tracks.length > 0 && (
+                    <div className="pt-2 border-t border-border/40 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Music2 size={13} className="text-primary" />
+                          Morceaux regroupés dans ce projet ({extractedData.tracks.length} titres)
+                        </span>
+                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                          {extractedData.type === 'ep' ? 'EP' : 'Album'}
+                        </Badge>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                        {extractedData.tracks.map((trk, i) => (
+                          <div key={i} className="flex items-center justify-between p-1.5 rounded bg-background/50 border border-border/30 text-xs">
+                            <div className="flex items-center gap-2 truncate min-w-0">
+                              <span className="text-muted-foreground font-mono text-[11px] w-5 shrink-0">{i + 1}.</span>
+                              <span className="font-medium text-foreground truncate">{trk.title}</span>
+                              {trk.featuring_artist && (
+                                <span className="text-[10px] text-amber-500 font-medium shrink-0">feat. {trk.featuring_artist}</span>
+                              )}
+                            </div>
+                            {trk.audio_file_url && (
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePlayAudio(`track-${i}`, trk.audio_file_url)}
+                                className="text-primary hover:text-primary/80 p-1 shrink-0 ml-2"
+                                title="Écouter l'extrait"
+                              >
+                                {playingAudioId === `track-${i}` ? <Pause size={13} /> : <Play size={13} />}
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
