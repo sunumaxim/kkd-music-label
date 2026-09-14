@@ -6,6 +6,7 @@ import {
   ArrowLeft, Youtube, Share2, Check, Disc3, Calendar, MapPin, ChevronRight,
   Play, Eye, Heart, ShoppingCart, Newspaper,
 } from 'lucide-react';
+import { artistSyncService } from '@/services/artistSyncService';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
@@ -66,13 +67,17 @@ export default function ArtistDetail() {
     queryFn: () => resolveEntityBySlug('Artist', slugParam, 'name'),
   });
 
-  const { data: releases = [] } = useQuery({
-    queryKey: ['artist-releases', artist?.name],
-    queryFn: () => base44.entities.Release.filter({ artist_name: artist?.name }),
-    enabled: !!artist?.name,
-    select: (data) =>
-      [...data].sort((a, b) => (b.release_date || '').localeCompare(a.release_date || '')),
+  const { data: allReleasesRaw = [] } = useQuery({
+    queryKey: ['all-releases-for-artist-detail'],
+    queryFn: () => base44.entities.Release.list('-release_date', 500),
   });
+
+  const { mainReleases, featuringReleases, totalCount } = useMemo(() => {
+    if (!artist?.name) return { mainReleases: [], featuringReleases: [], totalCount: 0 };
+    return artistSyncService.filterArtistCatalog(allReleasesRaw, artist.name, artist.id);
+  }, [allReleasesRaw, artist?.name, artist?.id]);
+
+  const releases = mainReleases;
 
   const { data: videos = [] } = useQuery({
     queryKey: ['artist-videos', artist?.name],
@@ -122,7 +127,25 @@ export default function ArtistDetail() {
   const singles = releases.filter((r) => r.release_type === 'single' || !r.release_type);
   const totalPlays =
     releases.reduce((s, r) => s + (r.plays_count || 0), 0) +
+    featuringReleases.reduce((s, r) => s + (r.plays_count || 0), 0) +
     videos.reduce((s, v) => s + (v.plays_count || 0) + (v.views_count || 0), 0);
+
+  const tabsList = useMemo(() => {
+    const list = [
+      { key: 'aperçu', label: 'Aperçu' },
+      { key: 'morceaux', label: `Morceaux (${releases.length})` },
+    ];
+    if (featuringReleases.length > 0) {
+      list.push({ key: 'collaborations', label: `Collaborations (${featuringReleases.length})` });
+    }
+    list.push(
+      { key: 'albums', label: `Albums (${albums.length})` },
+      { key: 'videos', label: `Vidéos (${videos.length})` },
+      { key: 'annonces', label: 'Annonces' },
+      { key: 'evenements', label: 'Événements' }
+    );
+    return list;
+  }, [releases.length, featuringReleases.length, albums.length, videos.length]);
 
   const popular = useMemo(
     () =>
@@ -251,7 +274,7 @@ export default function ArtistDetail() {
 
         {/* Onglets style Spotify */}
         <div className="flex items-center gap-4 sm:gap-6 border-b border-white/[0.08] mb-6 overflow-x-auto no-scrollbar">
-          {TABS.map((t) => (
+          {tabsList.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -364,10 +387,136 @@ export default function ArtistDetail() {
               </div>
             )}
 
+            {/* Featurings & Collaborations dans l'Aperçu */}
+            {featuringReleases.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="font-display font-bold text-xl text-white">
+                      Collaborations & Featurings Récentes
+                    </h2>
+                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                      {featuringReleases.length} titre(s)
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setTab('collaborations')}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    Tout afficher →
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {featuringReleases.slice(0, 6).map((r) => (
+                    <Link
+                      key={r.id}
+                      to={`/musique/${buildEntitySlug(r.title, r.id)}`}
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-[#141821] hover:bg-[#1c222f] border border-white/[0.06] hover:border-white/[0.14] transition-all group"
+                    >
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-zinc-900 shrink-0 relative">
+                        {r.cover_url ? (
+                          <img
+                            src={r.cover_url}
+                            alt={r.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                            <Disc3 size={20} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                          {r.title}
+                        </p>
+                        <p className="text-xs text-zinc-400 truncate mt-0.5">
+                          {r.artist_name} <span className="text-primary font-semibold">feat. {artist.name}</span>
+                        </p>
+                        {r.distributor && (
+                          <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                            Distr: {r.distributor}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Artistes similaires */}
             <section className="pt-6 border-t border-white/[0.08]">
               <SimilarArtists genre={artist.genre} artistId={artist.id} />
             </section>
+          </div>
+        )}
+
+        {/* COLLABORATIONS & FEATURINGS (Onglet dédié) */}
+        {tab === 'collaborations' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-display font-bold text-2xl text-white">
+                  Collaborations & Featurings ({featuringReleases.length})
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Tous les morceaux où {artist.name} intervient en featuring ou collaboration officielle
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {featuringReleases.map((r) => (
+                <div
+                  key={r.id}
+                  className="p-3.5 rounded-2xl bg-[#141821] border border-white/[0.06] hover:border-white/[0.14] transition-all flex flex-col justify-between group"
+                >
+                  <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="block">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-3 relative">
+                      {r.cover_url ? (
+                        <img
+                          src={r.cover_url}
+                          alt={r.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                          <Disc3 size={32} />
+                        </div>
+                      )}
+                      <span className="absolute top-2 left-2 text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-primary/80 backdrop-blur-md text-white">
+                        Feat
+                      </span>
+                    </div>
+                    <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                      {r.title}
+                    </p>
+                    <p className="text-xs text-zinc-400 truncate mt-0.5">
+                      Artiste principal : <span className="text-zinc-200 font-semibold">{r.artist_name}</span>
+                    </p>
+                    {r.distributor && (
+                      <p className="text-[10px] text-zinc-400 truncate mt-1">
+                        Distr : {r.distributor}
+                      </p>
+                    )}
+                  </Link>
+                  <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                    <Link
+                      to={`/musique/${buildEntitySlug(r.title, r.id)}`}
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    >
+                      Écouter le titre →
+                    </Link>
+                    {r.release_date && (
+                      <span className="text-[11px] text-zinc-400 font-mono">
+                        {new Date(r.release_date).getFullYear()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

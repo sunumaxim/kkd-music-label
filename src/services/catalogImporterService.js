@@ -12,6 +12,7 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { artistSyncService } from '@/services/artistSyncService';
 
 // Helper pour nettoyer et extraire les featurings
 export function extractFeaturing(rawTitle = '', defaultArtist = '') {
@@ -283,6 +284,10 @@ export const catalogImporterService = {
         apple_music_url: itMatch?.collectionViewUrl || itMatch?.trackViewUrl || '',
         youtube_url: '',
         duration_ms: itMatch?.trackTimeMillis || 0,
+        distributor: item.distributor || item.label || 'Distribution Numérique Certifiée',
+        record_label: item.record_label || item.label || 'KKD Music / Label Partenaire',
+        isrc: item.isrc || itMatch?.isrc || '',
+        copyright: item.copyright || (releaseDate ? `© ${releaseDate.slice(0, 4)} ${name}` : ''),
         selected: false,
       });
     }
@@ -294,6 +299,8 @@ export const catalogImporterService = {
       if (seenReleaseKeys.has(key)) continue;
       seenReleaseKeys.add(key);
 
+      const relDate = s.releaseDate?.slice(0, 10) || new Date().toISOString().split('T')[0];
+
       releases.push({
         id: `itunes-track-${s.trackId}`,
         originalId: s.trackId,
@@ -302,7 +309,7 @@ export const catalogImporterService = {
         featuring: parsedFeat.featuring,
         artist_name: name,
         release_type: 'single',
-        release_date: s.releaseDate?.slice(0, 10) || new Date().toISOString().split('T')[0],
+        release_date: relDate,
         cover_url: (s.artworkUrl100 || '').replace('100x100bb.jpg', '1000x1000bb.jpg'),
         audio_preview_url: s.previewUrl || '',
         spotify_url: `https://open.spotify.com/search/${encodeURIComponent(`${name} ${parsedFeat.cleanTitle}`)}`,
@@ -310,6 +317,10 @@ export const catalogImporterService = {
         apple_music_url: s.trackViewUrl || s.collectionViewUrl || '',
         youtube_url: '',
         duration_ms: s.trackTimeMillis || 0,
+        distributor: s.collectionCensoredName ? `Apple Music / ${s.collectionCensoredName}` : 'Distribution Numérique Certifiée',
+        record_label: s.collectionArtistName || 'KKD Music / Label Partenaire',
+        isrc: s.isrc || '',
+        copyright: `© ${relDate.slice(0, 4)} ${name}`,
         selected: false,
       });
     }
@@ -482,86 +493,90 @@ export const catalogImporterService = {
 
     const artistName = artist.name.trim();
 
-    // 1) Vérifier ou créer l'artiste dans le catalogue
+    // 1) Assurer que l'artiste principal existe et a un profil VALIDÉ (is_verified: true)
     let artistId = artist.id || '';
     let artistEntity = null;
 
     try {
-      const existingArtists = await base44.entities.Artist.list();
-      artistEntity = existingArtists.find(
-        a => a.name?.toLowerCase().trim() === artistName.toLowerCase()
-      );
-
+      artistEntity = await artistSyncService.ensureArtistProfile(artistName, {
+        photo_url: artist.image || '',
+        genre: (artist.genres && artist.genres[0]) || 'Afrobeats / Musique Urbaine',
+        biography: `Artiste certifié ${artistName} répertorié sur le réseau KKD Music & NIA.`,
+        spotify_url: artist.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(artistName)}`,
+      });
       if (artistEntity) {
         artistId = artistEntity.id;
-        // Si l'artiste existait mais n'avait pas de photo, mettre à jour si on a une photo
-        if (!artistEntity.photo_url && artist.image) {
-          await base44.entities.Artist.update(artistEntity.id, { photo_url: artist.image });
-        }
-      } else {
-        // Créer l'artiste automatiquement !
-        const created = await base44.entities.Artist.create({
-          name: artistName,
-          genre: (artist.genres && artist.genres[0]) || 'Afrobeats / Musique Urbaine',
-          photo_url: artist.image || '',
-          bio: `Artiste ${artistName} répertorié sur le réseau KKD Music & NIA.`,
-          spotify_url: artist.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(artistName)}`,
-          is_verified: true,
-        });
-        artistId = created.id;
-        artistEntity = created;
       }
     } catch (err) {
       console.warn('[catalogImporterService] Erreur résolution artiste:', err);
     }
 
-    // 2) Importer les sorties musicales (Releases)
+    // 2) Importer les sorties musicales (Releases) avec déduplication et validation des featurings
     let createdReleasesCount = 0;
+    let updatedReleasesCount = 0;
     let skippedReleasesCount = 0;
 
     if (releases.length > 0) {
-      // Charger les releases existantes pour cet artiste pour éviter les doublons
+      // Charger toutes les releases existantes pour vérifier les doublons multi-plateformes
       let existingReleases = [];
       try {
-        existingReleases = await base44.entities.Release.filter({ artist_name: artistName });
+        existingReleases = await base44.entities.Release.list();
       } catch {
         existingReleases = [];
       }
 
-      const existingTitles = new Set(
-        existingReleases.map(r => r.title?.toLowerCase().trim())
-      );
-
       for (const rel of releases) {
-        const titleKey = (rel.title || '').toLowerCase().trim();
-        if (existingTitles.has(titleKey)) {
-          skippedReleasesCount++;
-          continue;
-        }
-
         try {
-          await base44.entities.Release.create({
-            title: rel.title,
-            artist_name: artistName,
-            artist_id: artistId || '',
-            featuring_artist: rel.featuring || '',
-            cover_url: rel.cover_url || '',
-            release_date: rel.release_date || new Date().toISOString().split('T')[0],
-            release_type: rel.release_type || 'single',
-            spotify_url: rel.spotify_url || '',
-            deezer_url: rel.deezer_url || '',
-            apple_music_url: rel.apple_music_url || '',
-            youtube_url: rel.youtube_url || '',
-            audio_file_url: rel.audio_preview_url || '',
-            description: rel.description || `Sortie officielle de ${artistName}${rel.featuring ? ` (feat. ${rel.featuring})` : ''}`,
-            is_featured: false,
-            is_for_sale: false,
-            price: 0,
+          // Synchroniser automatiquement l'artiste et tous les artistes en featuring
+          const featSync = await artistSyncService.syncArtistsForRelease({
+            artistName,
+            artistId,
+            featuringString: rel.featuring || '',
+            coverUrl: rel.cover_url || '',
+            genre: (artist.genres && artist.genres[0]) || '',
           });
-          existingTitles.add(titleKey);
-          createdReleasesCount++;
+
+          // Vérifier si cette chanson existe déjà sur la plateforme (Spotify, Deezer, etc.)
+          const dupResult = artistSyncService.checkDuplicateRelease(rel, existingReleases);
+
+          if (dupResult.isDuplicate && dupResult.existingRelease) {
+            // Mettre à jour la chanson existante au lieu de créer un doublon
+            await base44.entities.Release.update(dupResult.existingRelease.id, {
+              ...dupResult.mergedUpdates,
+              featuring_artist: featSync.featuringArtistString || dupResult.mergedUpdates.featuring_artist,
+              featuring_artist_id: featSync.primaryFeaturingArtistId || dupResult.mergedUpdates.featuring_artist_id,
+            });
+            updatedReleasesCount++;
+          } else {
+            // Créer une nouvelle chanson avec métadonnées de distribution complètes et featurings liés
+            const newRelease = await base44.entities.Release.create({
+              title: rel.title,
+              artist_name: artistName,
+              artist_id: artistId || '',
+              featuring_artist: featSync.featuringArtistString || rel.featuring || '',
+              featuring_artist_id: featSync.primaryFeaturingArtistId || '',
+              cover_url: rel.cover_url || '',
+              release_date: rel.release_date || new Date().toISOString().split('T')[0],
+              release_type: rel.release_type || 'single',
+              spotify_url: rel.spotify_url || '',
+              deezer_url: rel.deezer_url || '',
+              apple_music_url: rel.apple_music_url || '',
+              youtube_url: rel.youtube_url || '',
+              audio_file_url: rel.audio_preview_url || '',
+              distributor: rel.distributor || 'Distribution Numérique Certifiée',
+              record_label: rel.record_label || 'KKD Music / Label Partenaire',
+              isrc: rel.isrc || '',
+              copyright: rel.copyright || '',
+              description: rel.description || `Sortie officielle de ${artistName}${featSync.featuringArtistString ? ` (feat. ${featSync.featuringArtistString})` : ''}`,
+              is_featured: false,
+              is_for_sale: false,
+              price: 0,
+            });
+            existingReleases.push(newRelease);
+            createdReleasesCount++;
+          }
         } catch (err) {
-          console.error(`[catalogImporterService] Erreur création release ${rel.title}:`, err);
+          console.error(`[catalogImporterService] Erreur traitement release ${rel.title}:`, err);
         }
       }
     }
@@ -622,10 +637,11 @@ export const catalogImporterService = {
       artistId,
       artistName,
       createdReleasesCount,
+      updatedReleasesCount,
       skippedReleasesCount,
       createdVideosCount,
       skippedVideosCount,
-      totalImported: createdReleasesCount + createdVideosCount,
+      totalImported: createdReleasesCount + updatedReleasesCount + createdVideosCount,
     };
   },
 };

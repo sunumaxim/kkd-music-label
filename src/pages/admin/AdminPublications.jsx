@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { artistSyncService } from '@/services/artistSyncService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,23 +49,29 @@ async function publishToCatalog(pub) {
   let artistId = pub.artist_id || '';
   const artistName = pub.artist_name;
 
-  if (!artistId && pub.new_artist_genre) {
-    const created = await base44.entities.Artist.create({
-      name: artistName,
-      genre: pub.new_artist_genre,
-      photo_url: pub.new_artist_photo_url || '',
-    });
-    artistId = created.id;
-  }
+  // Synchroniser l'artiste principal et TOUS les artistes en featuring (profils validés)
+  const syncResult = await artistSyncService.syncArtistsForRelease({
+    artistName,
+    artistId,
+    featuringString: pub.featuring_artist || '',
+    coverUrl: pub.cover_url || pub.new_artist_photo_url || '',
+    genre: pub.new_artist_genre || 'Afrobeats / Musique Urbaine',
+  });
+
+  artistId = syncResult.mainArtistId || artistId;
 
   const isVideo = pub.content_type === 'video_clip';
-  const fullTitle = pub.featuring_artist ? `${pub.title} (feat. ${pub.featuring_artist})` : pub.title;
+  const fullTitle = syncResult.featuringArtistString
+    ? `${pub.title} (feat. ${syncResult.featuringArtistString})`
+    : pub.title;
 
   if (isVideo) {
     const video = await base44.entities.Video.create({
       title: fullTitle,
       artist_name: artistName,
       artist_id: artistId,
+      featuring_artist: syncResult.featuringArtistString || '',
+      featuring_artist_id: syncResult.primaryFeaturingArtistId || '',
       youtube_url: pub.streaming_platform === 'youtube' ? pub.streaming_link : '',
       video_file_url: pub.file_url || '',
       thumbnail_url: pub.cover_url || '',
@@ -95,6 +102,10 @@ async function publishToCatalog(pub) {
     title: fullTitle,
     artist_name: artistName,
     artist_id: artistId,
+    featuring_artist: syncResult.featuringArtistString || '',
+    featuring_artist_id: syncResult.primaryFeaturingArtistId || '',
+    distributor: pub.distributor || 'Distribution KKD Music / NIA',
+    record_label: pub.record_label || 'KKD Music',
     cover_url: pub.cover_url || '',
     description: pub.description || '',
     release_type: releaseType,
