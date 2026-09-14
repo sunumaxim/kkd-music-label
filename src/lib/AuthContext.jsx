@@ -14,21 +14,25 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
   useEffect(() => {
-    checkUserAuth();
+    // Initialisation au montage : active l'indicateur de chargement uniquement ici
+    checkUserAuth(true);
 
-    const handleUpdate = () => {
-      checkUserAuth();
+    // Écoute uniquement les mises à jour spécifiques du compte utilisateur
+    const handleUserUpdate = () => {
+      checkUserAuth(false);
     };
-    window.addEventListener('kkd:db_updated', handleUpdate);
+    window.addEventListener('kkd:user_updated', handleUserUpdate);
 
     return () => {
-      window.removeEventListener('kkd:db_updated', handleUpdate);
+      window.removeEventListener('kkd:user_updated', handleUserUpdate);
     };
   }, []);
 
-  const checkUserAuth = async () => {
+  const checkUserAuth = async (isInitial = false) => {
     try {
-      setIsLoadingAuth(true);
+      if (isInitial) {
+        setIsLoadingAuth(true);
+      }
       const currentUser = await base44.auth.me();
       if (currentUser) {
         setUser(currentUser);
@@ -54,8 +58,10 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
       }
     } finally {
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
+      if (isInitial) {
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+      }
     }
   };
 

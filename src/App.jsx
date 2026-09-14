@@ -194,13 +194,11 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
-  const [splashDone, setSplashDone] = React.useState(false);
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <PlayerProvider>
-          <SplashScreen onDone={() => setSplashDone(true)} />
+          <SplashScreen />
           <Router>
             <AuthenticatedApp />
             <PublishHost />

@@ -119,11 +119,13 @@ class LocalDatabase {
     }
   }
 
-  _write(data) {
+  _write(data, shouldBroadcast = true) {
     try {
       if (typeof window === 'undefined') return;
       localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(data));
-      this.broadcastUpdate();
+      if (shouldBroadcast) {
+        this.broadcastUpdate();
+      }
     } catch (e) {
       console.warn('[LocalDb] Write warning:', e);
     }
@@ -132,6 +134,12 @@ class LocalDatabase {
   broadcastUpdate() {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('kkd:db_updated'));
+    }
+  }
+
+  broadcastUserUpdate() {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('kkd:user_updated'));
     }
   }
 
@@ -158,7 +166,7 @@ class LocalDatabase {
       } else {
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
       }
-      this.broadcastUpdate();
+      this.broadcastUserUpdate();
     } catch (e) {
       console.warn('[LocalDb] setCurrentUser warning:', e);
     }
@@ -209,7 +217,7 @@ class LocalDatabase {
   setCollection(name, items) {
     const data = this._read();
     data[name] = items;
-    this._write(data);
+    this._write(data, false);
   }
 
   insertItem(collectionName, item) {
