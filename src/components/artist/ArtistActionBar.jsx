@@ -1,10 +1,10 @@
 import React from 'react';
-import { Play, Pause, Shuffle, MoreHorizontal, Share2 } from 'lucide-react';
+import { Play, Pause, Shuffle, MoreHorizontal, Share2, RefreshCw } from 'lucide-react';
 import FollowButton from './FollowButton';
 
 /**
  * Barre d'actions du profil artiste (style Spotify standard) :
- * Gros bouton Play (56px) à gauche + Suivre/Abonné + Shuffle + Partage + Plus.
+ * Gros bouton Play (56px) à gauche + Suivre/Abonné + Shuffle + DSP Sync + Partage + Plus.
  */
 export default function ArtistActionBar({
   artist,
@@ -14,6 +14,8 @@ export default function ArtistActionBar({
   canPlay,
   onMore,
   onShare,
+  onDspSync,
+  isDspSyncing = false,
 }) {
   return (
     <div className="flex items-center gap-4 py-6 flex-wrap">
@@ -44,7 +46,24 @@ export default function ArtistActionBar({
         <Shuffle size={22} />
       </button>
 
-      {/* 4. Share Button */}
+      {/* 4. DSP Sync Watcher Button (Spotify & Deezer) */}
+      {onDspSync && (
+        <button
+          onClick={onDspSync}
+          disabled={isDspSyncing}
+          className={`p-2.5 rounded-full transition-colors flex items-center gap-1.5 ${
+            isDspSyncing
+              ? 'text-primary bg-primary/10'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title="Veille active : synchroniser photo et nouveaux singles depuis Spotify et Deezer"
+          aria-label="Synchroniser depuis Spotify et Deezer"
+        >
+          <RefreshCw size={20} className={isDspSyncing ? 'animate-spin text-primary' : ''} />
+        </button>
+      )}
+
+      {/* 5. Share Button */}
       {onShare && (
         <button
           onClick={onShare}
@@ -56,7 +75,7 @@ export default function ArtistActionBar({
         </button>
       )}
 
-      {/* 5. More Options */}
+      {/* 6. More Options */}
       <button
         onClick={onMore}
         className="p-2.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors ml-auto sm:ml-0"

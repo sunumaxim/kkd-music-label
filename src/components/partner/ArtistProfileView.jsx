@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Instagram } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExternalLink, Instagram, RefreshCw, Sparkles } from 'lucide-react';
 import { ReleaseCard, VideoCard, PlaylistPlayer } from '@/components/shared/MusicPlayer';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import { isArtistCertified } from '@/services/artistCertification';
+import { dspSyncWatcherService } from '@/services/dspSyncWatcherService';
 
 const STREAMING_LINKS = [
   { key: 'spotify_url', label: 'Spotify', color: 'text-green-400', bg: 'bg-green-500/10 hover:bg-green-500/20' },
@@ -33,6 +34,47 @@ export default function ArtistProfileView({ artistId }) {
     queryFn: () => base44.entities.Video.filter({ artist_name: artist?.name }, '-publish_date'),
     enabled: !!artist?.name,
   });
+
+  const queryClient = useQueryClient();
+  const [isDspSyncing, setIsDspSyncing] = useState(false);
+  const [dspNotice, setDspNotice] = useState(null);
+
+  // Veille informationnelle automatique avec Spotify & Deezer
+  useEffect(() => {
+    if (!artist?.id) return;
+    let isMounted = true;
+
+    dspSyncWatcherService.runDspWatch(artist).then((res) => {
+      if (!isMounted) return;
+      if (res?.newReleasesCount > 0 || res?.photoUpdated) {
+        queryClient.invalidateQueries(['artist-profile', artistId]);
+        queryClient.invalidateQueries(['artist-releases', artistId]);
+        setDspNotice(res.message);
+        setTimeout(() => setDspNotice(null), 5000);
+      }
+    }).catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [artist?.id, artistId, queryClient]);
+
+  const handleManualDspSync = async () => {
+    if (!artist?.id || isDspSyncing) return;
+    setIsDspSyncing(true);
+    try {
+      const res = await dspSyncWatcherService.runDspWatch(artist, { force: true });
+      if (res?.newReleasesCount > 0 || res?.photoUpdated) {
+        queryClient.invalidateQueries(['artist-profile', artistId]);
+        queryClient.invalidateQueries(['artist-releases', artistId]);
+      }
+      setDspNotice(res?.message || 'Profil et catalogue à jour.');
+      setTimeout(() => setDspNotice(null), 5000);
+    } catch {
+      setDspNotice('Échec de la synchronisation DSP');
+      setTimeout(() => setDspNotice(null), 4000);
+    } finally {
+      setIsDspSyncing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -79,9 +121,27 @@ export default function ArtistProfileView({ artistId }) {
                   />
                 )}
               </h2>
-              {artist.genre && <p className="text-xs text-muted-foreground">{artist.genre}</p>}
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                {artist.genre && <p className="text-xs text-muted-foreground">{artist.genre}</p>}
+                <button
+                  onClick={handleManualDspSync}
+                  disabled={isDspSyncing}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-secondary/80 hover:bg-secondary text-foreground/80 hover:text-foreground transition-colors disabled:opacity-50"
+                  title="Actualiser la veille Spotify & Deezer"
+                >
+                  <RefreshCw size={12} className={isDspSyncing ? 'animate-spin text-primary' : ''} />
+                  <span>{isDspSyncing ? 'Synchronisation...' : 'Veille DSPs'}</span>
+                </button>
+              </div>
             </div>
           </div>
+
+          {dspNotice && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-xs text-zinc-200">
+              <Sparkles size={14} className="text-primary shrink-0" />
+              <span>{dspNotice}</span>
+            </div>
+          )}
         </div>
       </div>
 

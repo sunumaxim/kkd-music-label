@@ -85,6 +85,53 @@ export function extractFeaturing(rawTitle = '', rawArtist = '') {
   };
 }
 
+/**
+ * Recherche et extrait la photo de profil EXACTE d'un artiste
+ * depuis Spotify, Deezer ou les plateformes officielles (et JAMAIS la pochette d'un single ou album).
+ * 
+ * @param {string} artistName - Nom de l'artiste
+ * @returns {Promise<string>} L'URL de la photo de profil HD ou chaîne vide si non trouvée
+ */
+export async function fetchExactArtistProfilePhoto(artistName) {
+  const clean = cleanArtistName(artistName);
+  if (!clean) return '';
+
+  // 1. Tenter via Base44 backend function searchArtistOnPlatforms (Deezer & catalogue connectés)
+  try {
+    const bRes = await base44.functions.invoke('searchArtistOnPlatforms', {
+      action: 'search',
+      query: clean,
+    });
+    const deezerList = bRes.data?.deezer || [];
+    const match = deezerList.find(d => cleanArtistName(d.name || '').toLowerCase() === clean.toLowerCase()) || deezerList[0];
+    if (match?.image && !match.image.includes('default') && !match.image.includes('placeholder')) {
+      return match.image;
+    }
+  } catch {
+    // continue
+  }
+
+  // 2. Tenter l'API publique Deezer (retourne la vraie photo d'artiste : picture_xl / picture_big)
+  try {
+    const res = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(clean)}&limit=5`);
+    if (res.ok) {
+      const data = await res.json();
+      const artists = data.data || [];
+      const match = artists.find(a => cleanArtistName(a.name || '').toLowerCase() === clean.toLowerCase()) || artists[0];
+      if (match) {
+        const photo = match.picture_xl || match.picture_big || match.picture_medium || match.picture;
+        if (photo && !photo.includes('default') && !photo.includes('placeholder')) {
+          return photo;
+        }
+      }
+    }
+  } catch {
+    // continue
+  }
+
+  return '';
+}
+
 export const artistSyncService = {
   /**
    * Trouve un artiste dans la base (locale ou cloud) par son nom
@@ -103,24 +150,42 @@ export const artistSyncService = {
   },
 
   /**
-   * Assure qu'un profil d'artiste existe et est VALIDÉ (is_verified: true)
-   * Si l'artiste n'existe pas, il est automatiquement créé avec profil certifié.
+   * Assure qu'un profil d'artiste existe dans la base.
+   * RÈGLES STRICTES :
+   * - Les artistes en featuring ne sont JAMAIS automatiquement certifiés (is_verified: false).
+   * - La photo de profil d'un artiste en featuring doit être sa photo exacte d'artiste (et non la cover du single).
+   * - Seul un artiste explicitement certifié ou validé par un administrateur aura is_verified: true.
    */
   async ensureArtistProfile(artistName, options = {}) {
     const name = cleanArtistName(artistName);
     if (!name) return null;
 
+    const isFeaturing = Boolean(options.isFeaturing);
+    // Si c'est un featuring : is_verified est STRICTEMENT false
+    const isVerifiedTarget = isFeaturing
+      ? false
+      : (options.is_verified !== undefined ? Boolean(options.is_verified) : Boolean(options.forceVerify));
+
     let existing = await this.findArtistByName(name);
 
     if (existing) {
-      // Si l'artiste existe déjà mais n'est pas encore validé, ou manque de photo
       const updates = {};
-      if (!existing.is_verified) {
+      // Ne forcer la vérification que si explicitement requis par l'admin via forceVerify
+      if (options.forceVerify && !existing.is_verified) {
         updates.is_verified = true;
       }
+      // Ne jamais forcer la vérification si l'artiste apparaît en featuring
+      if (isFeaturing && !options.forceVerify) {
+        // conserve l'état existant, aucun auto-verify
+      }
+
+      // Si l'artiste n'a pas encore de photo et qu'une vraie photo de profil est fournie
       if (!existing.photo_url && options.photo_url) {
         updates.photo_url = options.photo_url;
+      } else if (options.forceUpdatePhoto && options.photo_url && options.photo_url !== existing.photo_url) {
+        updates.photo_url = options.photo_url;
       }
+
       if (!existing.genre && options.genre) {
         updates.genre = options.genre;
       }
@@ -136,14 +201,16 @@ export const artistSyncService = {
       return existing;
     }
 
-    // Création automatique avec profil VALIDÉ
+    // Création automatique
     const newArtistData = {
       name: name,
-      is_verified: true, // Toujours validé comme requis
+      is_verified: isVerifiedTarget, // STRICTEMENT false pour les artistes en featuring !
       is_featured: Boolean(options.is_featured),
       genre: options.genre || 'Afrobeats / Musique Urbaine',
       photo_url: options.photo_url || '',
-      biography: options.biography || `Artiste certifié et validé répertorié sur le réseau KKD Music & NIA.`,
+      biography: options.biography || (isFeaturing
+        ? `Artiste collaborateur répertorié sur le réseau KKD Music & NIA.`
+        : `Artiste répertorié sur le réseau KKD Music & NIA.`),
       spotify_url: options.spotify_url || `https://open.spotify.com/search/${encodeURIComponent(name)}`,
       deezer_url: options.deezer_url || `https://www.deezer.com/search/${encodeURIComponent(name)}`,
       apple_music_url: options.apple_music_url || '',
@@ -164,7 +231,9 @@ export const artistSyncService = {
 
   /**
    * Synchronise l'artiste principal et TOUS les artistes en featuring pour une chanson / sortie.
-   * Retourne l'artiste principal et la liste des profils validés des featurings.
+   * RÈGLES :
+   * - Les artistes en featuring ne sont PAS certifiés automatiquement (is_verified: false).
+   * - Récupère la photo de profil EXACTE de chaque artiste en featuring (au lieu de la pochette du single).
    */
   async syncArtistsForRelease({
     artistName,
@@ -172,6 +241,7 @@ export const artistSyncService = {
     featuringString = '',
     coverUrl = '',
     genre = '',
+    isMainArtistVerified = false,
   }) {
     const mainName = cleanArtistName(artistName);
 
@@ -184,7 +254,17 @@ export const artistSyncService = {
       } catch {}
     }
     if (!mainArtist && mainName) {
-      mainArtist = await this.ensureArtistProfile(mainName, { photo_url: coverUrl, genre });
+      // Rechercher sa photo officielle exacte
+      let exactMainAvatar = '';
+      try {
+        exactMainAvatar = await fetchExactArtistProfilePhoto(mainName);
+      } catch {}
+
+      mainArtist = await this.ensureArtistProfile(mainName, {
+        photo_url: exactMainAvatar || coverUrl,
+        genre,
+        is_verified: isMainArtistVerified,
+      });
     }
 
     // 2. Traiter les artistes en featuring
@@ -195,10 +275,21 @@ export const artistSyncService = {
       // Éviter de s'ajouter soi-même en featuring
       if (featName.toLowerCase() === mainName.toLowerCase()) continue;
 
+      // Récupérer la photo de profil EXACTE de cet artiste en featuring (et NON la pochette du single)
+      let featAvatar = '';
+      try {
+        featAvatar = await fetchExactArtistProfilePhoto(featName);
+      } catch (err) {
+        console.warn(`[syncArtistsForRelease] Impossible de récupérer la photo pour ${featName}:`, err);
+      }
+
+      // Important : Les artistes en featuring ne seront PAS automatiquement certifiés (is_verified: false)
       const featArtist = await this.ensureArtistProfile(featName, {
-        photo_url: coverUrl,
+        photo_url: featAvatar || '', // UNIQUEMENT sa photo exacte ou chaîne vide (jamais coverUrl !)
         genre,
-        biography: `Artiste collaborateur certifié répertorié sur le réseau KKD Music & NIA.`,
+        isFeaturing: true,
+        is_verified: false, // JAMAIS certifié automatiquement
+        biography: `Artiste collaborateur répertorié sur le réseau KKD Music & NIA.`,
       });
 
       if (featArtist) {
@@ -368,5 +459,6 @@ export const artistSyncService = {
 };
 
 export { isArtistCertified, checkArtistCertifiedInDb } from './artistCertification';
+export { dspSyncWatcherService } from './dspSyncWatcherService';
 
 export default artistSyncService;

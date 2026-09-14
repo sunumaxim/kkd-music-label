@@ -393,7 +393,7 @@ export const catalogImporterService = {
 
     const artistName = artist.name.trim();
 
-    // 1) Assurer que l'artiste principal existe et a un profil VALIDÉ (is_verified: true)
+    // 1) Assurer que l'artiste principal existe (sans certification automatique abusive)
     let artistId = artist.id || '';
     let artistEntity = null;
 
@@ -401,8 +401,9 @@ export const catalogImporterService = {
       artistEntity = await artistSyncService.ensureArtistProfile(artistName, {
         photo_url: artist.image || '',
         genre: (artist.genres && artist.genres[0]) || 'Afrobeats / Musique Urbaine',
-        biography: `Artiste certifié ${artistName} répertorié sur le réseau KKD Music & NIA.`,
+        biography: `Artiste ${artistName} répertorié sur le réseau KKD Music & NIA.`,
         spotify_url: artist.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(artistName)}`,
+        is_verified: Boolean(artist.is_verified),
       });
       if (artistEntity) {
         artistId = artistEntity.id;

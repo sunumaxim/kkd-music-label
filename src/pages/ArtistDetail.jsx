@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Youtube, Share2, Check, Disc3, Calendar, MapPin, ChevronRight,
-  Play, Eye, Heart, ShoppingCart, Newspaper,
+  Play, Eye, Heart, ShoppingCart, Newspaper, Sparkles,
 } from 'lucide-react';
-import { artistSyncService } from '@/services/artistSyncService';
+import { artistSyncService, dspSyncWatcherService } from '@/services/artistSyncService';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
@@ -50,6 +50,9 @@ export default function ArtistDetail() {
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState('aperçu');
   const [videoFilter, setVideoFilter] = useState('all');
+  const [isDspSyncing, setIsDspSyncing] = useState(false);
+  const [dspSyncNotice, setDspSyncNotice] = useState(null);
+  const queryClient = useQueryClient();
 
   const handleShare = () => {
     if (!artist) return;
@@ -67,6 +70,45 @@ export default function ArtistDetail() {
     queryKey: ['artist', id],
     queryFn: () => resolveEntityBySlug('Artist', slugParam, 'name'),
   });
+
+  // Veille informationnelle automatique avec Spotify, Deezer & distributeurs (DSPs)
+  useEffect(() => {
+    if (!artist?.id) return;
+    let isMounted = true;
+
+    dspSyncWatcherService.runDspWatch(artist).then((res) => {
+      if (!isMounted) return;
+      if (res?.newReleasesCount > 0 || res?.photoUpdated) {
+        queryClient.invalidateQueries(['all-releases-for-artist-detail']);
+        queryClient.invalidateQueries(['artist', id]);
+        queryClient.invalidateQueries(['artist-detail', slugParam]);
+        setDspSyncNotice(res.message);
+        setTimeout(() => setDspSyncNotice(null), 6000);
+      }
+    }).catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [artist?.id, id, slugParam, queryClient]);
+
+  const handleManualDspSync = async () => {
+    if (!artist?.id || isDspSyncing) return;
+    setIsDspSyncing(true);
+    try {
+      const res = await dspSyncWatcherService.runDspWatch(artist, { force: true });
+      if (res?.newReleasesCount > 0 || res?.photoUpdated) {
+        queryClient.invalidateQueries(['all-releases-for-artist-detail']);
+        queryClient.invalidateQueries(['artist', id]);
+        queryClient.invalidateQueries(['artist-detail', slugParam]);
+      }
+      setDspSyncNotice(res?.message || 'Profil et catalogue à jour avec Spotify & Deezer.');
+      setTimeout(() => setDspSyncNotice(null), 6000);
+    } catch (err) {
+      setDspSyncNotice('Vérification DSP échouée');
+      setTimeout(() => setDspSyncNotice(null), 4000);
+    } finally {
+      setIsDspSyncing(false);
+    }
+  };
 
   // Vérification du statut certifié dans la base de données via la fonction helper
   const { data: isCertified = false } = useQuery({
@@ -288,7 +330,17 @@ export default function ArtistDetail() {
           canPlay={firstTracks.length > 0}
           onMore={() => navigate('/mon-espace')}
           onShare={handleShare}
+          onDspSync={handleManualDspSync}
+          isDspSyncing={isDspSyncing}
         />
+
+        {/* Bannière discrète de notification Veille DSP */}
+        {dspSyncNotice && (
+          <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs sm:text-sm text-zinc-200 transition-all animate-fadeIn">
+            <Sparkles size={16} className="text-primary shrink-0" />
+            <span>{dspSyncNotice}</span>
+          </div>
+        )}
 
         {/* Onglets style Spotify */}
         <div className="flex items-center gap-4 sm:gap-6 border-b border-white/[0.08] mb-6 overflow-x-auto no-scrollbar">
