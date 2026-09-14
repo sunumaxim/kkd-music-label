@@ -33,10 +33,15 @@ export default function NotificationBell({ user }) {
       timer = setTimeout(fetchNotifs, 800);
     };
     fetchNotifs();
-    const unsubscribe = base44.entities.Notification.subscribe((event) => {
-      if (event.data?.user_email === user?.email) debouncedFetch();
-    });
-    return () => { unsubscribe(); clearTimeout(timer); };
+    const unsubscribe = typeof base44?.entities?.Notification?.subscribe === 'function'
+      ? base44.entities.Notification.subscribe((event) => {
+          if (!event?.data?.user_email || event.data?.user_email === user?.email) debouncedFetch();
+        })
+      : () => {};
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+      clearTimeout(timer);
+    };
   }, [user?.email]);
 
   // Fermer au clic extérieur

@@ -33,10 +33,14 @@ export default function NotificationsPanel({ user }) {
 
   useEffect(() => {
     fetchNotifs();
-    const unsubscribe = base44.entities.Notification.subscribe((event) => {
-      if (event.data?.user_email === user?.email) fetchNotifs();
-    });
-    return unsubscribe;
+    const unsubscribe = typeof base44?.entities?.Notification?.subscribe === 'function'
+      ? base44.entities.Notification.subscribe((event) => {
+          if (!event?.data?.user_email || event.data?.user_email === user?.email) fetchNotifs();
+        })
+      : () => {};
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, [user?.email]);
 
   const unread = notifs.filter(n => !n.is_read).length;

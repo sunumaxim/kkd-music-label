@@ -10,6 +10,7 @@ import { Plus, Pencil, Trash2, ArrowLeft, Star, Download, ShieldCheck } from 'lu
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
 import ArtistImporter from '@/components/partner/ArtistImporter';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
+import { tiktokService } from '@/services';
 
 const EMPTY = {
   name: '', genre: '', biography: '', label: '',
@@ -96,6 +97,15 @@ export default function AdminArtists() {
       await updateMutation.mutateAsync({ id: editing.id, data: form });
     } else {
       await createMutation.mutateAsync(form);
+    }
+    if (form.tiktok_username) {
+      tiktokService.connectAccount({
+        username: form.tiktok_username,
+        display_name: form.name,
+        account_type: 'artist',
+        artist_name: form.name,
+        verified: true,
+      });
     }
   };
 

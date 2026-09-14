@@ -126,8 +126,8 @@ export default function AdminSocial() {
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="mb-2">
         <span className="text-xs font-mono text-primary tracking-widest uppercase">Réseaux Sociaux</span>
-        <h1 className="font-display text-2xl md:text-3xl font-extrabold mt-1">Publication Social Media</h1>
-        <p className="text-sm text-muted-foreground mt-1">Publiez directement sur Instagram et générez vos légendes TikTok</p>
+        <h1 className="font-display text-2xl md:text-3xl font-extrabold mt-1">Publication Social Media & TikTok</h1>
+        <p className="text-sm text-muted-foreground mt-1">Publiez directement sur Instagram et TikTok, et transmettez vos morceaux au répertoire musical TikTok</p>
       </div>
 
       {/* Instagram status */}
@@ -151,14 +151,14 @@ export default function AdminSocial() {
         </p>
         <p>Instagram via l'API Business ne permet de voir que les posts publiés <strong>via l'API</strong>, pas ceux publiés manuellement depuis l'app Instagram.</p>
         <p>Pour vos futures publications, utilisez le bouton ci-dessus. Les posts apparaîtront alors dans votre feed normal et seront suivis ici.</p>
-        <p>Les publications via TikTok restent assistées (copier/coller) car TikTok n'autorise pas la publication automatique via API.</p>
+        <p>L'intégration TikTok est désormais connectée : vous pouvez publier directement des vidéos et transmettre vos musiques au répertoire officiel TikTok Sounds.</p>
       </div>
 
       {/* TikTok section */}
       <div>
         <h2 className="font-heading font-bold text-lg mb-4 flex items-center gap-2">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-foreground"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.17 8.17 0 0 0 4.78 1.52V6.77a4.85 4.85 0 0 1-1.01-.08z"/></svg>
-          Légendes TikTok
+          Intégration & Diffusion TikTok
         </h2>
         <TikTokPublisher />
       </div>

@@ -96,7 +96,7 @@ export default function StudioCarousel() {
 
         <div className="flex gap-4 animate-marquee w-max py-2">
           {loop.map((p, i) => (
-            <ProviderCard key={p.id || i} p={p} />
+            <ProviderCard key={`${p.id || 'provider'}-${i}`} p={p} />
           ))}
         </div>
       </div>

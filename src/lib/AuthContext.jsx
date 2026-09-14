@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { localDb } from '@/api/localStore';
 
 const AuthContext = createContext();
 
@@ -7,49 +8,69 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings] = useState(false);
+  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [appPublicSettings, setAppPublicSettings] = useState(null);
 
   useEffect(() => {
     checkUserAuth();
+
+    const handleUpdate = () => {
+      checkUserAuth();
+    };
+    window.addEventListener('kkd:db_updated', handleUpdate);
+
+    return () => {
+      window.removeEventListener('kkd:db_updated', handleUpdate);
+    };
   }, []);
 
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } else {
+        const localUser = localDb.getCurrentUser();
+        if (localUser) {
+          setUser(localUser);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
     } catch (error) {
-      // App publique : l'absence d'utilisateur connecté n'est pas une erreur.
-      // Les pages publiques restent accessibles ; ProtectedRoute gère les pages protégées.
-      setUser(null);
-      setIsAuthenticated(false);
+      console.error('User auth check failed:', error);
+      const localUser = localDb.getCurrentUser();
+      if (localUser) {
+        setUser(localUser);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    } finally {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     }
   };
 
   const logout = (shouldRedirect = true) => {
+    localDb.setCurrentUser(null);
     setUser(null);
     setIsAuthenticated(false);
-    
+
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
-    } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+      window.location.href = '/';
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    window.location.href = '/login';
   };
 
   return (
@@ -77,3 +98,4 @@ export const useAuth = () => {
   }
   return context;
 };
+
