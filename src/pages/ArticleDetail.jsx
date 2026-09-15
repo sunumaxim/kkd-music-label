@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import MobileHeader from '@/components/mobile/MobileHeader';
-import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags } from '@/components/news/ArticleMediaBlocks';
+import { PhotoGallery, VideoEmbeds, MusicEmbeds, ExternalLinks, ArticleTags, LinkedPlatformContent } from '@/components/news/ArticleMediaBlocks';
 import CommentsSection from '@/components/shared/CommentsSection';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
@@ -153,6 +153,9 @@ export default function ArticleDetail() {
         ">
           <ReactMarkdown>{item.content}</ReactMarkdown>
         </div>
+
+        {/* Contenu KKD Music lié (Artiste, Morceaux & Clips) */}
+        <LinkedPlatformContent article={item} />
 
         {/* Media blocks */}
         <PhotoGallery images={item.gallery} />

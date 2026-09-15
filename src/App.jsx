@@ -70,6 +70,7 @@ import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import AdminLicenses from './pages/admin/AdminLicenses.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import DevenirArtiste from './pages/DevenirArtiste.jsx';
+import AccountSettings from './pages/AccountSettings.jsx';
 import TikTokOAuthCallback from './pages/TikTokOAuthCallback';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
@@ -147,6 +148,8 @@ const AuthenticatedApp = () => {
         <Route path="/explorer" element={<Explorer />} />
         <Route path="/devenir-artiste" element={<DevenirArtiste />} />
         <Route path="/demande-artiste" element={<DevenirArtiste />} />
+        <Route path="/parametres" element={<AccountSettings />} />
+        <Route path="/mon-compte" element={<AccountSettings />} />
       </Route>
 
       {/* Partner dashboard (protected) */}

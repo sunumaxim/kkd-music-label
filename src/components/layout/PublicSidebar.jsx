@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import {
   Home, Compass, Search, Music2, Users, Video, CalendarDays,
   Library, ListMusic, Ticket, ShieldCheck, Heart,
-  Plus, Sparkles, CheckCircle2, ChevronRight
+  Plus, Sparkles, CheckCircle2, ChevronRight, Settings
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
@@ -398,11 +398,11 @@ export default function PublicSidebar() {
               </div>
             </div>
             <Link
-              to="/mon-espace"
-              title="Paramètres"
+              to="/parametres"
+              title="Paramètres & Sécurité du compte"
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
             >
-              <ChevronRight size={16} />
+              <Settings size={16} />
             </Link>
           </div>
         ) : (

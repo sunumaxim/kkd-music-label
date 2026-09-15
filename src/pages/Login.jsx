@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, ShieldCheck } from "lucide-react";
+import GoogleIcon from "@/components/GoogleIcon";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -13,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,9 +24,22 @@ export default function Login() {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
-      setError("Email ou mot de passe incorrect.");
+      setError(err?.message || "Email ou mot de passe incorrect.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      await base44.auth.loginWithProvider("google");
+      window.location.href = "/";
+    } catch (err) {
+      setError("Échec de la connexion Google Firebase : " + (err?.message || "Erreur de popup"));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -64,18 +79,40 @@ export default function Login() {
           </div>
 
           <div>
-            <h1 className="font-display text-2xl font-extrabold mb-1">Connexion</h1>
+            <h1 className="font-display text-2xl font-extrabold mb-1">Connexion Sécurisée</h1>
             <p className="text-muted-foreground text-sm">Accédez aux espaces Label, Artistes ou Fan</p>
           </div>
 
-          {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+          {/* Bouton Google Firebase Auth */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || loading}
+            className="w-full h-11 border-border bg-secondary/50 hover:bg-secondary flex items-center justify-center gap-3 font-semibold"
+          >
+            {googleLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : (
+              <GoogleIcon className="w-5 h-5" />
+            )}
+            Continuer avec Google
+          </Button>
+
+          <div className="relative flex items-center justify-center text-xs uppercase my-3 text-muted-foreground">
+            <span className="w-full border-t border-border" />
+            <span className="bg-background px-3 font-medium">Ou avec vos identifiants</span>
+            <span className="w-full border-t border-border" />
+          </div>
+
+          {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium">{error}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label className="mb-1.5 block text-xs">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input type="email" placeholder="admin@kkdmusic.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-10" required />
+                <Input type="email" placeholder="votre-email@exemple.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-10 h-10" required />
               </div>
             </div>
             <div>
@@ -88,15 +125,21 @@ export default function Login() {
                 <Input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-10 h-10" required />
               </div>
             </div>
-            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/80 font-bold" disabled={loading}>
+            <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/80 font-bold" disabled={loading || googleLoading}>
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connexion...</> : "Se connecter"}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Pas encore de compte ?{" "}
-            <Link to="/register" className="text-primary font-medium hover:underline">Créer un compte</Link>
-          </p>
+          <div className="pt-2 text-center text-sm text-muted-foreground space-y-2">
+            <p>
+              Pas encore de compte ?{" "}
+              <Link to="/register" className="text-primary font-medium hover:underline">Créer un compte</Link>
+            </p>
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground/80 pt-2">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Données synchronisées & protégées par Firebase Cloud DB</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

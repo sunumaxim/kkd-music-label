@@ -551,7 +551,7 @@ export default function PartnerDashboard() {
               <div className="space-y-3">
                 {myPublications.map(pub => {
                   const st = PUB_STATUS[pub.status] || PUB_STATUS.en_attente;
-                  const canManage = pub.status === 'en_attente';
+                  const canDelete = pub.status === 'en_attente';
                   return (
                     <div key={pub.id} className="bg-card border border-border/50 rounded-xl p-4">
                       <div className="flex items-start gap-3">
@@ -570,31 +570,29 @@ export default function PartnerDashboard() {
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold ${st.color}`}>{st.label}</span>
-                              {canManage && (
-                                <>
-                                  <button
-                                    onClick={() => setEditingPublication(pub)}
-                                    className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
-                                    title="Modifier"
-                                  >
-                                    <Pencil size={13} />
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (confirm('Supprimer cette publication ? Cette action est irréversible.')) {
-                                        setDeletingPubId(pub.id);
-                                        deletePubMutation.mutate(pub.id);
-                                      }
-                                    }}
-                                    disabled={deletingPubId === pub.id}
-                                    className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                                    title="Supprimer"
-                                  >
-                                    {deletingPubId === pub.id
-                                      ? <Loader2 size={13} className="animate-spin" />
-                                      : <Trash2 size={13} />}
-                                  </button>
-                                </>
+                              <button
+                                onClick={() => setEditingPublication(pub)}
+                                className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                                title="Modifier les informations, pochette ou métadonnées"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm('Supprimer cette publication ? Cette action est irréversible.')) {
+                                      setDeletingPubId(pub.id);
+                                      deletePubMutation.mutate(pub.id);
+                                    }
+                                  }}
+                                  disabled={deletingPubId === pub.id}
+                                  className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                                  title="Supprimer"
+                                >
+                                  {deletingPubId === pub.id
+                                    ? <Loader2 size={13} className="animate-spin" />
+                                    : <Trash2 size={13} />}
+                                </button>
                               )}
                             </div>
                           </div>

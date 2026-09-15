@@ -6,12 +6,12 @@ import { X, Loader2, Image as ImageIcon, Music, Video, CheckCircle2, Lock } from
  * Affiche la pochette ou un lecteur inline une fois le fichier chargé.
  */
 export default function MediaUploader({
-  label, hint, accept, value, onUpload, onClear, uploading, kind, isPrivate,
+  label, hint, accept, value, onUpload, onClear, uploading, kind, isPrivate, locked, lockedMessage, onLockedAction, lockedActionLabel
 }) {
   const inputRef = useRef(null);
   const isPlayable = String(value || '').startsWith('http');
 
-  const pick = (file) => { if (file) onUpload(file); };
+  const pick = (file) => { if (file && !locked) onUpload(file); };
 
   return (
     <div>
@@ -27,8 +27,20 @@ export default function MediaUploader({
           {kind === 'audio' && (
             <div className="p-3 space-y-2">
               <div className="flex items-center gap-2 text-xs">
-                {isPrivate ? <Lock size={14} className="text-primary" /> : <Music size={14} className="text-primary" />}
-                <span className="truncate flex-1">{isPrivate ? 'Fichier privé chargé' : 'Fichier audio chargé'}</span>
+                {locked ? (
+                  <Lock size={14} className="text-amber-400" />
+                ) : isPrivate ? (
+                  <Lock size={14} className="text-primary" />
+                ) : (
+                  <Music size={14} className="text-primary" />
+                )}
+                <span className="truncate flex-1 font-medium">
+                  {locked
+                    ? 'Master audio verrouillé (Modification unique atteinte)'
+                    : isPrivate
+                    ? 'Fichier privé chargé (Vente)'
+                    : 'Fichier audio chargé'}
+                </span>
                 <CheckCircle2 size={14} className="text-green-500" />
               </div>
               {isPlayable && <audio src={value} controls className="w-full h-9" />}
@@ -42,19 +54,38 @@ export default function MediaUploader({
               <CheckCircle2 size={14} className="text-green-500 ml-auto" />
             </div>
           ))}
-          <button
-            type="button"
-            onClick={onClear}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-destructive hover:text-white transition-colors z-10"
-            aria-label="Supprimer"
-          >
-            <X size={14} />
-          </button>
-          {!isPrivate && isPlayable && (
-            <label className="block text-center text-[11px] text-primary py-1.5 hover:underline cursor-pointer">
-              Remplacer
-              <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(e) => pick(e.target.files[0])} />
-            </label>
+
+          {!locked && onClear && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center hover:bg-destructive hover:text-white transition-colors z-10"
+              aria-label="Supprimer"
+            >
+              <X size={14} />
+            </button>
+          )}
+
+          {locked ? (
+            <div className="p-3 bg-amber-500/10 border-t border-amber-500/20 text-xs text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <span className="leading-snug">{lockedMessage || "Modification audio désactivée. Faites une demande à KKD Music."}</span>
+              {onLockedAction && (
+                <button
+                  type="button"
+                  onClick={onLockedAction}
+                  className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-[11px] shrink-0"
+                >
+                  {lockedActionLabel || "Demander modification"}
+                </button>
+              )}
+            </div>
+          ) : (
+            !isPrivate && isPlayable && (
+              <label className="block text-center text-[11px] text-primary py-1.5 hover:underline cursor-pointer border-t border-border/40">
+                Remplacer le fichier
+                <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(e) => pick(e.target.files[0])} />
+              </label>
+            )
           )}
         </div>
       ) : (

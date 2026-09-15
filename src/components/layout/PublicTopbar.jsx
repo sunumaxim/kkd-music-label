@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   Search, ChevronLeft, ChevronRight, Upload, Library, ListMusic,
-  LogOut, LayoutDashboard, X, ShieldCheck
+  LogOut, LayoutDashboard, X, ShieldCheck, Settings
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -170,6 +170,11 @@ export default function PublicTopbar() {
                 <DropdownMenuItem asChild>
                   <Link to="/playlists" className="flex items-center gap-2 cursor-pointer hover:bg-secondary">
                     <ListMusic size={15} /> Mes Playlists
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/parametres" className="flex items-center gap-2 cursor-pointer hover:bg-secondary text-primary font-medium">
+                    <Settings size={15} /> Paramètres & Sécurité du Compte
                   </Link>
                 </DropdownMenuItem>
                 {user.role === 'admin' && (

@@ -25,6 +25,7 @@ const typeLabels = {
   promotion_clip: 'Promo Clip',
   partenariat_label: 'Partenariat Label',
   collaboration: 'Collaboration',
+  modification_audio: 'Remplacement Audio (Master)',
   autre: 'Autre',
 };
 

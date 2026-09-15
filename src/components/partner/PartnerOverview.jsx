@@ -101,19 +101,24 @@ export default function PartnerOverview({
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           {[
-            { label: 'Écoutes audio', value: fmt(totalPlays), icon: Headphones, color: 'text-primary' },
-            { label: 'Vues vidéos', value: fmt(totalVideoViews), icon: Eye, color: 'text-amber-400' },
-            { label: "Mentions j'aime", value: fmt(totalLikes + totalVideoLikes), icon: Heart, color: 'text-rose-400' },
-            { label: 'Titres vendus', value: fmt(totalSales + totalVideoSales), icon: ShoppingCart, color: 'text-emerald-400' },
-            { label: 'Billets live', value: fmt(totalTicketsSold), icon: Ticket, color: 'text-indigo-400' },
-            { label: 'Publications', value: myPublications.length, sub: `${pendingPubs} en cours`, icon: FileText, color: 'text-blue-400' },
+            { label: 'Écoutes audio', value: fmt(totalPlays), icon: Headphones, color: 'text-primary', tab: 'artiste' },
+            { label: 'Vues vidéos', value: fmt(totalVideoViews), icon: Eye, color: 'text-amber-400', tab: 'artiste' },
+            { label: "Mentions j'aime", value: fmt(totalLikes + totalVideoLikes), icon: Heart, color: 'text-rose-400', tab: 'artiste' },
+            { label: 'Titres vendus', value: fmt(totalSales + totalVideoSales), icon: ShoppingCart, color: 'text-emerald-400', tab: 'revenus' },
+            { label: 'Billets live', value: fmt(totalTicketsSold), icon: Ticket, color: 'text-indigo-400', tab: 'evenements' },
+            { label: 'Publications', value: myPublications.length, sub: `${pendingPubs} en cours`, icon: FileText, color: 'text-blue-400', tab: 'publications' },
           ].map(s => {
             const Ic = s.icon;
             return (
-              <div key={s.label} className="bg-[#141821] border border-white/[0.08] hover:border-white/[0.15] transition-all rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col justify-between">
+              <button
+                type="button"
+                key={s.label}
+                onClick={() => onNavigateTab && onNavigateTab(s.tab)}
+                className="text-left bg-[#141821] border border-white/[0.08] hover:border-primary/50 hover:bg-[#1a202c] transition-all rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col justify-between group active:scale-[0.98] cursor-pointer"
+              >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <Ic size={18} className={s.color} />
+                    <Ic size={18} className={`${s.color} group-hover:scale-110 transition-transform`} />
                     {s.sub && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
                         {s.sub}
@@ -122,8 +127,11 @@ export default function PartnerOverview({
                   </div>
                   <p className="font-display text-2xl sm:text-3xl font-black text-white tracking-tight">{s.value}</p>
                 </div>
-                <p className="text-xs text-zinc-400 mt-1 font-medium">{s.label}</p>
-              </div>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors">{s.label}</p>
+                  <ArrowRight size={11} className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
             );
           })}
         </div>
@@ -150,16 +158,20 @@ export default function PartnerOverview({
               const views = v.views_count || 0;
               const pct = Math.round((views / maxVideoViews) * 100);
               return (
-                <div key={v.id} className="bg-[#141821] border border-white/[0.08] hover:border-white/[0.15] transition-all rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm">
+                <div
+                  key={v.id}
+                  onClick={() => onNavigateTab && onNavigateTab('artiste')}
+                  className="bg-[#141821] border border-white/[0.08] hover:border-primary/50 hover:bg-[#1a202c] transition-all rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm cursor-pointer group"
+                >
                   {v.thumbnail_url ? (
-                    <img src={v.thumbnail_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                    <img src={v.thumbnail_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <VideoIcon size={18} className="text-primary" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-heading font-bold text-sm text-white truncate">{v.title}</p>
+                    <p className="font-heading font-bold text-sm text-white truncate group-hover:text-primary transition-colors">{v.title}</p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
                       <span className="flex items-center gap-1 font-bold text-primary">
                         <Eye size={12} /> {fmt(views)} vues
@@ -209,16 +221,20 @@ export default function PartnerOverview({
                 ? format(new Date(pub.created_date), 'dd MMM yyyy', { locale: fr })
                 : '';
               return (
-                <div key={pub.id} className="bg-[#141821] border border-white/[0.08] hover:border-white/[0.15] transition-all rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm">
+                <div
+                  key={pub.id}
+                  onClick={() => onNavigateTab && onNavigateTab('publications')}
+                  className="bg-[#141821] border border-white/[0.08] hover:border-primary/50 hover:bg-[#1a202c] transition-all rounded-2xl p-3.5 flex items-center gap-3.5 shadow-sm cursor-pointer group"
+                >
                   {pub.cover_url ? (
-                    <img src={pub.cover_url} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    <img src={pub.cover_url} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform" />
                   ) : (
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <Music size={18} className="text-primary" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-heading font-bold text-sm text-white truncate">{pub.title}</p>
+                    <p className="font-heading font-bold text-sm text-white truncate group-hover:text-primary transition-colors">{pub.title}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-zinc-400">
                       <span className="font-semibold text-zinc-300">{typeLabel}</span>
                       {pub.artist_name && (

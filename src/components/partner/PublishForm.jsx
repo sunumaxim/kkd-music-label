@@ -51,6 +51,16 @@ export default function PublishForm({ user, onClose, editPublication }) {
   const [newArtist, setNewArtist] = useState(isEditing ? !editPublication?.artist_id : false);
   const [dupCheck, setDupCheck] = useState({ loading: false, duplicates: [], checked: false });
 
+  // Règle de modification de l'audio : 1 modification directe max pour le créateur
+  const audioModifiedCount = Number(editPublication?.audio_modified_count || 0);
+  const isVideo = contentType === 'video_clip';
+  const isAlbum = contentType === 'album' || contentType === 'ep';
+  const isAudioLocked = isEditing && !isVideo && !isAlbum && !!editPublication?.file_url && audioModifiedCount >= 1;
+  const [audioFileReplaced, setAudioFileReplaced] = useState(false);
+  const [showAudioRequestModal, setShowAudioRequestModal] = useState(false);
+  const [audioRequestMessage, setAudioRequestMessage] = useState('');
+  const [audioRequestSending, setAudioRequestSending] = useState(false);
+
   const [form, setForm] = useState({
     title: editPublication?.title || '',
     artist_id: editPublication?.artist_id || '',
@@ -95,28 +105,72 @@ export default function PublishForm({ user, onClose, editPublication }) {
   }, [newArtist, form.artist_name]);
 
   const selectedPlatform = PLATFORMS.find((p) => p.value === form.streaming_platform) || PLATFORMS[0];
-  const isVideo = contentType === 'video_clip';
-  const isAlbum = contentType === 'album' || contentType === 'ep';
   // URL d'écoute (signée si fichier privé/vendu) pour l'étape de prévisualisation
   const playable = usePlayableUrl(isAlbum ? '' : form.file_url);
 
   const handleFileUpload = async (file) => {
     if (!file) return;
+    if (isAudioLocked) {
+      toast({
+        title: 'Modification directe bloquée',
+        description: "Vous avez déjà effectué votre modification autorisée pour ce master audio.",
+        variant: 'destructive',
+      });
+      return;
+    }
     setUpload('file', true);
     try {
       if (form.is_for_sale) {
         const res = await base44.integrations.Core.UploadPrivateFile({ file });
         set('file_url', res.file_uri);
+        setAudioFileReplaced(true);
         toast({ title: 'Fichier audio chargé', description: 'Stockage privé — accessible après achat.' });
       } else {
         const res = await base44.integrations.Core.UploadPublicFile({ file });
         set('file_url', res.file_url);
-        toast({ title: 'Fichier audio chargé', description: 'Écoute gratuite disponible.' });
+        setAudioFileReplaced(true);
+        toast({ title: 'Fichier audio chargé', description: 'Écoute disponible.' });
       }
     } catch (err) {
       toast({ title: 'Échec du téléversement audio', description: err?.message || 'Veuillez réessayer.', variant: 'destructive' });
     } finally {
       setUpload('file', false);
+    }
+  };
+
+  const handleSendAudioRequest = async () => {
+    if (!audioRequestMessage.trim()) {
+      toast({
+        title: 'Précision requise',
+        description: 'Veuillez expliquer la modification demandée ou fournir le lien du nouveau master.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setAudioRequestSending(true);
+    try {
+      await base44.entities.ServiceRequest.create({
+        full_name: user?.full_name || user?.email,
+        email: user?.email,
+        request_type: 'modification_audio',
+        title: `Remplacement master audio : ${form.title}`,
+        description: `Publication ID : ${editPublication?.id || 'Inconnu'}\nTitre : ${form.title}\nArtiste : ${form.artist_name}\nDétails & Lien : ${audioRequestMessage}`,
+        status: 'en_attente',
+      });
+      toast({
+        title: 'Demande transmise avec succès !',
+        description: "L'équipe KKD Music examinera et appliquera la mise à jour de votre fichier audio.",
+      });
+      setShowAudioRequestModal(false);
+      setAudioRequestMessage('');
+    } catch (err) {
+      toast({
+        title: "Erreur lors de l'envoi",
+        description: err?.message || 'Veuillez contacter le support.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAudioRequestSending(false);
     }
   };
 
@@ -272,6 +326,10 @@ export default function PublishForm({ user, onClose, editPublication }) {
       price: isAlbum ? 0 : form.is_for_sale ? Number(form.price) : 0,
       preview_start: isAlbum ? 0 : form.is_for_sale ? form.preview_start : 0,
       preview_duration: isAlbum ? 30 : form.is_for_sale ? Number(form.preview_duration) || 30 : 30,
+      audio_modified_count: isEditing
+        ? (audioFileReplaced ? audioModifiedCount + 1 : audioModifiedCount)
+        : 0,
+      ...(audioFileReplaced ? { last_audio_change_date: new Date().toISOString() } : {}),
     });
   };
 
@@ -580,6 +638,39 @@ export default function PublishForm({ user, onClose, editPublication }) {
           </div>
         ) : (
           <>
+            {isEditing && !isVideo && (
+              isAudioLocked ? (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-300 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-200">
+                    <Lock size={15} className="text-amber-400" />
+                    <span>Master audio vérifié et verrouillé</span>
+                  </div>
+                  <p className="leading-relaxed text-amber-300/90">
+                    Conformément à la politique KKD Music, le fichier audio ne peut être modifié directement qu'une seule fois par le créateur. Pour remplacer à nouveau le master audio, veuillez soumettre une demande officielle à notre équipe.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowAudioRequestModal(true)}
+                    className="border-amber-500/40 text-amber-200 hover:bg-amber-500/20 text-xs font-bold gap-1.5 mt-1"
+                  >
+                    Demander le remplacement de l'audio à KKD Music
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 text-xs text-blue-300 flex items-start gap-2.5">
+                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-blue-400" />
+                  <div>
+                    <span className="font-bold text-blue-200">Règle de modification du master :</span>
+                    <p className="mt-0.5 text-blue-300/90 leading-relaxed">
+                      Vous pouvez modifier la pochette et les informations sans limite. Le master audio ne peut être modifié directement qu'<strong>une seule fois</strong>. Une deuxième modification nécessitera une demande à KKD Music.
+                    </p>
+                  </div>
+                </div>
+              )
+            )}
+
             <MediaUploader
               label={`${isVideo ? 'Fichier vidéo' : 'Fichier audio'} ${form.is_for_sale ? '(privé, vendu)' : '(gratuit)'}${form.streaming_link?.trim() ? ' (facultatif — lien fourni)' : ' *'}`}
               kind={isVideo ? 'video' : 'audio'}
@@ -587,8 +678,12 @@ export default function PublishForm({ user, onClose, editPublication }) {
               value={form.file_url}
               uploading={uploads.file}
               isPrivate={form.is_for_sale}
+              locked={isAudioLocked}
+              lockedMessage="Master audio verrouillé (Modification unique déjà effectuée). Soumettez une demande pour le remplacer."
+              lockedActionLabel="Demander à KKD"
+              onLockedAction={() => setShowAudioRequestModal(true)}
               onUpload={handleFileUpload}
-              onClear={() => set('file_url', '')}
+              onClear={isAudioLocked ? null : () => set('file_url', '')}
             />
             {form.is_for_sale && (
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -728,6 +823,57 @@ export default function PublishForm({ user, onClose, editPublication }) {
           )}
         </div>
       </form>
+
+      {/* Modal de demande de modification audio à KKD */}
+      {showAudioRequestModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-bold text-base flex items-center gap-2">
+                <Music size={16} className="text-primary" /> Demande de modification audio
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAudioRequestModal(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Indiquez à l'équipe KKD la raison de la mise à jour du master pour <strong>"{form.title}"</strong> et collez le lien de téléchargement du nouveau fichier (Google Drive, Dropbox, WeTransfer, etc.).
+            </p>
+            <Textarea
+              rows={4}
+              placeholder="Expliquez la raison (ex: version remasterisée, mixage corrigé) et collez le lien du nouveau master..."
+              value={audioRequestMessage}
+              onChange={(e) => setAudioRequestMessage(e.target.value)}
+              className="text-xs"
+            />
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAudioRequestModal(false)}
+                className="text-xs"
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={audioRequestSending || !audioRequestMessage.trim()}
+                onClick={handleSendAudioRequest}
+                className="text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {audioRequestSending ? <Loader2 size={13} className="animate-spin mr-1" /> : null}
+                Envoyer à l'administration
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

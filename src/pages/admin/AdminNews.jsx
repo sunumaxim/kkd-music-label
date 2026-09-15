@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import {
   Plus, Pencil, Trash2, Sparkles, Loader2, ArrowLeft, X,
   Link2, Check, ExternalLink, Image, Video, Music2, Tag,
-  Upload, Globe, ChevronDown, ChevronUp
+  Upload, Globe, ChevronDown, ChevronUp, Disc, Film, User, CheckCircle2
 } from 'lucide-react';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
 
@@ -34,6 +34,12 @@ const EMPTY_FORM = {
   video_urls: [],
   music_embeds: [],
   links: [],
+  linked_artist_id: '',
+  linked_artist_name: '',
+  linked_artist_photo_url: '',
+  linked_artist_slug: '',
+  linked_releases: [],
+  linked_videos: [],
 };
 
 // ── Mini section collapsible ──
@@ -70,7 +76,17 @@ export default function AdminNews() {
 
   const { data: artists = [] } = useQuery({
     queryKey: ['artists-for-news'],
-    queryFn: () => base44.entities.Artist.list('name', 50),
+    queryFn: () => base44.entities.Artist.list('name', 100),
+  });
+
+  const { data: releases = [] } = useQuery({
+    queryKey: ['releases-for-news'],
+    queryFn: () => base44.entities.Release.list('-created_date', 100),
+  });
+
+  const { data: platformVideos = [] } = useQuery({
+    queryKey: ['videos-for-news'],
+    queryFn: () => base44.entities.Video.list('-created_date', 100),
   });
 
   const { data: news = [], isLoading } = useQuery({
@@ -151,9 +167,97 @@ export default function AdminNews() {
     setTagInput('');
   };
 
-  const addVideoUrl = () => setForm(f => ({ ...f, video_urls: [...(f.video_urls || []), ''] }));
-  const updateVideoUrl = (i, val) => setForm(f => { const arr = [...(f.video_urls || [])]; arr[i] = val; return { ...f, video_urls: arr }; });
-  const removeVideoUrl = (i) => setForm(f => ({ ...f, video_urls: f.video_urls.filter((_, j) => j !== i) }));
+  const addVideoUrl = () => { setFormDirty(f => ({ ...f, video_urls: [...(f.video_urls || []), ''] })); };
+  const updateVideoUrl = (i, val) => setFormDirty(f => { const arr = [...(f.video_urls || [])]; arr[i] = val; return { ...f, video_urls: arr }; });
+  const removeVideoUrl = (i) => setFormDirty(f => ({ ...f, video_urls: f.video_urls.filter((_, j) => j !== i) }));
+
+  const handleDirectVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading('video');
+    try {
+      const res = await base44.integrations.Core.UploadFile({ file });
+      setFormDirty(f => ({ ...f, video_urls: [...(f.video_urls || []), res.file_url] }));
+    } catch (err) {
+      alert(err?.message || "Échec de l'envoi de la vidéo");
+    } finally {
+      setUploading('');
+    }
+  };
+
+  const handleSelectArtist = (artistId) => {
+    if (!artistId || artistId === 'none') {
+      setFormDirty(f => ({
+        ...f,
+        linked_artist_id: '',
+        linked_artist_name: '',
+        linked_artist_photo_url: '',
+        linked_artist_slug: '',
+      }));
+      return;
+    }
+    const artist = artists.find(a => a.id === artistId);
+    if (artist) {
+      setFormDirty(f => ({
+        ...f,
+        linked_artist_id: artist.id,
+        linked_artist_name: artist.name,
+        linked_artist_photo_url: artist.photo_url || '',
+        linked_artist_slug: artist.slug || artist.id,
+      }));
+    }
+  };
+
+  const handleAddLinkedRelease = (releaseId) => {
+    if (!releaseId) return;
+    const rel = releases.find(r => r.id === releaseId);
+    if (!rel) return;
+    if (form.linked_releases?.some(r => r.id === rel.id)) return;
+    setFormDirty(f => ({
+      ...f,
+      linked_releases: [
+        ...(f.linked_releases || []),
+        {
+          id: rel.id,
+          title: rel.title,
+          artist_name: rel.artist_name,
+          cover_url: rel.cover_url || '',
+          audio_file_url: rel.audio_file_url || '',
+          is_for_sale: !!rel.is_for_sale,
+          price: rel.price || 0,
+        },
+      ],
+    }));
+  };
+
+  const handleRemoveLinkedRelease = (id) => {
+    setFormDirty(f => ({ ...f, linked_releases: (f.linked_releases || []).filter(r => r.id !== id) }));
+  };
+
+  const handleAddLinkedVideo = (videoId) => {
+    if (!videoId) return;
+    const vid = platformVideos.find(v => v.id === videoId);
+    if (!vid) return;
+    if (form.linked_videos?.some(v => v.id === vid.id)) return;
+    setFormDirty(f => ({
+      ...f,
+      linked_videos: [
+        ...(f.linked_videos || []),
+        {
+          id: vid.id,
+          title: vid.title,
+          artist_name: vid.artist_name,
+          thumbnail_url: vid.thumbnail_url || '',
+          youtube_url: vid.youtube_url || '',
+          video_file_url: vid.video_file_url || '',
+        },
+      ],
+    }));
+  };
+
+  const handleRemoveLinkedVideo = (id) => {
+    setFormDirty(f => ({ ...f, linked_videos: (f.linked_videos || []).filter(v => v.id !== id) }));
+  };
 
   const addMusic = () => setForm(f => ({ ...f, music_embeds: [...(f.music_embeds || []), ''] }));
   const updateMusic = (i, val) => setForm(f => { const arr = [...(f.music_embeds || [])]; arr[i] = val; return { ...f, music_embeds: arr }; });
@@ -286,17 +390,213 @@ export default function AdminNews() {
           </label>
         </Section>
 
-        {/* Vidéos YouTube */}
-        <Section icon={Video} label={`Vidéos YouTube (${form.video_urls?.length || 0})`}>
-          {form.video_urls?.map((url, i) => (
-            <div key={i} className="flex gap-2">
-              <Input value={url} onChange={e => updateVideoUrl(i, e.target.value)} placeholder="https://youtube.com/watch?v=..." className="text-sm" />
-              <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoUrl(i)}><X size={14} /></Button>
+        {/* Vidéos de l'article (Téléversement direct et liens YouTube/Web) */}
+        <Section icon={Video} label={`Vidéos de l'article (${form.video_urls?.length || 0})`} defaultOpen>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Intégrez des vidéos dans l'article : téléversez directement un fichier vidéo (MP4/WebM) ou collez des liens (YouTube, Vimeo, etc.).
+            </p>
+
+            {/* Téléverser un fichier vidéo */}
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border-dashed border-primary/40 bg-primary/5 rounded-xl hover:bg-primary/10 text-xs font-bold text-primary transition-colors w-fit">
+              {uploading === 'video' ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+              {uploading === 'video' ? 'Envoi de la vidéo en cours...' : 'Téléverser un fichier vidéo (MP4, WebM)'}
+              <input type="file" accept="video/*" className="hidden" disabled={uploading === 'video'} onChange={handleDirectVideoUpload} />
+            </label>
+
+            {/* Liste des vidéos */}
+            {form.video_urls?.map((url, i) => (
+              <div key={i} className="p-3 bg-secondary/40 border border-border/60 rounded-xl space-y-2">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    value={url}
+                    onChange={e => updateVideoUrl(i, e.target.value)}
+                    placeholder="https://youtube.com/watch?v=... ou lien direct .mp4"
+                    className="text-xs flex-1"
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeVideoUrl(i)} className="text-muted-foreground hover:text-destructive shrink-0">
+                    <X size={15} />
+                  </Button>
+                </div>
+                {url && (
+                  url.includes('youtube.com') || url.includes('youtu.be') ? (
+                    <span className="text-[11px] text-primary flex items-center gap-1 font-mono">
+                      <Check size={11} /> Lien YouTube détecté (Lecteur vidéo interactif intégré)
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-3 pt-1">
+                      <video src={url} className="w-32 h-20 rounded-lg bg-black object-cover border border-border/50" preload="metadata" />
+                      <span className="text-[11px] text-muted-foreground">Fichier vidéo intégré avec lecteur natif HTML5</span>
+                    </div>
+                  )
+                )}
+              </div>
+            ))}
+
+            <Button type="button" variant="outline" size="sm" onClick={addVideoUrl} className="text-xs gap-1.5 font-bold">
+              <Plus size={13} /> Ajouter un lien vidéo
+            </Button>
+          </div>
+        </Section>
+
+        {/* Contenu KKD Music associé (Artiste, Morceaux & Clips) */}
+        <Section icon={Disc} label="Contenu KKD Music associé (Artiste, Morceaux & Clips)" defaultOpen>
+          <div className="space-y-5">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Associez le contenu officiel de votre plateforme pour permettre aux lecteurs d'écouter les morceaux, visionner les clips et accéder aux fiches artistes directement depuis l'article.
+            </p>
+
+            {/* 1. Sélectionner l'artiste associé */}
+            <div className="space-y-2">
+              <Label className="text-xs font-heading font-bold flex items-center gap-1.5">
+                <User size={13} className="text-primary" /> Artiste officiel du sujet
+              </Label>
+              {form.linked_artist_id ? (
+                <div className="p-3 bg-secondary/50 rounded-xl border border-border flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {form.linked_artist_photo_url ? (
+                      <img src={form.linked_artist_photo_url} alt="" className="w-10 h-10 rounded-full object-cover border border-primary/30 shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                        <User size={18} className="text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-heading font-bold text-sm truncate flex items-center gap-1">
+                        {form.linked_artist_name} <CheckCircle2 size={13} className="text-primary shrink-0" />
+                      </p>
+                      <span className="text-[10px] text-muted-foreground font-mono">Profil KKD vérifié</span>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSelectArtist(null)}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Détacher
+                  </Button>
+                </div>
+              ) : (
+                <Select onValueChange={handleSelectArtist}>
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Sélectionner un artiste sur KKD Music..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun artiste</SelectItem>
+                    {artists.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name} {a.genre ? `(${a.genre})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={addVideoUrl} className="text-xs gap-1.5">
-            <Plus size={12} /> Ajouter une vidéo
-          </Button>
+
+            {/* 2. Morceaux & Sorties associées */}
+            <div className="space-y-2 pt-2 border-t border-border/40">
+              <Label className="text-xs font-heading font-bold flex items-center gap-1.5">
+                <Music2 size={13} className="text-primary" /> Morceaux / Sorties mentionnées ({form.linked_releases?.length || 0})
+              </Label>
+              {form.linked_releases?.length > 0 && (
+                <div className="space-y-2 mb-2">
+                  {form.linked_releases.map(rel => (
+                    <div key={rel.id} className="p-2.5 bg-secondary/40 border border-border/60 rounded-xl flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {rel.cover_url ? (
+                          <img src={rel.cover_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                            <Disc size={16} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-heading font-bold text-xs truncate">{rel.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{rel.artist_name}</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveLinkedRelease(rel.id)}
+                        className="text-muted-foreground hover:text-destructive shrink-0 h-8 w-8"
+                      >
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Select onValueChange={handleAddLinkedRelease}>
+                <SelectTrigger className="text-xs">
+                  <SelectValue placeholder="Lier un morceau ou une sortie..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {releases
+                    .filter(r => !form.linked_releases?.some(lr => lr.id === r.id))
+                    .map(r => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.title} — {r.artist_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 3. Clips vidéos associés */}
+            <div className="space-y-2 pt-2 border-t border-border/40">
+              <Label className="text-xs font-heading font-bold flex items-center gap-1.5">
+                <Film size={13} className="text-primary" /> Clips Vidéos mentionnés ({form.linked_videos?.length || 0})
+              </Label>
+              {form.linked_videos?.length > 0 && (
+                <div className="space-y-2 mb-2">
+                  {form.linked_videos.map(vid => (
+                    <div key={vid.id} className="p-2.5 bg-secondary/40 border border-border/60 rounded-xl flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {vid.thumbnail_url ? (
+                          <img src={vid.thumbnail_url} alt="" className="w-12 h-8 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-12 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                            <Film size={15} className="text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-heading font-bold text-xs truncate">{vid.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{vid.artist_name}</p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveLinkedVideo(vid.id)}
+                        className="text-muted-foreground hover:text-destructive shrink-0 h-8 w-8"
+                      >
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Select onValueChange={handleAddLinkedVideo}>
+                <SelectTrigger className="text-xs">
+                  <SelectValue placeholder="Lier un clip vidéo officiel..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {platformVideos
+                    .filter(v => !form.linked_videos?.some(lv => lv.id === v.id))
+                    .map(v => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.title} — {v.artist_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </Section>
 
         {/* Musiques */}
