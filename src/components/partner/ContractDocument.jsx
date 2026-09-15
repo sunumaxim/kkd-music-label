@@ -12,114 +12,207 @@ const CONTACT_EMAILS = [
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '____ / ____ / ______');
 
 /**
- * Document de contrat KKD Music — rendu A4 pour capture PDF.
- * Largeur fixe 794px (~ A4 @ 96dpi).
+ * Document de contrat KKD Music — rendu A4 pour capture et impression PDF.
+ * Design officiel avec cadre noble, en-tête rougeâtre, texte juridique et cachet électronique.
  */
 export default function ContractDocument({ invite }) {
   const isLabel = invite?.invite_type === 'label_partenaire';
   const partyName = invite?.artist_name || '______________________';
-  const contractKind = isLabel ? 'CONTRAT DE PARTENARIAT LABEL' : "CONTRAT D'ARTISTE KKD MUSIC";
+  const contractKind = isLabel ? 'CONTRAT DE PARTENARIAT LABEL' : "CONTRAT D'ARTISTE & DE DISTRIBUTION";
   const partyRole = isLabel ? 'le Label Partenaire' : "l'Artiste";
 
   return (
-    <div style={{ width: '794px', background: '#ffffff', color: '#111', fontFamily: 'Inter, sans-serif', padding: '56px 64px', boxSizing: 'border-box' }}>
-      {/* ── En-tête ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #ff0a0a', paddingBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <img src={LOGO_URL} alt="KKD Music" crossOrigin="anonymous" style={{ height: '64px', width: 'auto' }} />
-          <div>
-            <div style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1 }}>KKD MUSIC</div>
-            <div style={{ fontSize: '10px', color: '#666', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Label Indépendant</div>
+    <div style={{
+      width: '794px',
+      background: '#ffffff',
+      color: '#0f172a',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      boxSizing: 'border-box',
+      position: 'relative',
+      padding: '16px',
+    }}>
+      {/* ── CADRE OFFICIEL DU DOCUMENT (Double bordure d'authenticité) ── */}
+      <div style={{
+        border: '2px solid #8B1515',
+        padding: '3px',
+        boxSizing: 'border-box',
+      }}>
+        <div style={{
+          border: '1px solid #D4AF37',
+          padding: '24px 32px 32px 32px',
+          boxSizing: 'border-box',
+          position: 'relative',
+        }}>
+
+          {/* ── EN-TÊTE ROUGEÂTRE OFFICIEL ── */}
+          <div style={{
+            background: '#8B1515',
+            color: '#ffffff',
+            borderRadius: '4px',
+            padding: '16px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            borderBottom: '3px solid #D4AF37',
+            marginBottom: '16px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <img
+                src={LOGO_URL}
+                alt="KKD Music"
+                crossOrigin="anonymous"
+                style={{ height: '48px', width: 'auto', background: '#ffffff', padding: '4px', borderRadius: '4px' }}
+              />
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.1 }}>KKD MUSIC</div>
+                <div style={{ fontSize: '9px', color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Label Group · Maison de Disques</div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', fontSize: '10px', color: '#FEE2E2', lineHeight: 1.4 }}>
+              <div style={{ fontWeight: 800, color: '#ffffff', fontSize: '11px', letterSpacing: '0.04em' }}>
+                RÉF : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()}
+              </div>
+              <div>Émis le {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}</div>
+              <div style={{ color: '#FDE68A', fontWeight: 600 }}>Dakar, République du Sénégal</div>
+            </div>
           </div>
+
+          {/* ── ENCADRÉ JURIDIQUE (DROITS D'AUTEUR & AUTHENTICITÉ) ── */}
+          <div style={{
+            background: '#FFF5F5',
+            border: '1px solid #FCA5A5',
+            borderLeft: '4px solid #8B1515',
+            padding: '10px 14px',
+            marginBottom: '20px',
+            borderRadius: '2px',
+          }}>
+            <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>
+              Avis Juridique & Protection des Droits d'Auteur — Loi N° 2008-09
+            </div>
+            <div style={{ fontSize: '9px', color: '#475569', lineHeight: 1.45 }}>
+              Le présent contrat confère un cadre légal conforme à la législation internationale sur la propriété littéraire et artistique. L'artiste demeure l'unique titulaire des droits moraux inaliénables sur ses œuvres. Toute reproduction, distribution ou exploitation commerciale s'exécute sous la garantie d'authenticité et de certification KKD Music.
+            </div>
+          </div>
+
+          {/* ── TITRE SOLENNEL DU DOCUMENT ── */}
+          <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+            <h1 style={{ fontSize: '17px', fontWeight: 900, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#8B1515', margin: 0 }}>
+              {contractKind}
+            </h1>
+            <p style={{ fontSize: '10.5px', color: '#64748B', marginTop: '3px', fontWeight: 500 }}>
+              Cadre institutionnel de diffusion numérique, promotion et gestion artistique
+            </p>
+          </div>
+
+          {/* ── DÉSIGNATION DES PARTIES ── */}
+          <div style={{
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            padding: '10px 14px',
+            borderRadius: '4px',
+            marginBottom: '16px',
+            fontSize: '10.5px',
+            lineHeight: 1.6,
+          }}>
+            <div><strong>ENTRE LES SOUSSIGNÉS :</strong></div>
+            <div style={{ marginTop: '3px' }}>
+              <strong>1. KKD MUSIC</strong>, maison de disques et plateforme de distribution musicale accessible sur <strong>kkdmusic.com</strong>, représentée par sa Direction Générale, ci-après « KKD Music »,
+            </div>
+            <div style={{ marginTop: '3px' }}>
+              <strong>2. {partyRole.toUpperCase()} : {partyName}</strong>
+              {invite?.email ? ` (${invite.email})` : ''}, ci-après « {partyRole === 'le Label Partenaire' ? 'le Label' : "l'Artiste"} ».
+            </div>
+          </div>
+
+          {/* ── ARTICLES DU CONTRAT ── */}
+          <div style={{ fontSize: '10px', lineHeight: 1.6, color: '#1e293b' }}>
+            <Article num="1" title="Objet du contrat & Distribution numérique">
+              KKD Music assure la distribution, la commercialisation et la promotion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} sur sa plateforme officielle <strong>kkdmusic.com</strong> et ses relais partenaires. La diffusion multi-plateformes (Spotify, Apple Music, YouTube Music, Audiomack, Deezer) est soumise aux standards de qualité et validation de l'équipe éditoriale.
+            </Article>
+
+            <Article num="2" title="Durée de validité & Reconduction">
+              Le présent contrat est conclu pour une durée déterminée, du <strong>{fmt(invite?.contract_start)}</strong> au <strong>{fmt(invite?.contract_end)}</strong>. À son terme, il sera renouvelable par accord exprès ou avenant signé entre les parties.
+            </Article>
+
+            <Article num="3" title="Garantie d'originalité & Droits d'auteur">
+              {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} garantit être le légitime détenteur des droits d'auteur moraux et patrimoniaux sur les enregistrements masters déposés. {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} garantit KKD Music contre toute action en contrefaçon, plagiat ou contestation de tiers.
+            </Article>
+
+            <Article num="4" title="Rémunération & Partage des redevances">
+              Les revenus issus des ventes, streams payants et billetteries sont reversés selon la clé de répartition établie dans l'espace partenaire (90 % artiste / 10 % commission KKD Music). Les paiements sont sécurisés via les opérateurs agréés (Wave, Orange Money).
+            </Article>
+
+            <Article num="5" title="Confidentialité, Résiliation & Droit applicable">
+              Tout manquement grave autorise la partie lésée à résilier le contrat après préavis écrit de 30 jours. Le présent accord est soumis à la législation sénégalaise relative à la propriété intellectuelle et aux tribunaux compétents de Dakar.
+            </Article>
+          </div>
+
+          {/* ── SIGNATURES OFFICIELLES (AVEC CACHET ÉLECTRONIQUE DE MADOU KANE) ── */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginTop: '28px',
+            gap: '24px',
+            paddingTop: '16px',
+            borderTop: '1px solid #E2E8F0',
+          }}>
+            {/* Colonne KKD Music avec cachet électronique et signature */}
+            <div style={{ flex: 1, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Pour KKD Music (Direction des Opérations)
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                <img
+                  src={SIGNATURE_URL}
+                  alt="Cachet & Signature Abdoulaye Sylla"
+                  crossOrigin="anonymous"
+                  style={{ height: '62px', width: 'auto', display: 'block' }}
+                />
+              </div>
+              <div style={{ height: '1px', background: '#D4AF37', margin: '6px auto', width: '80%' }} />
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>Abdoulaye Sylla</div>
+              <div style={{ fontSize: '9px', fontWeight: 700, color: '#8B1515' }}>Gestionnaire Principal · Direction des Opérations</div>
+              <div style={{ fontSize: '8.5px', color: '#64748B' }}>KKD Music Label Group · Missira, Tambacounda & Dakar</div>
+              <div style={{ fontSize: '8px', fontStyle: 'italic', color: '#059669', marginTop: '2px', fontWeight: 600 }}>
+                ✓ Cachet électronique & signature officielle certifiée
+              </div>
+            </div>
+
+            {/* Colonne Artiste */}
+            <div style={{ flex: 1, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Pour {partyRole === 'le Label Partenaire' ? 'le Label Partenaire' : "l'Artiste Ayant-Droit"}
+              </div>
+              <div style={{ height: '62px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: '9.5px', fontStyle: 'italic' }}>
+                « Lu, approuvé et certifié conforme »
+              </div>
+              <div style={{ height: '1px', background: '#CBD5E1', margin: '6px auto', width: '80%' }} />
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>{partyName}</div>
+              <div style={{ fontSize: '9px', color: '#64748B' }}>{invite?.email || 'Signature & Date'}</div>
+              <div style={{ fontSize: '8px', color: '#94A3B8', marginTop: '2px' }}>
+                Fait à Dakar · Certifié le {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}
+              </div>
+            </div>
+          </div>
+
+          {/* ── PIED DE PAGE DU CONTRAT ── */}
+          <div style={{
+            marginTop: '20px',
+            paddingTop: '10px',
+            borderTop: '1px solid #E2E8F0',
+            fontSize: '8px',
+            color: '#94A3B8',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div>KKD Music · Plateforme de distribution certifiée · kkdmusic.com</div>
+            <div>Réf : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()} — Date immuable : {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}</div>
+          </div>
+
         </div>
-        <div style={{ textAlign: 'right', fontSize: '10px', color: '#666', lineHeight: 1.5 }}>
-          <div style={{ fontWeight: 600, color: '#111' }}>Réf : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()}</div>
-          <div>Émis le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-          <div>kkdmusic.com</div>
-          <div>Missira, Tambacounda, Sénégal</div>
-        </div>
-      </div>
-
-      {/* ── Titre ── */}
-      <div style={{ textAlign: 'center', margin: '32px 0 8px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{contractKind}</h1>
-        <p style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>Plateforme de distribution et gestion artistique</p>
-      </div>
-
-      {/* ── Entreprises ── */}
-      <div style={{ margin: '24px 0', fontSize: '12px', lineHeight: 1.7 }}>
-        <p style={{ marginBottom: '8px' }}>
-          <strong>ENTRE :</strong> KKD MUSIC, plateforme de distribution musicale
-          numérique accessible à l'adresse <strong>kkdmusic.com</strong>, ci-après « KKD Music »,
-        </p>
-        <p style={{ marginBottom: '8px' }}>
-          <strong>ET :</strong> {partyRole} <strong>{partyName}</strong>,
-          {invite?.email ? ` agissant pour le compte de l'adresse email ${invite.email},` : ''} ci-après « {partyRole === 'le Label Partenaire' ? 'le Label' : "l'Artiste"} ».
-        </p>
-      </div>
-
-      {/* ── Articles ── */}
-      <div style={{ fontSize: '11.5px', lineHeight: 1.7, color: '#222' }}>
-        <Article num="1" title="Objet du contrat">
-          KKD Music assure la distribution numérique, la promotion et la gestion des œuvres de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} exclusivement sur la plateforme <strong>kkdmusic.com</strong>. La diffusion des sorties musicales sur d'autres plateformes musicales (Spotify, Apple Music, YouTube Music, Audiomack, Deezer, etc.) n'est pas incluse automatiquement : elle nécessite une demande préalable adressée à KKD Music et est soumise à des critères spécifiques définis par l'équipe. {partyRole === 'le Label Partenaire' ? 'Le Label' : "L'Artiste"} souhaitant une distribution multi-plateformes doit contacter KKD Music afin d'en convenir les conditions.
-        </Article>
-
-        <Article num="2" title="Durée">
-          Le présent contrat est conclu pour une durée déterminée, du <strong>{fmt(invite?.contract_start)}</strong> au <strong>{fmt(invite?.contract_end)}</strong>. À l'échéance, il pourra être renouvelé par avenant signé des deux parties.
-        </Article>
-
-        <Article num="3" title="Engagements de KKD Music">
-          Mise à disposition d'un espace partenaire dédié (tableau de bord), diffusion des sorties sur la plateforme, outils de promotion, génération de supports marketing, suivi des performances (écoutes, likes, ventes) et accompagnement artistique par les équipes KKD Music.
-        </Article>
-
-        <Article num="4" title={`Engagements de ${partyRole === 'le Label Partenaire' ? 'du Label' : "de l'Artiste"}`}>
-          Fournir des œuvres originales dont {partyRole === 'le Label Partenaire' ? 'le Label' : "l'Artiste"} détient les droits, respecter la charte KKD Music, communiquer les metadata (pochette obligatoire, liens de streaming, fichiers audio/vidéo), et garantir l'authenticité des contenus publiés.
-        </Article>
-
-        <Article num="5" title="Rémunération et droits">
-          Les revenus générés (ventes de contenus payants, billetterie d'événements) sont répartis selon les conditions définies dans l'espace partenaire. Les paiements sont traités via les partenaires agréés par KKD Music (Wave, Orange Money). Aucune extraction ou téléchargement non autorisé des contenus protégés n'est autorisé.
-        </Article>
-
-        <Article num="6" title="Confidentialité et propriété">
-          Chaque partie s'engage à préserver la confidentialité des informations échangées. Les contenus publiés demeurent la propriété de {partyRole === 'le Label Partenaire' ? 'des artistes du Label' : "l'Artiste"} ; KKD Music dispose d'une licence de diffusion sur la durée du contrat.
-        </Article>
-
-        <Article num="7" title="Résiliation">
-          Le contrat peut être résilié par l'une ou l'autre partie en cas de manquement grave, après notification écrite. Les contrats résiliés ou expirés sont archivés dans l'espace partenaire.
-        </Article>
-      </div>
-
-      {/* ── Contact ── */}
-      <div style={{ marginTop: '28px', padding: '16px 20px', border: '1.5px solid #ff0a0a', borderRadius: '10px', background: '#fff7f7' }}>
-        <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ff0a0a', marginBottom: '8px' }}>Contact KKD Music</div>
-        <div style={{ fontSize: '11px', lineHeight: 1.7, color: '#333' }}>
-          {CONTACT_EMAILS.map((e) => (
-            <div key={e}>✉ {e}</div>
-          ))}
-          <div style={{ marginTop: '4px' }}>Site web : kkdmusic.com · Réseaux : @kkdmusic</div>
-        </div>
-      </div>
-
-      {/* ── Signatures ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', gap: '32px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '40px' }}>Pour KKD Music</div>
-          <img src={SIGNATURE_URL} alt="Signature" crossOrigin="anonymous" style={{ height: '70px', width: 'auto', marginBottom: '8px' }} />
-          <div style={{ fontSize: '12px', fontWeight: 700 }}>Madou Kane</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>PDG — Président Directeur Général</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>KKD Music</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>Missira, Tambacounda, Sénégal</div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, marginBottom: '40px' }}>{`Pour ${partyRole === 'le Label Partenaire' ? 'le Label' : "l'Artiste"}`}</div>
-          <div style={{ height: '70px', borderBottom: '1px solid #999' }} />
-          <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '8px' }}>{partyName}</div>
-          <div style={{ fontSize: '10px', color: '#666' }}>{invite?.email || 'Date & signature'}</div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: '36px', paddingTop: '12px', borderTop: '1px solid #eee', fontSize: '9px', color: '#999', textAlign: 'center' }}>
-        KKD Music · kkdmusic.com · Document généré automatiquement — {new Date().toLocaleString('fr-FR')}
       </div>
     </div>
   );
@@ -127,9 +220,9 @@ export default function ContractDocument({ invite }) {
 
 function Article({ num, title, children }) {
   return (
-    <div style={{ marginBottom: '12px' }}>
-      <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#111' }}>Article {num} — {title}</div>
-      <p style={{ marginTop: '3px', textAlign: 'justify' }}>{children}</p>
+    <div style={{ marginBottom: '10px' }}>
+      <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#8B1515' }}>Article {num} — {title}</div>
+      <p style={{ marginTop: '2px', textAlign: 'justify', color: '#334155' }}>{children}</p>
     </div>
   );
 }

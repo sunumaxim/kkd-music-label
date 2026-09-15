@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Music, User, Headphones, CheckCircle2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Music, User, Headphones, CheckCircle2, ExternalLink, Video as VideoIcon, Play } from 'lucide-react';
 import { cleanArtistName } from '@/services/artistSyncService';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
@@ -79,6 +79,45 @@ export default function ReleaseDetail() {
       return all.filter((r) => r.id !== id).slice(0, 4);
     },
     enabled: !!release?.artist_name,
+  });
+
+  // Résolution du clip officiel synchronisé avec cette chanson
+  const { data: linkedVideo } = useQuery({
+    queryKey: ['release-linked-video', release?.id, release?.linked_video_id, release?.title, release?.artist_name],
+    queryFn: async () => {
+      if (!release) return null;
+      // 1. Si un ID de clip précis est lié
+      if (release.linked_video_id) {
+        const found = await base44.entities.Video.filter({ id: release.linked_video_id });
+        if (found && found[0]) return found[0];
+      }
+      // 2. Recherche automatique par artiste + titre
+      if (release.artist_name) {
+        const artistVideos = await base44.entities.Video.filter({ artist_name: release.artist_name });
+        if (artistVideos && artistVideos.length > 0) {
+          const cleanRelTitle = (release.title || '')
+            .toLowerCase()
+            .replace(/\(.*?\)|\[.*?\]/g, '')
+            .replace(/clip\s*officiel|official\s*video|music\s*video|visualizer|audio\s*officiel/gi, '')
+            .trim();
+
+          const exact = artistVideos.find(v => {
+            const cleanVidTitle = (v.title || '').toLowerCase().trim();
+            return cleanVidTitle === cleanRelTitle ||
+                   cleanVidTitle.includes(cleanRelTitle) ||
+                   cleanRelTitle.includes(cleanVidTitle);
+          });
+          if (exact) return exact;
+
+          if (release.youtube_url) {
+            const byYt = artistVideos.find(v => v.youtube_url && v.youtube_url.trim() === release.youtube_url.trim());
+            if (byYt) return byYt;
+          }
+        }
+      }
+      return null;
+    },
+    enabled: !!release,
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['release', id] });
@@ -364,6 +403,50 @@ export default function ReleaseDetail() {
                 </a>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Clip officiel synchronisé */}
+        {linkedVideo && (
+          <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              {linkedVideo.thumbnail_url ? (
+                <div className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border border-white/10 group">
+                  <img
+                    src={linkedVideo.thumbnail_url}
+                    alt={linkedVideo.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <Play size={16} className="text-white fill-white" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0">
+                  <VideoIcon size={24} />
+                </div>
+              )}
+              <div className="min-w-0">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-red-400 flex items-center gap-1">
+                  <VideoIcon size={12} /> Clip officiel synchronisé
+                </span>
+                <h3 className="font-bold text-sm sm:text-base text-white truncate mt-0.5">
+                  {linkedVideo.title}
+                </h3>
+                <p className="text-xs text-zinc-400 truncate">
+                  {linkedVideo.artist_name || release.artist_name}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to={`/videos/${buildEntitySlug(linkedVideo.title, linkedVideo.id)}`}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs sm:text-sm transition-colors shrink-0 shadow-md"
+            >
+              <Play size={14} className="fill-white" />
+              <span>Regarder le clip</span>
+              <ExternalLink size={12} />
+            </Link>
           </div>
         )}
 

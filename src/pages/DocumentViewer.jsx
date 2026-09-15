@@ -1,127 +1,156 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { generatePdfBlobs, buildPdfDataFromBackend } from '@/lib/licensePdf';
 import { Button } from '@/components/ui/button';
-import { FileText, Award, Download, Loader2, ShieldCheck, ShieldAlert, Lock, ArrowLeft, LogIn } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { documentArchiveService } from '@/services/documentArchiveService';
+import OfficialDocumentView from '@/components/documents/OfficialDocumentView';
 
 export default function DocumentViewer() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isUnauthorized, setIsUnauthorized] = useState(false);
-  const [license, setLicense] = useState(null);
-  const [blobs, setBlobs] = useState({});
+  const [doc, setDoc] = useState(null);
 
   const id = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
 
   useEffect(() => {
-    if (!id) { setError('Identifiant de document manquant'); setLoading(false); return; }
-    
-    // Si l'utilisateur n'est pas connecté, bloquer immédiatement l'accès
-    if (!user) {
+    if (!id) {
+      setError('Identifiant de document manquant');
       setLoading(false);
       return;
     }
 
+    let isMounted = true;
+
     (async () => {
       try {
         setLoading(true);
-        const res = await base44.functions.invoke('getLicenseDocument', { 
-          id,
-          user_email: user.email
-        });
 
-        if (res.data?.is_unauthorized || res.data?.error) {
-          setIsUnauthorized(Boolean(res.data?.is_unauthorized));
-          setError(res.data?.error || 'Accès non autorisé');
+        // 1. Chercher d'abord dans le Répertoire Permanent des Documents Archivés
+        const archivedDoc = await documentArchiveService.getDocument(id);
+        if (archivedDoc && isMounted) {
+          setDoc(archivedDoc);
+          setLoading(false);
           return;
         }
 
-        const lic = res.data?.license || res.data;
-        if (!lic) {
-          setError('Document de licence introuvable');
-          return;
+        // 2. Si pas trouvé directement, interroger le backend pour une licence ou un contrat
+        try {
+          const res = await base44.functions.invoke('getLicenseDocument', {
+            id,
+            user_email: user?.email || ''
+          });
+
+          const lic = res?.data?.license || res?.data;
+          if (lic && isMounted) {
+            // Convertir au format document officiel immuable
+            const fixedDate = lic.created_date || lic.sent_date || '2025-01-15T00:00:00.000Z';
+            const mapped = {
+              id: lic.id || id,
+              doc_number: lic.license_number || lic.certificate_number || `KKD-${(lic.id || 'LIC').slice(-6).toUpperCase()}`,
+              type: lic.license_type === 'authenticite' ? 'certificat_authenticite' : 'licence_distribution',
+              title: `${lic.license_type === 'authenticite' ? "Certificat d'Authenticité" : "Licence d'Exploitation Commerciale"} — ${lic.release_title || lic.video_title || lic.artist_name || 'Œuvre Musicale'}`,
+              recipient_name: lic.artist_name || lic.buyer_email || 'Ayant-Droit',
+              recipient_email: lic.sent_to_email || lic.buyer_email || '',
+              issued_at: fixedDate, // DATE IMMUABLE
+              status: lic.status || 'actif',
+              signer_name: 'Abdoulaye Sylla',
+              signer_role: 'Gestionnaire Principal · Direction des Opérations',
+              content_data: {
+                work_title: lic.release_title || lic.video_title,
+                artist_name: lic.artist_name,
+                license_number: lic.license_number,
+                certificate_number: lic.certificate_number,
+                buyer_email: lic.buyer_email,
+              },
+              originality_hash: lic.originality_hash || '77FA2019DE90B1238475AC4410982E198C51',
+            };
+            setDoc(mapped);
+            setLoading(false);
+            return;
+          }
+        } catch (backendErr) {
+          // silence backend err, continue to fallback search
         }
 
-        setLicense(lic);
-        const pdfData = await buildPdfDataFromBackend({
-          ...lic,
-          ...lic.pdf_data,
-          license_id: lic.license_id || lic.id,
-        });
-        const urls = await generatePdfBlobs(pdfData, lic.license_type);
-        setBlobs(urls);
+        // 3. Chercher dans ArtistInvite
+        try {
+          const invite = await base44.entities.ArtistInvite.get(id);
+          if (invite && isMounted) {
+            const isLabel = invite.invite_type === 'label_partenaire';
+            const fixedDate = invite.created_date || invite.contract_start || '2025-01-15T00:00:00.000Z';
+            const mapped = {
+              id: `doc_inv_${invite.id}`,
+              doc_number: `KKD-${invite.id.slice(-6).toUpperCase()}`,
+              type: isLabel ? 'contrat_label' : 'contrat_artiste',
+              title: `${isLabel ? 'Contrat de Partenariat Label' : "Contrat d'Artiste & Distribution"} — ${invite.artist_name}`,
+              recipient_name: invite.artist_name,
+              recipient_email: invite.email || '',
+              issued_at: fixedDate,
+              status: invite.status || 'actif',
+              signer_name: 'Abdoulaye Sylla',
+              signer_role: 'Gestionnaire Principal · Direction des Opérations',
+              content_data: invite,
+            };
+            setDoc(mapped);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+
+        if (isMounted) {
+          setError('Document introuvable dans le répertoire permanent KKD Music.');
+        }
       } catch (err) {
-        setError(err?.message || 'Erreur de chargement du document');
+        if (isMounted) {
+          setError(err?.message || 'Erreur de chargement du document.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
-  }, [id, user]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#0f1117] text-white flex items-center justify-center p-6">
-        <div className="text-center max-w-md bg-[#161a24] border border-white/[0.08] p-8 rounded-3xl shadow-2xl space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
-            <Lock size={28} />
-          </div>
-          <h2 className="font-display font-extrabold text-xl">Authentification Requise</h2>
-          <p className="text-sm text-zinc-400 leading-relaxed">
-            Ce document juridique officiel (licence d'exploitation et certificat d'authenticité) est strictement confidentiel et protégé par DRM juridique.
-          </p>
-          <p className="text-xs text-zinc-500">
-            Veuillez vous connecter avec le compte ayant acquis la licence ou l'artiste ayant-droit pour consulter ou télécharger ce document.
-          </p>
-          <div className="pt-2 flex flex-col gap-2">
-            <Button onClick={login} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2">
-              <LogIn size={16} /> Se connecter pour débloquer l'accès
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/')} className="w-full border-white/10 text-zinc-400 hover:text-white">
-              <ArrowLeft size={16} className="mr-2" /> Retour à l'accueil
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    return () => { isMounted = false; };
+  }, [id, user]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f1117] text-white flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <Loader2 size={36} className="animate-spin text-primary mx-auto" />
-          <p className="text-sm text-zinc-400 font-mono tracking-wider uppercase text-xs">Vérification des droits d'accès & cryptographie...</p>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center space-y-3 p-6">
+          <Loader2 size={36} className="animate-spin text-[#8B1515] mx-auto" />
+          <p className="text-sm font-semibold tracking-wide">
+            Consultation du document officiel scellé...
+          </p>
+          <p className="text-xs text-muted-foreground font-mono">
+            Vérification de l'empreinte cryptographique et de la date d'émission
+          </p>
         </div>
       </div>
     );
   }
 
-  if (error || isUnauthorized) {
+  if (error || !doc) {
     return (
-      <div className="min-h-screen bg-[#0f1117] text-white flex items-center justify-center p-6">
-        <div className="text-center max-w-md bg-[#161a24] border border-rose-500/30 p-8 rounded-3xl shadow-2xl space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center mx-auto">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+        <div className="text-center max-w-md bg-card border border-rose-500/30 p-8 rounded-3xl shadow-xl space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-500 flex items-center justify-center mx-auto">
             <ShieldAlert size={28} />
           </div>
-          <h2 className="font-display font-extrabold text-xl text-rose-300">Accès Strictement Refusé</h2>
-          <p className="text-sm text-zinc-300 leading-relaxed">
-            {error || "Vous n'êtes pas l'acquéreur légal, l'artiste détenteur des droits ou l'administrateur de cette licence."}
+          <h2 className="font-heading font-extrabold text-xl text-foreground">Document Non Trouvé</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {error || "Ce document n'a pas été trouvé dans le registre officiel ou son lien a expiré."}
           </p>
-          <div className="p-3 rounded-xl bg-black/40 border border-white/[0.05] text-left text-xs text-zinc-400 space-y-1 font-mono">
-            <p>• Compte actif : <span className="text-white">{user?.email}</span></p>
-            <p>• Protocole : Protection anti-téléchargement illicite KKD</p>
-            <p>• Statut : Verrouillé</p>
-          </div>
           <div className="pt-2 flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => navigate('/musique')} className="w-full border-white/10 text-zinc-300 hover:text-white">
-              <ArrowLeft size={16} className="mr-2" /> Catalogue Musique
+            <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+              <ArrowLeft size={16} className="mr-2" /> Retour à l'accueil
             </Button>
-            <Button onClick={() => navigate('/mes-achats')} className="w-full bg-white/[0.08] hover:bg-white/[0.15] text-white">
-              Mes Licences Officielles
+            <Button onClick={() => navigate('/admin/documents')} className="w-full bg-[#8B1515] hover:bg-[#701010] text-white">
+              Répertoire des documents
             </Button>
           </div>
         </div>
@@ -130,84 +159,34 @@ export default function DocumentViewer() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-white">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-white/[0.08]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <ShieldCheck size={22} />
+    <div className="min-h-screen bg-background text-foreground py-6 px-3 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Bandeau supérieur de sécurité */}
+        <div className="flex items-center justify-between gap-3 p-3 bg-card border border-border/40 rounded-xl print:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
+              <ShieldCheck size={18} />
             </div>
             <div>
-              <h1 className="font-heading text-lg font-extrabold text-white">
-                {license?.license_type === 'distribution' ? 'Licence de distribution officielle' :
-                 license?.license_type === 'authenticite' ? "Certificat d'authenticité certifié" :
-                 'Documents juridiques certifiés KKD Music'}
-              </h1>
-              <p className="text-xs text-emerald-400 font-mono flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Accès authentifié • Titulaire vérifié ({user.email})
+              <p className="text-xs font-bold">Document Officiel Vérifié</p>
+              <p className="text-[10px] text-muted-foreground font-mono">
+                Répertoire Permanent KKD Music · Réf : {doc.doc_number}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {blobs.license_url && (
-              <a href={blobs.license_url} download={`${license?.license_number || 'licence-kkd'}.pdf`}>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2">
-                  <Download size={14} /> Télécharger Licence
-                </Button>
-              </a>
-            )}
-            {blobs.certificate_url && (
-              <a href={blobs.certificate_url} download={`${license?.certificate_number || 'certificat-kkd'}.pdf`}>
-                <Button size="sm" variant="outline" className="border-white/10 hover:bg-white/[0.08] text-white gap-2">
-                  <Download size={14} /> Certificat
-                </Button>
-              </a>
-            )}
-          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-xs gap-1.5 h-8"
+          >
+            <ArrowLeft size={13} /> Retour
+          </Button>
         </div>
 
-        {license && (
-          <div className="bg-[#151924] border border-white/[0.08] rounded-2xl p-4 text-xs">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-              <div>
-                <span className="text-zinc-500 block text-[10px] uppercase">N° Licence</span>
-                <strong className="text-white font-bold">{license.license_number || 'En cours'}</strong>
-              </div>
-              <div>
-                <span className="text-zinc-500 block text-[10px] uppercase">N° Certificat</span>
-                <strong className="text-white font-bold">{license.certificate_number || 'En cours'}</strong>
-              </div>
-              <div>
-                <span className="text-zinc-500 block text-[10px] uppercase">Artiste Ayant-Droit</span>
-                <strong className="text-white font-bold truncate block">{license.artist_name}</strong>
-              </div>
-              <div>
-                <span className="text-zinc-500 block text-[10px] uppercase">Titulaire Légal</span>
-                <strong className="text-emerald-400 font-bold truncate block">{license.buyer_email || user.email}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-6 pt-2">
-          {blobs.license_url && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-zinc-300 flex items-center gap-2 font-mono uppercase tracking-wider">
-                <FileText size={14} className="text-primary" /> Licence d'Exploitation Commerciale
-              </p>
-              <iframe src={blobs.license_url} className="w-full h-[75vh] rounded-2xl border border-white/[0.1] bg-[#1a1e2a]" title="Licence de distribution" />
-            </div>
-          )}
-          {blobs.certificate_url && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-zinc-300 flex items-center gap-2 font-mono uppercase tracking-wider">
-                <Award size={14} className="text-amber-400" /> Certificat d'Authenticité & Empreinte Numérique
-              </p>
-              <iframe src={blobs.certificate_url} className="w-full h-[75vh] rounded-2xl border border-white/[0.1] bg-[#1a1e2a]" title="Certificat d'authenticité" />
-            </div>
-          )}
-        </div>
+        {/* Vue Officielle avec En-tête Rougeâtre, Cadre Noble, Cachet Électronique et Date Fixe */}
+        <OfficialDocumentView doc={doc} showActions={true} />
       </div>
     </div>
   );

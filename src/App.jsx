@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { mediaSyncSchedulerService } from '@/services/mediaSyncSchedulerService';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -194,6 +195,11 @@ const AuthenticatedApp = () => {
 };
 
 function App() {
+  useEffect(() => {
+    // Initialisation du planificateur de synchronisation des clips et chansons à 14h
+    mediaSyncSchedulerService.init14hScheduler();
+  }, []);
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>

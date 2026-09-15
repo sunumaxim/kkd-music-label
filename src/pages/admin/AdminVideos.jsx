@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, ArrowLeft, Play, Youtube } from 'lucide-react';
+import { Plus, Pencil, Trash2, ArrowLeft, Play, Youtube, Music2, RefreshCw } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { mediaSyncSchedulerService } from '@/services/mediaSyncSchedulerService';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import WatermarkUploader from '../../components/admin/WatermarkUploader';
 import QuickCatalogImporterModal from '../../components/admin/QuickCatalogImporterModal';
@@ -25,6 +27,7 @@ const EMPTY = {
   description: '', publish_date: new Date().toISOString().split('T')[0],
   is_featured: false,
   is_for_sale: false, price: 0, protected_file_uri: '',
+  linked_release_id: '',
 };
 
 function getYoutubeId(url) {
@@ -36,12 +39,19 @@ function getYoutubeId(url) {
 export default function AdminVideos() {
   const [editing, setEditing] = useState(null);
   const [showImporter, setShowImporter] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['admin-videos'],
     queryFn: () => base44.entities.Video.list('-created_date'),
+  });
+
+  const { data: releases = [] } = useQuery({
+    queryKey: ['admin-releases-for-video-link'],
+    queryFn: () => base44.entities.Release.list('-created_date', 300),
   });
 
   const createMutation = useMutation({
@@ -80,10 +90,22 @@ export default function AdminVideos() {
       const ytId = getYoutubeId(savedForm.youtube_url);
       if (ytId) savedForm.thumbnail_url = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
     }
+    let savedVideoId = editing !== 'new' ? editing?.id : null;
     if (editing !== 'new' && editing?.id) {
       await updateMutation.mutateAsync({ id: editing.id, data: savedForm });
     } else {
-      await createMutation.mutateAsync(savedForm);
+      const created = await createMutation.mutateAsync(savedForm);
+      savedVideoId = created?.id;
+    }
+
+    if (savedForm.linked_release_id && savedVideoId) {
+      try {
+        await base44.entities.Release.update(savedForm.linked_release_id, {
+          linked_video_id: savedVideoId,
+        });
+      } catch (err) {
+        console.warn('Erreur liaison automatique chanson:', err);
+      }
     }
   };
 
@@ -144,6 +166,46 @@ export default function AdminVideos() {
             multiple={false}
           />
           <p className="text-xs text-muted-foreground -mt-2">Si laissé vide, la miniature YouTube sera utilisée automatiquement.</p>
+
+          {/* Chanson / Œuvre musicale synchronisée */}
+          <div>
+            <Label className="mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 font-semibold text-xs">
+                <Music2 size={13} className="text-primary" />
+                Chanson synchronisée (Lien direct)
+              </span>
+              {form.linked_release_id && (
+                <button
+                  type="button"
+                  onClick={() => set('linked_release_id', '')}
+                  className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                >
+                  Dissocier
+                </button>
+              )}
+            </Label>
+            <Select
+              value={form.linked_release_id || 'none'}
+              onValueChange={v => set('linked_release_id', v === 'none' ? '' : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner la chanson correspondante" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="none">-- Aucune chanson liée --</SelectItem>
+                {releases
+                  .filter(r => !form.artist_name || (r.artist_name && (r.artist_name.toLowerCase().includes(form.artist_name.toLowerCase()) || form.artist_name.toLowerCase().includes(r.artist_name.toLowerCase()))))
+                  .map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.title} ({r.artist_name})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Permet aux auditeurs de basculer instantanément entre le clip vidéo et la chanson.
+            </p>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -212,15 +274,35 @@ export default function AdminVideos() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="font-display text-2xl font-extrabold">Vidéos</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={async () => {
+              setIsSyncing(true);
+              const res = await mediaSyncSchedulerService.syncClipsAndSongs();
+              setIsSyncing(false);
+              toast({
+                title: 'Synchronisation effectuée',
+                description: res.message,
+              });
+              queryClient.invalidateQueries({ queryKey: ['admin-videos'] });
+              queryClient.invalidateQueries({ queryKey: ['admin-releases-for-video-link'] });
+            }}
+            variant="outline"
+            disabled={isSyncing}
+            className="border-border text-foreground hover:bg-muted gap-1.5 font-medium text-xs sm:text-sm"
+            title="Lier automatiquement chaque chanson à son clip (programmée quotidiennement à 14h)"
+          >
+            <RefreshCw size={14} className={isSyncing ? 'animate-spin text-primary' : ''} />
+            <span>{isSyncing ? 'Synchronisation...' : 'Synchro clips & chansons'}</span>
+          </Button>
           <Button
             onClick={() => setShowImporter(true)}
             variant="outline"
-            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold"
+            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs sm:text-sm"
           >
-            <Youtube size={16} className="text-red-500" /> Importer clips YouTube / Artiste
+            <Youtube size={16} className="text-red-500" /> Importer clips YouTube
           </Button>
-          <Button onClick={openNew} className="bg-primary hover:bg-primary/80">
+          <Button onClick={openNew} className="bg-primary hover:bg-primary/80 text-xs sm:text-sm">
             <Plus size={16} className="mr-1" /> Publier une vidéo
           </Button>
         </div>
@@ -265,6 +347,12 @@ export default function AdminVideos() {
                   <div className="min-w-0">
                     <p className="font-heading font-bold text-sm truncate">{video.title}</p>
                     <p className="text-xs text-muted-foreground">{video.artist_name} • {VIDEO_TYPES.find(t => t.value === video.video_type)?.label}</p>
+                    {video.linked_release_id && (
+                      <p className="text-[10px] font-mono text-primary flex items-center gap-1 mt-1 font-semibold">
+                        <Music2 size={11} />
+                        <span>Chanson liée</span>
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <TikTokPublishButton item={video} type="video" />

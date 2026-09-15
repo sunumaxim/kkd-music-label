@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, User, ExternalLink, Instagram, Eye, Heart, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, User, ExternalLink, Instagram, Eye, Heart, ShoppingCart, Music2, Youtube, Users } from 'lucide-react';
 import CommentsSection from '@/components/shared/CommentsSection';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PromoAssetGenerator from '@/components/promo/PromoAssetGenerator';
@@ -10,8 +10,9 @@ import MobileHeader from '@/components/mobile/MobileHeader';
 import PageMeta from '@/components/shared/PageMeta';
 import ShareBar from '@/components/shared/ShareBar';
 import LikeButton from '@/components/shared/LikeButton';
-import { slugify, buildShareUrl, buildSharePreviewUrl, extractIdFromSlug } from '@/lib/slugify';
+import { slugify, buildShareUrl, buildSharePreviewUrl, extractIdFromSlug, buildEntitySlug } from '@/lib/slugify';
 import { resolveEntityBySlug } from '@/lib/resolveEntity';
+import { getArtistYouTubeChannelInfo } from '@/services/youtubeChannelService';
 import { motion } from 'framer-motion';
 
 function getYouTubeId(url) {
@@ -48,6 +49,55 @@ export default function VideoDetail() {
       return results[0] || null;
     },
     enabled: !!video?.artist_name,
+  });
+
+  // Résolution de la chanson synchronisée / associée au clip
+  const { data: linkedRelease } = useQuery({
+    queryKey: ['video-linked-release', video?.id, video?.linked_release_id, video?.title, video?.artist_name],
+    queryFn: async () => {
+      // 1. Si un ID précis est déjà lié
+      if (video?.linked_release_id) {
+        const found = await base44.entities.Release.filter({ id: video.linked_release_id });
+        if (found && found[0]) return found[0];
+      }
+
+      // 2. Recherche par correspondance titre / artiste (synchro automatique clip <-> chanson)
+      if (video?.artist_name) {
+        const artistReleases = await base44.entities.Release.filter({ artist_name: video.artist_name });
+        if (artistReleases && artistReleases.length > 0) {
+          const cleanVidTitle = (video.title || '')
+            .toLowerCase()
+            .replace(/\(.*?\)|\[.*?\]/g, '')
+            .replace(/clip\s*officiel|official\s*video|music\s*video|visualizer|audio\s*officiel/gi, '')
+            .trim();
+
+          // Chercher une correspondance exacte ou forte
+          const exact = artistReleases.find(r => {
+            const cleanRelTitle = (r.title || '').toLowerCase().trim();
+            return cleanRelTitle === cleanVidTitle ||
+                   cleanRelTitle.includes(cleanVidTitle) ||
+                   cleanVidTitle.includes(cleanRelTitle);
+          });
+          if (exact) return exact;
+
+          // Si la vidéo a une URL YouTube commune avec la release
+          if (video.youtube_url) {
+            const byYt = artistReleases.find(r => r.youtube_url && r.youtube_url.trim() === video.youtube_url.trim());
+            if (byYt) return byYt;
+          }
+        }
+      }
+      return null;
+    },
+    enabled: !!video,
+  });
+
+  // Métadonnées de chaîne YouTube (nombre d'abonnés & profil officiel de la chaîne)
+  const { data: youtubeChannel } = useQuery({
+    queryKey: ['youtube-channel-stats', video?.artist_name, artist?.youtube_url, artist?.youtube_subscribers],
+    queryFn: () => getArtistYouTubeChannelInfo(video?.artist_name, artist?.youtube_url, artist),
+    enabled: !!video?.artist_name,
+    staleTime: 1000 * 60 * 30, // 30 minutes de cache
   });
 
   const shareUrl = video ? buildShareUrl('/videos', video.slug || video.title) : '';
@@ -203,10 +253,87 @@ export default function VideoDetail() {
               />
             )}
 
+            {/* Chanson associée / synchronisée au clip */}
+            {linkedRelease && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {linkedRelease.cover_url ? (
+                    <img
+                      src={linkedRelease.cover_url}
+                      alt={linkedRelease.title}
+                      className="w-14 h-14 rounded-lg object-cover border border-white/10 shrink-0 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                      <Music2 size={24} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-primary flex items-center gap-1">
+                      <Music2 size={12} /> Chanson synchronisée
+                    </span>
+                    <h3 className="font-heading font-bold text-sm text-foreground truncate mt-0.5">
+                      {linkedRelease.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {linkedRelease.artist_name || video.artist_name}
+                      {linkedRelease.release_type ? ` · ${linkedRelease.release_type.toUpperCase()}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to={`/musique/${buildEntitySlug(linkedRelease.title, linkedRelease.id)}`}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  <span>Écouter le morceau</span>
+                  <ExternalLink size={12} />
+                </Link>
+              </div>
+            )}
+
             {/* Description */}
             {video.description && (
               <p className="text-muted-foreground leading-relaxed">{video.description}</p>
             )}
+
+            {/* Profil YouTube officiel de l'artiste & Abonnés en bas de la fiche */}
+            <div className="rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-500/30 text-red-500 flex items-center justify-center shrink-0">
+                  <Youtube size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-heading font-bold text-sm text-foreground">
+                      {youtubeChannel?.channelTitle || video.artist_name}
+                    </p>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 font-semibold uppercase">
+                      YouTube Officiel
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <Users size={12} className="text-red-400" />
+                    <span>
+                      {youtubeChannel?.subscribersCount
+                        ? `${youtubeChannel.subscribersCount} abonnés sur YouTube`
+                        : 'Chaîne officielle certifiée'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={youtubeChannel?.channelUrl || video.youtube_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(video.artist_name)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors shrink-0 shadow-sm"
+              >
+                <Youtube size={14} />
+                <span>Voir le profil YouTube</span>
+                <ExternalLink size={11} />
+              </a>
+            </div>
 
             {/* Share block */}
             <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3">
@@ -290,6 +417,27 @@ export default function VideoDetail() {
                 </div>
               </div>
             ) : null}
+
+            {/* YouTube Channel link */}
+            {(youtubeChannel?.channelUrl || artist?.youtube_url) && (
+              <a
+                href={youtubeChannel?.channelUrl || artist?.youtube_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 p-4 rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 to-rose-500/10 hover:from-red-500/20 hover:to-rose-500/20 transition-all"
+              >
+                <Youtube size={18} className="text-red-500 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-red-400">YouTube</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {youtubeChannel?.subscribersCount
+                      ? `${youtubeChannel.subscribersCount} abonnés`
+                      : `@${artist?.name || video?.artist_name}`}
+                  </p>
+                </div>
+                <ExternalLink size={12} className="ml-auto text-muted-foreground shrink-0" />
+              </a>
+            )}
 
             {/* Instagram link */}
             {artist?.instagram_url && (

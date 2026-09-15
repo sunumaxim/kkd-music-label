@@ -1,510 +1,602 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose
-} from '@/components/ui/dialog';
-import {
-  FileText, Award, Loader2, CheckCircle, XCircle, Download, Send,
-  ShieldCheck, Music, Video as VideoIcon, Calendar, Search, Plus, Mail, RefreshCw
+  FileText, Award, Loader2, Download, Send,
+  ShieldCheck, Calendar, Search, Plus, Mail, Eye, Share2, FolderArchive, Layers
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
-import { generatePdfBlobs, buildPdfDataFromBackend } from '@/lib/licensePdf';
-
-const LICENSE_TYPES = [
-  { value: 'double', label: 'Licence + Certificat', icon: ShieldCheck },
-  { value: 'distribution', label: 'Licence de distribution', icon: FileText },
-  { value: 'authenticite', label: "Certificat d'authenticité", icon: Award },
-];
-
-const STATUS_CONFIG = {
-  en_attente: { label: 'En attente', color: 'bg-yellow-500/10 text-yellow-600', icon: Loader2 },
-  genere: { label: 'Généré', color: 'bg-blue-500/10 text-blue-600', icon: CheckCircle },
-  envoye: { label: 'Envoyé', color: 'bg-emerald-500/10 text-emerald-600', icon: Send },
-  expire: { label: 'Expiré', color: 'bg-orange-500/10 text-orange-600', icon: XCircle },
-  refuse: { label: 'Refusé', color: 'bg-red-500/10 text-red-600', icon: XCircle },
-};
+import { documentArchiveService, DOCUMENT_TYPES } from '@/services/documentArchiveService';
+import DocumentModalViewer from '@/components/documents/DocumentModalViewer';
+import { downloadContractPdf } from '@/lib/contractPdf';
 
 export default function AdminLicenses() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('repertoire'); // 'repertoire' | 'licenses' | 'new_doc'
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showGenerator, setShowGenerator] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [sendingDocId, setSendingDocId] = useState(null);
 
-  // All licenses
-  const { data: licenses = [], isLoading } = useQuery({
+  // 1. Tous les documents du Répertoire Permanent
+  const { data: archivedDocs = [], isLoading: loadingDocs, refetch: refetchDocs } = useQuery({
+    queryKey: ['admin-archived-documents'],
+    queryFn: () => documentArchiveService.listDocuments(),
+  });
+
+  // 2. Licences spécifiques (MusicLicense)
+  const { data: licenses = [], isLoading: loadingLicenses } = useQuery({
     queryKey: ['admin-licenses'],
     queryFn: () => base44.entities.MusicLicense.list('-created_date', 200),
   });
 
-  // All artists (for generator)
+  // 3. Artistes (pour générateur)
   const { data: artists = [] } = useQuery({
     queryKey: ['admin-artists-for-licenses'],
     queryFn: () => base44.entities.Artist.list('name', 200),
   });
 
-  const stats = {
-    total: licenses.length,
-    envoye: licenses.filter(l => l.status === 'envoye').length,
-    genere: licenses.filter(l => l.status === 'genere').length,
-    en_attente: licenses.filter(l => l.status === 'en_attente').length,
+  // Filtrage du répertoire
+  const filteredDocs = archivedDocs.filter(d => {
+    const matchType = typeFilter === 'all' || d.type === typeFilter;
+    const matchSearch = !search ||
+      d.title?.toLowerCase().includes(search.toLowerCase()) ||
+      d.recipient_name?.toLowerCase().includes(search.toLowerCase()) ||
+      d.recipient_email?.toLowerCase().includes(search.toLowerCase()) ||
+      d.doc_number?.toLowerCase().includes(search.toLowerCase());
+    return matchType && matchSearch;
+  });
+
+  // Re-consulter un document (ouvre la vue haute fidélité avec la date originale)
+  const handleConsultDoc = (doc) => {
+    setSelectedDoc(doc);
+    setModalOpen(true);
   };
 
-  const filtered = licenses.filter(l => {
-    const matchSearch = !search ||
-      l.artist_name?.toLowerCase().includes(search.toLowerCase()) ||
-      l.release_title?.toLowerCase().includes(search.toLowerCase()) ||
-      l.video_title?.toLowerCase().includes(search.toLowerCase()) ||
-      l.sent_to_email?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || l.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Déclencher l'envoi d'un document existant vers le destinataire
+  const handleTriggerSend = async (doc) => {
+    if (!doc.recipient_email) {
+      toast({
+        title: 'Email manquant',
+        description: "Ce document n'a pas d'adresse email associée.",
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  const resendMutation = useMutation({
-    mutationFn: async (lic) => {
-      const res = await base44.functions.invoke('sendLicenseEmail', { license_id: lic.id });
-      return res.data;
-    },
-    onSuccess: (data) => {
-      if (data?.error) {
-        toast({ title: 'Échec', description: data.error, variant: 'destructive' });
-      } else {
-        toast({ title: 'Email envoyé', description: `Documents envoyés à ${data.sent_to}.` });
-        queryClient.invalidateQueries({ queryKey: ['admin-licenses'] });
-      }
-    },
-    onError: (err) => {
-      toast({ title: 'Erreur', description: err?.message || 'Échec de l\'envoi', variant: 'destructive' });
-    },
-  });
+    setSendingDocId(doc.id);
+    try {
+      const res = await documentArchiveService.sendExistingDocument(doc.id, {
+        target_email: doc.recipient_email
+      });
+      toast({
+        title: 'Envoi déclenché avec succès',
+        description: `Email et notification push transmis à ${res.recipient}. Date d'origine ${new Date(res.issued_at).toLocaleDateString('fr-FR')} préservée.`,
+      });
+      refetchDocs();
+    } catch (e) {
+      toast({
+        title: "Échec de l'envoi",
+        description: e?.message || "Erreur lors du déclenchement.",
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingDocId(null);
+    }
+  };
+
+  // Télécharger le document en PDF sans blocage
+  const handleDownloadDoc = async (doc) => {
+    try {
+      const res = await downloadContractPdf(null, `${doc.doc_number}_${doc.title}`, {
+        title: doc.title,
+        doc_number: doc.doc_number,
+        issued_at: doc.issued_at,
+        recipient_name: doc.recipient_name,
+        signer_name: doc.signer_name || 'Abdoulaye Sylla',
+        signer_role: doc.signer_role || 'Gestionnaire Principal · Direction des Opérations',
+      });
+      toast({
+        title: 'PDF téléchargé',
+        description: `Document ${doc.doc_number} exporté avec succès.`,
+      });
+    } catch {
+      toast({ title: 'Erreur', description: "Impossible d'exporter le PDF", variant: 'destructive' });
+    }
+  };
+
+  // Copier le lien sécurisé
+  const handleCopyLink = (doc) => {
+    const url = documentArchiveService.getShareUrl(doc.id);
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Lien copié', description: 'Lien de consultation sécurisé copié.' });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ── EN-TÊTE PRINCIPAL DE LA PAGE ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-5">
         <div>
-          <h1 className="font-heading text-2xl font-extrabold flex items-center gap-2">
-            <ShieldCheck size={24} className="text-primary" />
-            Documents & Licences
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Générez et envoyez des licences et certificats aux artistes et partenaires.
-          </p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-[#8B1515]/10 border border-[#8B1515]/20 text-[#8B1515] flex items-center justify-center">
+              <FolderArchive size={22} />
+            </div>
+            <div>
+              <h1 className="font-heading text-2xl font-extrabold tracking-tight">
+                Répertoire & Coffre-Fort des Documents
+              </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Consultation et reconsultation permanente sans altération de date · Déclenchement d'envois et notifications push
+              </p>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => setShowGenerator(true)} className="gap-2 shrink-0">
-          <Plus size={16} /> Générer un document
-        </Button>
+
+        {/* Bouton de création directe */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setActiveTab('new_doc')}
+            className="gap-2 bg-[#8B1515] hover:bg-[#701010] text-white"
+          >
+            <Plus size={16} /> Générer un nouveau document
+          </Button>
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* ── STATISTIQUES GLOBALES DU RÉPERTOIRE ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border/50 rounded-xl p-3 text-center">
-          <p className="font-heading text-xl font-extrabold">{stats.total}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
+        <div className="bg-card border border-border/50 rounded-xl p-3.5">
+          <p className="text-xs text-muted-foreground font-semibold">Total Documents Archivés</p>
+          <p className="font-heading text-2xl font-black mt-1">{archivedDocs.length}</p>
+          <p className="text-[10px] text-emerald-500 mt-0.5 font-medium">Conservation immuable garantie</p>
         </div>
-        <div className="bg-card border border-emerald-500/20 rounded-xl p-3 text-center">
-          <p className="font-heading text-xl font-extrabold text-emerald-600">{stats.envoye}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Envoyés</p>
+
+        <div className="bg-card border border-emerald-500/20 rounded-xl p-3.5">
+          <p className="text-xs text-emerald-600 font-semibold">Contrats Artistes & Labels</p>
+          <p className="font-heading text-2xl font-black text-emerald-600 mt-1">
+            {archivedDocs.filter(d => d.type.startsWith('contrat')).length}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Avec cachet Abdoulaye Sylla</p>
         </div>
-        <div className="bg-card border border-blue-500/20 rounded-xl p-3 text-center">
-          <p className="font-heading text-xl font-extrabold text-blue-600">{stats.genere}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Générés</p>
+
+        <div className="bg-card border border-blue-500/20 rounded-xl p-3.5">
+          <p className="text-xs text-blue-600 font-semibold">Licences & Certificats</p>
+          <p className="font-heading text-2xl font-black text-blue-600 mt-1">
+            {archivedDocs.filter(d => d.type.includes('licence') || d.type.includes('certificat')).length}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Scellés SHA-256 cryptographiques</p>
         </div>
-        <div className="bg-card border border-yellow-500/20 rounded-xl p-3 text-center">
-          <p className="font-heading text-xl font-extrabold text-yellow-600">{stats.en_attente}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">En attente</p>
+
+        <div className="bg-card border border-purple-500/20 rounded-xl p-3.5">
+          <p className="text-xs text-purple-600 font-semibold">Envois & Relances Déclenchés</p>
+          <p className="font-heading text-2xl font-black text-purple-600 mt-1">
+            {archivedDocs.reduce((acc, d) => acc + (d.sent_count || 0), 0)}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Couplés aux push notifications</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par artiste, œuvre, email..."
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="envoye">Envoyé</SelectItem>
-            <SelectItem value="genere">Généré</SelectItem>
-            <SelectItem value="en_attente">En attente</SelectItem>
-            <SelectItem value="expire">Expiré</SelectItem>
-            <SelectItem value="refuse">Refusé</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* ── ONGLETS DE NAVIGATION DE LA SECTION ── */}
+      <div className="flex border-b border-border/40 gap-2">
+        <button
+          onClick={() => setActiveTab('repertoire')}
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'repertoire'
+              ? 'border-[#8B1515] text-[#8B1515]'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <FolderArchive size={16} /> Répertoire des Documents ({filteredDocs.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('licenses')}
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'licenses'
+              ? 'border-[#8B1515] text-[#8B1515]'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Layers size={16} /> Flux des Licences Streaming ({licenses.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('new_doc')}
+          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === 'new_doc'
+              ? 'border-[#8B1515] text-[#8B1515]'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Plus size={16} /> Nouveau Document & Archivage
+        </button>
       </div>
 
-      {/* List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-muted-foreground" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 border border-dashed border-border/30 rounded-2xl">
-          <FileText size={36} className="mx-auto mb-3 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">Aucun document trouvé</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Générez un nouveau document pour un artiste</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map(lic => {
-            const st = STATUS_CONFIG[lic.status] || STATUS_CONFIG.en_attente;
-            const StIcon = st.icon;
-            return (
-              <div key={lic.id} className="bg-card border border-border/50 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${st.color}`}>
-                    <StIcon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="min-w-0">
-                        <p className="font-heading font-bold text-sm truncate">
-                          {lic.release_title || lic.video_title || lic.artist_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {lic.artist_name} · {lic.license_type === 'double' ? 'Licence + Certificat' :
-                            lic.license_type === 'distribution' ? 'Licence de distribution' :
-                            "Certificat d'authenticité"}
-                        </p>
+      {/* ── CONTENU DE L'ONGLET 1 : RÉPERTOIRE PERMANENT ── */}
+      {activeTab === 'repertoire' && (
+        <div className="space-y-4">
+          {/* Filtres de recherche */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher par référence, artiste, contrat, bénéficiaire ou email..."
+                className="pl-9"
+              />
+            </div>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full sm:w-56">
+                <SelectValue placeholder="Tous les types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les documents</SelectItem>
+                <SelectItem value="contrat_artiste">Contrats d'Artiste</SelectItem>
+                <SelectItem value="contrat_label">Contrats de Label</SelectItem>
+                <SelectItem value="licence_distribution">Licences de distribution</SelectItem>
+                <SelectItem value="certificat_authenticite">Certificats d'authenticité</SelectItem>
+                <SelectItem value="attestation_droits">Attestations de droits</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Liste des documents du répertoire */}
+          {loadingDocs ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={28} className="animate-spin text-[#8B1515]" />
+            </div>
+          ) : filteredDocs.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-border/40 rounded-2xl p-6 bg-card/40">
+              <FolderArchive size={40} className="mx-auto mb-3 text-muted-foreground/30" />
+              <p className="text-sm font-semibold">Aucun document ne correspond à votre filtre</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Générez un contrat ou synchronisez un nouvel accord pour l'archiver dans le répertoire.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {filteredDocs.map((doc) => {
+                const typeCfg = DOCUMENT_TYPES[doc.type] || DOCUMENT_TYPES.contrat_artiste;
+                const formattedDate = new Date(doc.issued_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                });
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="bg-card border border-border/50 hover:border-border rounded-xl p-4 transition-all shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    {/* Colonne d'informations */}
+                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-border/60">
+                        {doc.type.includes('certificat') ? (
+                          <Award size={20} className="text-[#8B1515]" />
+                        ) : (
+                          <FileText size={20} className="text-[#8B1515]" />
+                        )}
                       </div>
-                      <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold shrink-0 ${st.color}`}>{st.label}</span>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${typeCfg.color}`}>
+                            {typeCfg.badge}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-foreground">
+                            {doc.doc_number}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1">
+                            <Calendar size={11} /> Émis le : <strong className="text-foreground">{formattedDate}</strong> (immuable)
+                          </span>
+                        </div>
+
+                        <h3 className="font-heading font-bold text-sm text-foreground truncate">
+                          {doc.title}
+                        </h3>
+
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                          <span>Bénéficiaire : <strong className="text-foreground">{doc.recipient_name}</strong></span>
+                          {doc.recipient_email && (
+                            <span className="flex items-center gap-1">
+                              <Mail size={11} /> {doc.recipient_email}
+                            </span>
+                          )}
+                          <span className="text-emerald-600 font-medium text-[11px]">
+                            ✓ Cachet Abdoulaye Sylla
+                          </span>
+                          {doc.sent_count > 0 && (
+                            <span className="text-purple-600 font-medium text-[11px]">
+                              • Expédié {doc.sent_count} fois
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 mt-2">
-                      <a href={`/document/${lic.id}`} target="_blank" rel="noreferrer"
-                        className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                        <Download size={11} /> Voir les documents
-                      </a>
-                      {lic.sent_to_email && (
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
-                          <Mail size={11} /> {lic.sent_to_email}
-                        </span>
-                      )}
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Calendar size={11} />
-                        {lic.sent_date ? format(new Date(lic.sent_date), 'dd MMM yyyy', { locale: fr }) : 'En attente'}
-                      </span>
-                    </div>
-
-                    {lic.originality_hash && (
-                      <p className="text-[10px] font-mono text-muted-foreground/60 mt-1.5 truncate">
-                        SHA-256 : {lic.originality_hash.slice(0, 32)}...
-                      </p>
-                    )}
-
-                    {lic.status === 'envoye' && lic.sent_to_email && (
-                      <button
-                        onClick={() => resendMutation.mutate(lic)}
-                        disabled={resendMutation.isPending}
-                        className="mt-2 text-[11px] text-accent hover:underline flex items-center gap-1 disabled:opacity-50"
+                    {/* Actions rapides */}
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleConsultDoc(doc)}
+                        className="gap-1.5 text-xs h-8"
+                        title="Re-consulter le document exact sans modification de date"
                       >
-                        <RefreshCw size={11} className={resendMutation.isPending ? 'animate-spin' : ''} />
-                        Renvoyer par email
-                      </button>
-                    )}
+                        <Eye size={13} /> Re-consulter
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadDoc(doc)}
+                        className="gap-1.5 text-xs h-8"
+                        title="Télécharger le fichier PDF certifié"
+                      >
+                        <Download size={13} /> PDF
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyLink(doc)}
+                        className="text-xs h-8 px-2.5"
+                        title="Copier le lien sécurisé"
+                      >
+                        <Share2 size={13} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => handleTriggerSend(doc)}
+                        disabled={sendingDocId === doc.id}
+                        className="gap-1.5 text-xs h-8 bg-[#8B1515] hover:bg-[#701010] text-white"
+                        title="Déclencher l'envoi immédiat (email + notification push) sans modifier la date"
+                      >
+                        {sendingDocId === doc.id ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Send size={13} />
+                        )}
+                        {sendingDocId === doc.id ? 'Expédition…' : "Déclencher l'envoi"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Generator Dialog */}
-      {showGenerator && (
-        <LicenseGenerator
+      {/* ── CONTENU DE L'ONGLET 2 : FLUX DES LICENCES ── */}
+      {activeTab === 'licenses' && (
+        <div className="space-y-4">
+          <div className="p-3 bg-muted/40 border border-border/40 rounded-xl text-xs text-muted-foreground flex items-center justify-between">
+            <span>Flux temps réel des licences générées automatiquement lors des achats ou distributions.</span>
+            <span className="font-mono">{licenses.length} enregistrements</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2">
+            {licenses.map(lic => (
+              <div key={lic.id} className="bg-card border border-border/50 rounded-xl p-3 flex items-center justify-between gap-3 text-xs">
+                <div>
+                  <p className="font-bold text-foreground text-sm">{lic.release_title || lic.video_title || lic.artist_name}</p>
+                  <p className="text-muted-foreground">
+                    {lic.artist_name} · N° {lic.license_number || lic.certificate_number || lic.id} · Destinataire : {lic.sent_to_email || lic.buyer_email || 'Non renseigné'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a href={`/document/${lic.id}`} target="_blank" rel="noreferrer">
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                      <Eye size={12} /> Consulter
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── CONTENU DE L'ONGLET 3 : NOUVEAU DOCUMENT & ARCHIVAGE DIRECT ── */}
+      {activeTab === 'new_doc' && (
+        <NewDocumentForm
           artists={artists}
-          onClose={() => setShowGenerator(false)}
-          onGenerated={() => {
-            setShowGenerator(false);
-            queryClient.invalidateQueries({ queryKey: ['admin-licenses'] });
+          onSuccess={(newDoc) => {
+            refetchDocs();
+            setActiveTab('repertoire');
+            toast({
+              title: 'Document archivé avec succès',
+              description: `Réf : ${newDoc.doc_number}. Date immuable scellée dans le coffre-fort.`,
+            });
+            handleConsultDoc(newDoc);
           }}
+        />
+      )}
+
+      {/* Modal de re-consultation sécurisée */}
+      {selectedDoc && (
+        <DocumentModalViewer
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          doc={selectedDoc}
+          onSendSuccess={() => refetchDocs()}
         />
       )}
     </div>
   );
 }
 
-// ── Generator Dialog (flux : sélection → prévisualisation → envoi) ──
-function LicenseGenerator({ artists, onClose, onGenerated }) {
+/**
+ * Formulaire de génération et d'archivage permanent d'un nouveau document
+ */
+function NewDocumentForm({ artists, onSuccess }) {
   const { toast } = useToast();
-  const [artistId, setArtistId] = useState('');
-  const [workType, setWorkType] = useState('release');
-  const [workId, setWorkId] = useState('');
-  const [licenseType, setLicenseType] = useState('double');
+  const [docType, setDocType] = useState('contrat_artiste');
+  const [artistName, setArtistName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [preview, setPreview] = useState(null); // { license_id, document_url, certificate_url, sent_to }
+  const [workTitle, setWorkTitle] = useState('');
+  const [contractDurationMonths, setContractDurationMonths] = useState('24');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const selectedArtist = artists.find(a => a.id === artistId);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!artistName.trim()) {
+      toast({ title: 'Nom manquant', description: "Veuillez préciser le nom de l'artiste ou du bénéficiaire.", variant: 'destructive' });
+      return;
+    }
 
-  const { data: releases = [] } = useQuery({
-    queryKey: ['gen-releases', selectedArtist?.name],
-    queryFn: () => base44.entities.Release.filter({ artist_name: selectedArtist.name }, '-release_date'),
-    enabled: !!selectedArtist?.name,
-  });
-
-  const { data: videos = [] } = useQuery({
-    queryKey: ['gen-videos', selectedArtist?.name],
-    queryFn: () => base44.entities.Video.filter({ artist_name: selectedArtist.name }, '-publish_date'),
-    enabled: !!selectedArtist?.name,
-  });
-
-  const works = workType === 'release' ? releases : videos;
-
-  const handleGenerate = async () => {
-    if (!artistId) { toast({ title: 'Sélectionnez un artiste', variant: 'destructive' }); return; }
-    if (!workId) { toast({ title: 'Sélectionnez une œuvre', variant: 'destructive' }); return; }
-    setGenerating(true);
+    setSaving(true);
     try {
-      const res = await base44.functions.invoke('generateMusicLicense', {
-        artist_id: artistId,
-        release_id: workType === 'release' ? workId : '',
-        video_id: workType === 'video' ? workId : '',
-        license_type: licenseType,
-        recipient_email: recipientEmail || undefined,
-        preview_only: true,
+      const now = new Date();
+      const typeLabel = DOCUMENT_TYPES[docType]?.label || 'Document';
+      const endDate = new Date(now.getTime() + parseInt(contractDurationMonths, 10) * 30 * 24 * 3600 * 1000);
+
+      const newDoc = await documentArchiveService.archiveDocument({
+        type: docType,
+        title: `${typeLabel} — ${artistName} ${workTitle ? `(${workTitle})` : ''}`.trim(),
+        recipient_name: artistName,
+        recipient_email: recipientEmail,
+        issued_at: now.toISOString(), // Scellé immuable
+        status: 'actif',
+        signer_name: 'Abdoulaye Sylla',
+        signer_role: 'Gestionnaire Principal · Direction des Opérations',
+        content_data: {
+          artist_name: artistName,
+          email: recipientEmail,
+          work_title: workTitle,
+          contract_start: now.toISOString().split('T')[0],
+          contract_end: endDate.toISOString().split('T')[0],
+          notes: notes || 'Acte officiel de distribution certifié.',
+          royalty_split: '90% Artiste / 10% KKD Music',
+        }
       });
-      if (res.data?.error) {
-        toast({ title: 'Échec', description: res.data.error, variant: 'destructive' });
-      } else {
-        const pdfData = await buildPdfDataFromBackend(res.data);
-        const urls = await generatePdfBlobs(pdfData, licenseType);
-        setPreview({
-          document_url: urls.license_url || '',
-          certificate_url: urls.certificate_url || '',
-          license_number: res.data.license_number,
-          certificate_number: res.data.certificate_number,
-          sent_to: res.data.sent_to,
-          _params: {
-            artist_id: artistId,
-            release_id: workType === 'release' ? workId : '',
-            video_id: workType === 'video' ? workId : '',
-            license_type: licenseType,
-            recipient_email: recipientEmail || undefined,
-          },
-        });
-        toast({ title: 'Document généré', description: 'Prévisualisez puis envoyez ou téléchargez.' });
-      }
-    } catch (err) {
-      toast({ title: 'Erreur', description: err?.message || 'Génération échouée', variant: 'destructive' });
+
+      onSuccess(newDoc);
+    } catch (e) {
+      toast({ title: 'Erreur', description: e?.message || "Impossible d'archiver le document.", variant: 'destructive' });
     } finally {
-      setGenerating(false);
+      setSaving(false);
     }
   };
 
-  const handleSend = async () => {
-    if (!preview?._params) return;
-    setSending(true);
-    try {
-      const res = await base44.functions.invoke('generateMusicLicense', {
-        ...preview._params,
-        preview_only: false,
-      });
-      if (res.data?.error) {
-        toast({ title: 'Échec envoi', description: res.data.error, variant: 'destructive' });
-      } else {
-        toast({ title: 'Email envoyé', description: `Documents envoyés à ${res.data.sent_to}.` });
-        onGenerated();
-      }
-    } catch (err) {
-      toast({ title: 'Erreur', description: err?.message || 'Envoi échoué', variant: 'destructive' });
-    } finally {
-      setSending(false);
-    }
-  };
+  return (
+    <div className="bg-card border border-border/60 rounded-2xl p-6 max-w-2xl mx-auto shadow-xs">
+      <div className="mb-5 pb-3 border-b border-border/40">
+        <h2 className="font-heading font-bold text-lg">Générer & Archiver un Acte Officiel</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Le document sera doté de son numéro d'inventaire, de sa date immuable et du cachet officiel d'Abdoulaye Sylla.
+        </p>
+      </div>
 
-  const reset = () => {
-    if (preview?.document_url?.startsWith('blob:')) URL.revokeObjectURL(preview.document_url);
-    if (preview?.certificate_url?.startsWith('blob:')) URL.revokeObjectURL(preview.certificate_url);
-    setPreview(null);
-    setArtistId('');
-    setWorkId('');
-    setRecipientEmail('');
-  };
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label className="text-xs">Type de document juridique</Label>
+          <Select value={docType} onValueChange={setDocType}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="contrat_artiste">Contrat d'Artiste & Distribution Numérique</SelectItem>
+              <SelectItem value="contrat_label">Contrat de Partenariat Label</SelectItem>
+              <SelectItem value="licence_distribution">Licence de Commercialisation Master</SelectItem>
+              <SelectItem value="certificat_authenticite">Certificat d'Authenticité & Empreinte Numérique</SelectItem>
+              <SelectItem value="attestation_droits">Attestation de Déclaration de Droits d'Auteur</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-  // ── Étape 2 : Prévisualisation ──
-  if (preview) {
-    return (
-      <Dialog open onOpenChange={() => { reset(); onClose(); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle size={18} className="text-emerald-500" /> Document généré — Prévisualisation
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700">
-              <p className="font-semibold">Licence N° {preview.license_number}</p>
-              {preview.certificate_number && <p>Certificat N° {preview.certificate_number}</p>}
-              <p className="mt-1 text-muted-foreground">Destinataire : {preview.sent_to}</p>
-            </div>
-
-            {/* PDF Preview */}
-            {preview.document_url && (
-              <div>
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1"><FileText size={12} /> Licence de distribution</p>
-                <iframe src={preview.document_url} className="w-full h-64 rounded-lg border border-border/50" title="Licence" />
-              </div>
-            )}
-            {preview.certificate_url && (
-              <div>
-                <p className="text-xs font-semibold mb-1 flex items-center gap-1"><Award size={12} /> Certificat d'authenticité</p>
-                <iframe src={preview.certificate_url} className="w-full h-64 rounded-lg border border-border/50" title="Certificat" />
-              </div>
-            )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Nom de l'Artiste ou Entité Bénéficiaire *</Label>
+            <Input
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              placeholder="Ex: Amadou & The Band"
+              className="mt-1"
+              required
+            />
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <div className="flex gap-2 flex-wrap">
-              {preview.document_url && (
-                <a href={preview.document_url} target="_blank" rel="noreferrer" download>
-                  <Button variant="outline" className="gap-2 w-full sm:w-auto">
-                    <Download size={15} /> Licence
-                  </Button>
-                </a>
-              )}
-              {preview.certificate_url && (
-                <a href={preview.certificate_url} target="_blank" rel="noreferrer" download>
-                  <Button variant="outline" className="gap-2 w-full sm:w-auto">
-                    <Download size={15} /> Certificat
-                  </Button>
-                </a>
-              )}
-            </div>
-            <div className="flex gap-2 flex-1 sm:justify-end">
-              <Button variant="ghost" onClick={() => { reset(); }}>
-                <Plus size={15} /> Nouveau
-              </Button>
-              <Button onClick={handleSend} disabled={sending} className="gap-2 flex-1 sm:flex-none">
-                {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                {sending ? 'Envoi...' : 'Envoyer par email'}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // ── Étape 1 : Sélection ──
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck size={18} className="text-primary" /> Générer un document
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
           <div>
-            <Label className="text-xs mb-1.5 block">Artiste</Label>
-            <Select value={artistId} onValueChange={(v) => { setArtistId(v); setWorkId(''); }}>
-              <SelectTrigger><SelectValue placeholder="Sélectionnez un artiste..." /></SelectTrigger>
+            <Label className="text-xs">Email du Bénéficiaire</Label>
+            <Input
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder="artiste@example.com"
+              className="mt-1"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs">Titre de l'Œuvre (ou Catalogue concerné)</Label>
+          <Input
+            value={workTitle}
+            onChange={(e) => setWorkTitle(e.target.value)}
+            placeholder="Ex: Teranga Deluxe Album"
+            className="mt-1"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Durée contractuelle</Label>
+            <Select value={contractDurationMonths} onValueChange={setContractDurationMonths}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {artists.length === 0 ? (
-                  <SelectItem value="_none" disabled>Aucun artiste</SelectItem>
-                ) : artists.map(a => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                ))}
+                <SelectItem value="12">12 mois (1 an)</SelectItem>
+                <SelectItem value="24">24 mois (2 ans - Standard)</SelectItem>
+                <SelectItem value="36">36 mois (3 ans)</SelectItem>
+                <SelectItem value="60">60 mois (5 ans)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {artistId && (
-            <div>
-              <Label className="text-xs mb-1.5 block">Type d'œuvre</Label>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => { setWorkType('release'); setWorkId(''); }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${workType === 'release' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-                  <Music size={13} /> Sortie
-                </button>
-                <button type="button" onClick={() => { setWorkType('video'); setWorkId(''); }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${workType === 'video' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-                  <VideoIcon size={13} /> Clip
-                </button>
-              </div>
-            </div>
-          )}
-
-          {artistId && (
-            <div>
-              <Label className="text-xs mb-1.5 block">Œuvre</Label>
-              <Select value={workId} onValueChange={setWorkId}>
-                <SelectTrigger><SelectValue placeholder="Sélectionnez..." /></SelectTrigger>
-                <SelectContent>
-                  {works.length === 0 ? (
-                    <SelectItem value="_none" disabled>Aucune œuvre</SelectItem>
-                  ) : works.map(w => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.title} {w.release_date ? `· ${format(new Date(w.release_date), 'dd MMM yyyy', { locale: fr })}` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           <div>
-            <Label className="text-xs mb-1.5 block">Type de document</Label>
-            <div className="grid grid-cols-1 gap-2">
-              {LICENSE_TYPES.map(lt => {
-                const Icon = lt.icon;
-                return (
-                  <button key={lt.value} type="button" onClick={() => setLicenseType(lt.value)}
-                    className={`text-left p-3 rounded-xl border transition-all ${licenseType === lt.value ? 'border-primary bg-primary/5' : 'border-border/50 bg-card hover:border-primary/30'}`}>
-                    <div className="flex items-center gap-2">
-                      <Icon size={16} className={licenseType === lt.value ? 'text-primary' : 'text-muted-foreground'} />
-                      <p className="font-heading font-bold text-xs">{lt.label}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-xs mb-1.5 block">Email destinataire (optionnel)</Label>
+            <Label className="text-xs">Signataire Principal KKD Music</Label>
             <Input
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
-              placeholder={selectedArtist?.name ? `Email de ${selectedArtist.name}...` : 'Laissez vide pour l\'email de l\'artiste'}
+              value="Abdoulaye Sylla · Gestionnaire Principal"
+              disabled
+              className="mt-1 bg-muted/50 cursor-not-allowed font-medium text-xs"
             />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Le document sera prévisualisé. Vous pourrez ensuite l'envoyer ou le télécharger.
-            </p>
           </div>
         </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Annuler</Button>
-          </DialogClose>
-          <Button onClick={handleGenerate} disabled={generating || !artistId || !workId} className="gap-2">
-            {generating ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-            {generating ? 'Génération...' : 'Générer & prévisualiser'}
+        <div>
+          <Label className="text-xs">Clauses Particulières & Notes</Label>
+          <Input
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ex: Clé 90/10, distribution internationale garantie..."
+            className="mt-1"
+          />
+        </div>
+
+        <div className="pt-3 flex justify-end gap-2">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="bg-[#8B1515] hover:bg-[#701010] text-white gap-2"
+          >
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />}
+            {saving ? 'Archivage en cours…' : 'Archiver & Visualiser le Document'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </form>
+    </div>
   );
 }
