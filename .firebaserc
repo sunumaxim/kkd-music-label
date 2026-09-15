@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "gen-lang-client-0733536616"
+    "default": "kkdmusic-774df",
+    "production": "kkdmusic-774df",
+    "aistudio": "gen-lang-client-0733536616"
   }
 }

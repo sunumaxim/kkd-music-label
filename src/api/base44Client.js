@@ -151,6 +151,26 @@ if (base44?.functions) {
       return { purchases: cachedPurchases };
     }
 
+    if (fnName === 'checkArtistDuplicate') {
+      const existingArtists = localDb.getCollection('artists');
+      const targetName = (params?.artist_name || '').toLowerCase().trim();
+      const duplicate = existingArtists.some(a => (a.name || '').toLowerCase().trim() === targetName);
+      return { duplicate, exists: duplicate };
+    }
+
+    if (fnName === 'searchArtistOnPlatforms') {
+      return { success: true, tracks: [], releases: [], platforms: ['Spotify', 'Apple Music', 'YouTube Music'] };
+    }
+
+    if (fnName === 'getArtistTopTracks') {
+      const releases = localDb.getCollection('releases');
+      return { success: true, tracks: releases.slice(0, 5) };
+    }
+
+    if (fnName === 'extractLinkMetadata') {
+      return { success: true, title: 'Titre extrait', artist: 'Artiste', platform: 'Web' };
+    }
+
     return { success: true, executed: true };
   };
 }
