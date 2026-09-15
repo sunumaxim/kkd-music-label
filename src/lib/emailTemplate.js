@@ -146,55 +146,67 @@ export const EMAIL_THEMES = {
   }
 };
 
-// Signataires officiels KKD Music
+// Signataires et Entités officielles KKD Music
 export const SIGNERS = {
+  kkd_music: {
+    id: 'kkd_music',
+    name: 'KKD Music',
+    role: 'Maison de Disques & Distribution',
+    department: 'Direction Générale',
+    initials: 'KKD',
+    phone: '+221 77 000 00 00',
+    email: 'contact@kkdmusic.com',
+    location: 'Tambacounda, Sénégal',
+    badge: 'Maison de Disques Officielle',
+    avatarText: 'KKD',
+  },
+  kkd_label: {
+    id: 'kkd_label',
+    name: 'KKD Label Entertainment',
+    role: 'Direction du Label',
+    department: 'Production & Édition',
+    initials: 'KKD',
+    phone: '+221 77 000 00 00',
+    email: 'contact@kkdmusic.com',
+    location: 'Tambacounda, Sénégal',
+    badge: 'Label Entertainment Officiel',
+    avatarText: 'KKD',
+  },
+  kkd_distribution: {
+    id: 'kkd_distribution',
+    name: 'KKD Distribution',
+    role: 'Service Distribution & Streaming',
+    department: 'Catalogue International',
+    initials: 'KD',
+    phone: '+221 77 000 00 00',
+    email: 'contact@kkdmusic.com',
+    location: 'Tambacounda, Sénégal',
+    badge: 'Distribution Internationale',
+    avatarText: 'KD',
+  },
+  direction: {
+    id: 'direction',
+    name: 'Direction KKD Music',
+    role: 'Direction Générale',
+    department: 'Maison de Disques',
+    initials: 'KKD',
+    phone: '+221 77 000 00 00',
+    email: 'contact@kkdmusic.com',
+    location: 'Tambacounda, Sénégal',
+    badge: 'Direction Officielle',
+    avatarText: 'KKD',
+  },
   abdoulaye: {
     id: 'abdoulaye',
     name: 'Abdoulaye Sylla',
     role: 'Gestionnaire Principal',
-    department: 'Direction des Opérations & Distribution',
+    department: 'KKD Music',
     initials: 'AS',
     phone: '+221 77 000 00 00',
     email: 'contact@kkdmusic.com',
-    location: 'Dakar & Missira, Sénégal',
-    badge: 'Gestionnaire Principal KKD Music',
+    location: 'Tambacounda, Sénégal',
+    badge: 'Gestionnaire Principal',
     avatarText: 'AS',
-  },
-  madou: {
-    id: 'madou',
-    name: 'Madou Kane',
-    role: 'Président Directeur Général & Fondateur',
-    department: 'Direction Générale KKD Music Label Group',
-    initials: 'MK',
-    phone: '+221 77 000 00 00',
-    email: 'contact@kkdmusic.com',
-    location: 'Dakar & Tambacounda, Sénégal',
-    badge: 'Président Fondateur KKD Music',
-    avatarText: 'MK',
-  },
-  direction: {
-    id: 'direction',
-    name: 'Direction Générale KKD Music',
-    role: 'Comité de Direction',
-    department: 'Maison de Disques & Distribution Internationale',
-    initials: 'KKD',
-    phone: '+221 77 000 00 00',
-    email: 'contact@kkdmusic.com',
-    location: 'Dakar, République du Sénégal',
-    badge: 'Direction Générale Certifiée',
-    avatarText: 'KKD',
-  },
-  ar: {
-    id: 'ar',
-    name: 'Cellule A&R & Relations Artistes',
-    role: 'Développement Artistique',
-    department: 'Sélection, Licences & Promotion',
-    initials: 'A&R',
-    phone: '+221 77 000 00 00',
-    email: 'contact@kkdmusic.com',
-    location: 'Dakar, Sénégal',
-    badge: 'A&R Talent Hub',
-    avatarText: 'A&R',
   }
 };
 
@@ -237,94 +249,85 @@ export const CONTEXT_TYPES = {
     categoryName: 'Événement & Billetterie VIP',
     categoryDesc: 'Concert, showcase privé, festival ou événement officiel avec billetterie',
     fields: [
-      { key: 'event_title', label: 'Nom de l\'événement', placeholder: 'Ex: Grand Showcase VIP KKD Music 2026' },
+      { key: 'event_title', label: "Nom de l'événement", placeholder: 'Ex: Grand Showcase Live KKD 2026' },
       { key: 'event_date', label: 'Date & Heure', placeholder: 'Ex: Samedi 14 Novembre 2026 à 20h30' },
-      { key: 'venue', label: 'Lieu / Salle', placeholder: 'Ex: Grand Théâtre National Doudou Ndiaye Rose' },
-      { key: 'city', label: 'Ville & Pays', placeholder: 'Ex: Dakar, Sénégal' },
-      { key: 'access_type', label: 'Catégorie d\'accès', placeholder: 'Ex: Carré VIP, Carré Or, Pass Privilège' },
-      { key: 'doors_open', label: 'Ouverture des portes', placeholder: 'Ex: 19h00 (Contrôle électronique nominatif)' },
+      { key: 'venue', label: 'Lieu / Salle', placeholder: 'Ex: Centre Culturel / Espace Scénique' },
+      { key: 'city', label: 'Ville & Pays', placeholder: 'Ex: Tambacounda, Sénégal' },
+      { key: 'access_type', label: "Catégorie d'accès", placeholder: 'Ex: Carré VIP, Carré Or, Pass Privilège' },
     ],
-    defaultNotice: "Ce courriel officiel constitue un avis de billetterie ou une invitation officielle. Tout accès sur place requiert la présentation du billet sécurisé officiel KKD Music.",
+    defaultNotice: "Présentation du billet officiel KKD Music requise à l'entrée.",
   },
   contract: {
     id: 'contract',
     label: 'Contrat & Certification Juridique',
-    badge: 'DOCUMENT JURIDIQUE OFFICIEL',
+    badge: 'DOCUMENT OFFICIEL',
     icon: '📜',
     categoryName: 'Contrat & Certification de Droits',
-    categoryDesc: 'Notification contractuelle officielle, avenant ou certificat de licence',
+    categoryDesc: 'Notification contractuelle officielle, accord ou certificat de licence',
     fields: [
-      { key: 'doc_title', label: 'Intitulé de l\'accord', placeholder: 'Ex: Contrat de Partenariat & Distribution Exclusive' },
-      { key: 'doc_ref', label: 'Réf. Document', placeholder: 'Ex: KKD-CTR-2026-089A' },
-      { key: 'beneficiary', label: 'Ayant-droit / Titulaire', placeholder: 'Ex: Nom de l\'artiste ou du label partenaire' },
-      { key: 'effective_date', label: 'Date d\'effet', placeholder: 'Ex: À compter du 1er Novembre 2026' },
-      { key: 'royalties_rate', label: 'Rétrocession garantie', placeholder: 'Ex: 90% des royalties nettes perçues' },
-      { key: 'legal_status', label: 'Statut du document', placeholder: 'Ex: Scellé et certifié électroniquement' },
+      { key: 'doc_title', label: "Intitulé de l'accord", placeholder: 'Ex: Contrat de Partenariat & Distribution' },
+      { key: 'doc_ref', label: 'Réf. Document', placeholder: 'Ex: KKD-CTR-2026-089' },
+      { key: 'beneficiary', label: 'Ayant-droit / Bénéficiaire', placeholder: "Ex: Nom de l'artiste ou du partenaire" },
+      { key: 'effective_date', label: "Date d'effet", placeholder: 'Ex: À compter de la signature' },
     ],
-    defaultNotice: "Ce courriel officiel émane du secrétariat juridique de KKD Music et se rattache directement à l'exécution de l'accord contractuel visé ci-dessus.",
+    defaultNotice: "Document officiel émis par la Direction de KKD Music.",
   },
   circular: {
     id: 'circular',
     label: 'Note de Service & Circulaire de Direction',
-    badge: 'NOTE DU GESTIONNAIRE PRINCIPAL',
+    badge: 'NOTE OFFICIELLE DE DIRECTION',
     icon: '🏛️',
     categoryName: 'Note Officielle de Direction',
-    categoryDesc: 'Communication administrative de service émise par Abdoulaye Sylla',
+    categoryDesc: 'Communication administrative émise par la Direction de KKD Music',
     fields: [
-      { key: 'circular_ref', label: 'N° de Circulaire', placeholder: 'Ex: CIR-KKD-DIR-2026-014' },
-      { key: 'emitter', label: 'Signataire émetteur', placeholder: 'Abdoulaye Sylla, Gestionnaire Principal' },
-      { key: 'target_group', label: 'Destinataires visés', placeholder: 'Ex: Ensemble des artistes et partenaires du label' },
-      { key: 'effective_scope', label: 'Portée d\'application', placeholder: 'Ex: Immédiate — Exercice 2026/2027' },
-      { key: 'urgency', label: 'Degré de priorité', placeholder: 'Ex: Information réglementaire obligatoire' },
+      { key: 'circular_ref', label: 'N° de Référence', placeholder: 'Ex: CIR-KKD-2026-014' },
+      { key: 'emitter', label: 'Émetteur', placeholder: 'Direction KKD Music' },
+      { key: 'target_group', label: 'Destinataires', placeholder: 'Partenaires & Artistes du label' },
+      { key: 'effective_scope', label: "Portée d'application", placeholder: 'Immédiate' },
     ],
-    defaultNotice: "Note administrative émise sous l'autorité du Gestionnaire Principal de KKD Music. Les directives et dispositions énoncées s'appliquent à tous les ayants droit concernés.",
+    defaultNotice: "Note officielle émise par la Direction de KKD Music (Tambacounda, Sénégal).",
   },
   partnership: {
     id: 'partnership',
-    label: 'Partenariat B2B & Distribution Mondiale',
-    badge: 'OPPORTUNITÉ PARTENARIAT B2B',
+    label: 'Partenariat & Distribution',
+    badge: 'OPPORTUNITÉ PARTENARIAT',
     icon: '🤝',
-    categoryName: 'Partenariat & Distribution Label',
-    categoryDesc: 'Offre formelle de collaboration avec 90% de royalties pour les labels et artistes',
+    categoryName: 'Partenariat & Distribution',
+    categoryDesc: 'Offre formelle de collaboration et distribution',
     fields: [
-      { key: 'offer_name', label: 'Programme B2B', placeholder: 'Ex: Partenariat Label Affilié KKD' },
-      { key: 'royalty_split', label: 'Rémunération garantie', placeholder: '90% des royalties versées au partenaire' },
-      { key: 'territory', label: 'Couverture territoriale', placeholder: 'Mondiale (150+ plateformes de streaming)' },
-      { key: 'services_included', label: 'Services compris', placeholder: 'Distribution DSP, ISRC/UPC, Déclarations SACEM/SODAV' },
-      { key: 'deadline', label: 'Période d\'adhésion', placeholder: 'Ex: Clôture des sessions au 30 du mois' },
+      { key: 'offer_name', label: 'Programme', placeholder: 'Ex: Partenariat Label & Distribution' },
+      { key: 'royalty_split', label: 'Partage royalties', placeholder: '90% versés au créateur' },
+      { key: 'territory', label: 'Territoire', placeholder: 'Mondial (150+ plateformes)' },
     ],
-    defaultNotice: "Cette proposition de partenariat respecte le barème transparent de KKD Music (90% de rétrocession nette) pour un accompagnement d'excellence.",
+    defaultNotice: "Proposition officielle de partenariat KKD Music.",
   },
   video: {
     id: 'video',
     label: 'Clip Vidéo & Production Audiovisuelle',
     badge: 'CLIP OFFICIEL KKD',
     icon: '🎬',
-    categoryName: 'Première & Clip Officiel',
-    categoryDesc: 'Lancement d\'un clip ou contenu audiovisuel exclusif sur les canaux KKD',
+    categoryName: 'Sortie Clip Vidéo',
+    categoryDesc: 'Lancement d\'un clip officiel sur les canaux KKD',
     fields: [
-      { key: 'clip_title', label: 'Titre du clip', placeholder: 'Ex: Dakar By Night (Clip Officiel 4K)' },
-      { key: 'artist_name', label: 'Artiste principal', placeholder: 'Ex: Ousmane Ba' },
-      { key: 'director', label: 'Réalisation', placeholder: 'Ex: KKD Visuals Studios' },
-      { key: 'video_format', label: 'Résolution & Son', placeholder: 'Ultra HD 4K · Master Audio HQ' },
-      { key: 'channel', label: 'Diffuseur officiel', placeholder: 'Chaîne YouTube KKD Music Officielle' },
+      { key: 'clip_title', label: 'Titre du clip', placeholder: 'Ex: Tamba By Night (Clip Officiel)' },
+      { key: 'artist_name', label: 'Artiste', placeholder: 'Ex: Ousmane Ba' },
+      { key: 'director', label: 'Réalisation', placeholder: 'Ex: KKD Visuals' },
     ],
-    defaultNotice: "Œuvre audiovisuelle produite ou distribuée sous licence exclusive KKD Music. Reproduction ou diffusion non autorisée strictement interdite.",
+    defaultNotice: "Vidéo officielle disponible sur les plateformes KKD Music.",
   },
   news: {
     id: 'news',
     label: 'Communiqué de Presse & Actualité',
-    badge: 'COMMUNIQUÉ DE PRESSE OFFICIEL',
+    badge: 'COMMUNIQUÉ OFFICIEL',
     icon: '📢',
-    categoryName: 'Presse & Relations Publiques',
-    categoryDesc: 'Annonce institutionnelle officielle destinée aux médias et partenaires',
+    categoryName: 'Actualité & Communication',
+    categoryDesc: 'Annonce officielle de KKD Music',
     fields: [
-      { key: 'press_ref', label: 'Réf. Communiqué', placeholder: 'Ex: CP-KKD-2026-09' },
-      { key: 'press_topic', label: 'Sujet officiel', placeholder: 'Ex: Bilan annuel et expansion régionale' },
-      { key: 'press_contact', label: 'Relations Médias', placeholder: 'presse@kkdmusic.com · +221 77 000 00 00' },
-      { key: 'publication_date', label: 'Date d\'embargo / parution', placeholder: 'Ex: Diffusion immédiate' },
+      { key: 'press_ref', label: 'Référence', placeholder: 'Ex: CP-KKD-2026-09' },
+      { key: 'press_topic', label: 'Objet', placeholder: 'Ex: Actualité du label' },
+      { key: 'publication_date', label: 'Date', placeholder: 'Ex: Diffusion immédiate' },
     ],
-    defaultNotice: "Document officiel validé par la Direction de la Communication de KKD Music Label Group pour diffusion auprès des médias accrédités.",
+    defaultNotice: "Communiqué officiel émis par la Direction de KKD Music.",
   }
 };
 
@@ -341,21 +344,64 @@ export function buildEmailHtml({
   extra = '',
   theme = 'prestige_dark',
   badge_label = 'COMMUNICATION OFFICIELLE',
-  signer_id = 'abdoulaye',
+  signer_id = 'kkd_music',
   custom_signer = null,
   streaming_links = [],
   highlight_box = null,
   show_signature = true,
-  // Nouveaux paramètres contextuels anti-incompréhension :
+  // Paramètres d'adaptation du logo :
+  logo_size = 'standard', // 'compact' | 'standard' | 'large'
+  logo_style = 'clean', // 'clean' | 'badge' | 'subtle_glow' | 'minimal'
+  // Nouveaux paramètres contextuels anti-incompréhension épurés :
   context_type = null,
   context_meta = null,
   context_notice = null,
   enable_context_card = true,
 }) {
   const T = EMAIL_THEMES[theme] || EMAIL_THEMES.prestige_dark;
-  const S = custom_signer || SIGNERS[signer_id] || SIGNERS.abdoulaye;
+  const S = custom_signer || SIGNERS[signer_id] || SIGNERS.kkd_music;
   const isWhiteTheme = theme === 'official_white';
   const ctxDef = CONTEXT_TYPES[context_type];
+
+  // Dimensionnement adaptatif du logo
+  const sizeMap = {
+    compact: { height: 34, maxH: 40, subSize: 9.5, pad: '20px 28px' },
+    standard: { height: 46, maxH: 52, subSize: 10.5, pad: '26px 32px' },
+    large: { height: 58, maxH: 66, subSize: 11, pad: '30px 36px' },
+  };
+  const SIZ = sizeMap[logo_size] || sizeMap.standard;
+
+  // Style visuel du logo
+  let logoWrapperStyle = 'display:inline-block;';
+  let logoImgStyle = '';
+
+  if (logo_style === 'badge') {
+    logoWrapperStyle = `display:inline-block; padding:8px 18px; border-radius:12px; background:${isWhiteTheme ? '#8B1515' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isWhiteTheme ? '#6B0F0F' : T.cardBorder};`;
+    if (isWhiteTheme) logoImgStyle = 'filter: brightness(0) invert(1);';
+  } else if (logo_style === 'subtle_glow') {
+    logoWrapperStyle = `display:inline-block; padding:6px 12px;`;
+    logoImgStyle = `filter: drop-shadow(0 2px 8px ${T.gold}50);`;
+  } else if (logo_style === 'minimal') {
+    logoWrapperStyle = `display:inline-block; padding:4px 8px; opacity:0.92;`;
+    if (isWhiteTheme) logoImgStyle = 'filter: brightness(0);';
+  } else {
+    // 'clean' (default)
+    if (isWhiteTheme) {
+      logoWrapperStyle = `display:inline-block; padding:6px 14px; border-radius:10px; background:#8B1515;`;
+      logoImgStyle = 'filter: brightness(0) invert(1);';
+    } else {
+      logoWrapperStyle = `display:inline-block;`;
+      logoImgStyle = 'filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));';
+    }
+  }
+
+  // Sous-titre officiel adapté à l'entité et à l'objet
+  let logoSubtext = 'KKD MUSIC · TAMBACOUNDA, SÉNÉGAL';
+  if (context_type === 'release') logoSubtext = 'KKD MUSIC · SORTIE OFFICIELLE';
+  else if (context_type === 'event') logoSubtext = 'KKD MUSIC · ÉVÉNEMENT & BILLETTERIE';
+  else if (context_type === 'contract') logoSubtext = 'KKD LABEL ENTERTAINMENT · JURIDIQUE';
+  else if (context_type === 'partnership') logoSubtext = 'KKD DISTRIBUTION · PARTENARIAT';
+  else if (context_type === 'circular') logoSubtext = 'KKD MUSIC · DIRECTION DU LABEL';
 
   // Badge en-tête contextuel
   const finalBadge = badge_label || (ctxDef ? ctxDef.badge : 'COMMUNICATION OFFICIELLE');
@@ -372,8 +418,7 @@ export function buildEmailHtml({
     </div>
   ` : '';
 
-  // ── CARTOUCHE DE CONTEXTE OFFICIEL & ANTI-AMBIGUÏTÉ ──
-  // S'adapte au titre, à l'événement ou au document pour éviter toute mauvaise compréhension
+  // ── CARTOUCHE DE CONTEXTE OFFICIEL ÉPURÉ ──
   let contextCardHtml = '';
   if (enable_context_card && (ctxDef || (context_meta && Object.keys(context_meta).length > 0))) {
     const metaEntries = [];
@@ -381,7 +426,6 @@ export function buildEmailHtml({
       if (Array.isArray(context_meta)) {
         metaEntries.push(...context_meta);
       } else {
-        // Objets { key: value }
         const fieldDefs = ctxDef?.fields || [];
         Object.entries(context_meta).forEach(([k, v]) => {
           if (v && String(v).trim()) {
@@ -396,23 +440,18 @@ export function buildEmailHtml({
 
     if (metaEntries.length > 0 || noticeText) {
       contextCardHtml = `
-        <div style="background:${isWhiteTheme ? '#F8FAFC' : 'rgba(0,0,0,0.35)'}; border:1.5px solid ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}; border-left:4px solid ${T.gold}; border-radius:10px; padding:18px 20px; margin:24px 0 28px 0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}; padding-bottom:10px; margin-bottom:12px;">
-            <div style="font-size:11px; font-weight:800; color:${T.gold}; text-transform:uppercase; letter-spacing:0.08em;">
-              ${ctxDef ? `${ctxDef.icon} FICHE CONTEXTUELLE : ${ctxDef.categoryName.toUpperCase()}` : '📌 FICHE CONTEXTUELLE OFFICIELLE'}
-            </div>
-            <div style="font-size:10px; color:${T.textDim}; font-family:monospace; font-weight:600;">
-              REF: KKD-${(context_type || 'OFF').toUpperCase()}-${new Date().getFullYear()}
-            </div>
+        <div style="background:${isWhiteTheme ? '#F8FAFC' : 'rgba(0,0,0,0.30)'}; border:1px solid ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}; border-left:3px solid ${T.gold}; border-radius:8px; padding:16px 18px; margin:20px 0 24px 0;">
+          <div style="font-size:11px; font-weight:800; color:${T.gold}; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">
+            ${ctxDef ? `${ctxDef.icon} ${ctxDef.categoryName.toUpperCase()}` : '📌 INFORMATIONS OFFICIELLES'}
           </div>
           ${metaEntries.length > 0 ? `
             <table cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse;">
               ${metaEntries.map((m, idx) => `
                 <tr>
-                  <td style="padding:6px 0; border-bottom:${idx === metaEntries.length - 1 ? 'none' : `1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}`}; font-size:12.5px; color:${T.textDim}; width:40%; vertical-align:top;">
+                  <td style="padding:5px 0; border-bottom:${idx === metaEntries.length - 1 ? 'none' : `1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}`}; font-size:12px; color:${T.textDim}; width:38%; vertical-align:top;">
                     ${m.label} :
                   </td>
-                  <td style="padding:6px 0; border-bottom:${idx === metaEntries.length - 1 ? 'none' : `1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}`}; font-size:13px; font-weight:700; color:${T.headline}; text-align:right; vertical-align:top;">
+                  <td style="padding:5px 0; border-bottom:${idx === metaEntries.length - 1 ? 'none' : `1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}`}; font-size:12.5px; font-weight:700; color:${T.headline}; text-align:right; vertical-align:top;">
                     ${m.value}
                   </td>
                 </tr>
@@ -420,8 +459,8 @@ export function buildEmailHtml({
             </table>
           ` : ''}
           ${noticeText ? `
-            <div style="margin-top:12px; padding-top:10px; border-top:1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}; font-size:11px; color:${isWhiteTheme ? '#64748B' : T.textDim}; line-height:1.55; font-style:italic;">
-              🛡️ <strong style="color:${isWhiteTheme ? '#334155' : T.gold}; font-style:normal;">Portée officielle & clarté d'objet :</strong> ${noticeText}
+            <div style="margin-top:10px; padding-top:8px; border-top:1px dashed ${isWhiteTheme ? '#E2E8F0' : T.cardBorder}; font-size:11px; color:${isWhiteTheme ? '#64748B' : T.textDim}; line-height:1.5;">
+              ℹ️ ${noticeText}
             </div>
           ` : ''}
         </div>
@@ -526,8 +565,8 @@ export function buildEmailHtml({
     body { margin:0; padding:0; background:${T.bg}; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-text-size-adjust:100%; }
     .wrapper { background:${T.bg}; padding:32px 14px; }
     .card { background:${T.card}; border:1px solid ${T.cardBorder}; border-radius:14px; max-width:600px; margin:0 auto; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.35); }
-    .header { background:${T.headerBg}; border-bottom:1px solid ${T.headerBorder}; padding:26px 36px; text-align:center; }
-    .header-logo { height:42px; width:auto; display:inline-block; }
+    .header { background:${T.headerBg}; border-bottom:1px solid ${T.headerBorder}; padding:${SIZ.pad}; text-align:center; }
+    .header-logo { height:${SIZ.height}px; max-height:${SIZ.maxH}px; max-width:240px; width:auto; display:inline-block; }
     .top-bar { height:3px; background:${T.topBar}; }
     .content { padding:36px 38px 28px; }
     .headline { font-size:24px; font-weight:900; color:${T.headline}; margin:0 0 18px; line-height:1.28; letter-spacing:-0.4px; }
@@ -545,6 +584,7 @@ export function buildEmailHtml({
       .content, .header, .footer { padding-left:20px !important; padding-right:20px !important; }
       .headline { font-size:20px !important; }
       .body-text { font-size:14.5px !important; }
+      .header-logo { height:${Math.max(30, SIZ.height - 8)}px !important; }
     }
   </style>
 </head>
@@ -556,14 +596,16 @@ export function buildEmailHtml({
       <!-- Top Accent Bar -->
       <div class="top-bar"></div>
 
-      <!-- Header de marque -->
+      <!-- Header de marque avec logo redimensionné et adapté au thème/objet -->
       <div class="header">
         <table cellpadding="0" cellspacing="0" border="0" style="width:100%;">
           <tr>
             <td style="text-align:center;">
-              <img src="${LOGO_URL}" alt="KKD Music" class="header-logo" style="${isWhiteTheme ? 'filter: brightness(0) invert(1);' : ''}" />
-              <div style="font-size:10px; font-weight:800; color:${isWhiteTheme ? '#FDE68A' : T.gold}; letter-spacing:0.18em; text-transform:uppercase; margin-top:8px;">
-                KKD MUSIC LABEL GROUP · MAISON DE DISQUES
+              <div style="${logoWrapperStyle}">
+                <img src="${LOGO_URL}" alt="KKD Music" class="header-logo" style="${logoImgStyle}" />
+              </div>
+              <div style="font-size:${SIZ.subSize}px; font-weight:800; color:${isWhiteTheme ? '#8B1515' : T.gold}; letter-spacing:0.18em; text-transform:uppercase; margin-top:8px;">
+                ${logoSubtext}
               </div>
             </td>
           </tr>
@@ -584,7 +626,7 @@ export function buildEmailHtml({
         ${signatureHtml}
       </div>
 
-      <!-- Footer officiel -->
+      <!-- Footer épuré officiel Tambacounda -->
       <div class="footer">
         <div class="social-links">
           <a href="${SITE_URL}">Site officiel</a>
@@ -593,13 +635,13 @@ export function buildEmailHtml({
           <a href="https://open.spotify.com">Spotify</a>
         </div>
         <div style="height:1px; background:${T.footerBorder}; margin:16px 0;"></div>
-        <p style="font-size:12.5px; color:${T.headline}; font-weight:800; margin-bottom:6px;">KKD MUSIC LABEL GROUP</p>
-        <p>Direction Générale & Management : Abdoulaye Sylla · Missira, Tambacounda & Dakar, Sénégal</p>
+        <p style="font-size:12.5px; color:${T.headline}; font-weight:800; margin-bottom:4px;">KKD MUSIC</p>
+        <p>Tambacounda, Sénégal · Contact officiel : contact@kkdmusic.com</p>
         <p style="margin-top:10px;">
-          <a href="${SITE_URL}/mon-espace">Mon compte & préférences</a> · <a href="${SITE_URL}/mentions-legales">Mentions légales</a>
+          <a href="${SITE_URL}/mon-espace">Mon espace sécurisé</a> · <a href="${SITE_URL}/mentions-legales">Mentions légales</a>
         </p>
         <p style="margin-top:8px; font-size:10.5px; color:${T.textDim};">
-          © ${new Date().getFullYear()} KKD Music. Tous droits réservés · Protection internationale des droits d'auteur.
+          © ${new Date().getFullYear()} KKD Music. Tous droits réservés.
         </p>
       </div>
 

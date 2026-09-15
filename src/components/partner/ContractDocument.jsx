@@ -62,10 +62,10 @@ export default function ContractDocument({ invite }) {
                 src={LOGO_URL}
                 alt="KKD Music"
                 crossOrigin="anonymous"
-                style={{ height: '48px', width: 'auto', background: '#ffffff', padding: '4px', borderRadius: '4px' }}
+                style={{ height: '52px', width: 'auto', background: '#ffffff', padding: '6px', borderRadius: '4px' }}
               />
               <div>
-                <div style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.1 }}>KKD MUSIC</div>
+                <div style={{ fontSize: '19px', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.1 }}>KKD MUSIC</div>
                 <div style={{ fontSize: '9px', color: '#FDE68A', letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>Label Group · Maison de Disques</div>
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function ContractDocument({ invite }) {
                 RÉF : KKD-{(invite?.id || 'XXXX').slice(-6).toUpperCase()}
               </div>
               <div>Émis le {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}</div>
-              <div style={{ color: '#FDE68A', fontWeight: 600 }}>Dakar, République du Sénégal</div>
+              <div style={{ color: '#FDE68A', fontWeight: 600 }}>Tambacounda, Sénégal</div>
             </div>
           </div>
 
@@ -144,11 +144,11 @@ export default function ContractDocument({ invite }) {
             </Article>
 
             <Article num="5" title="Confidentialité, Résiliation & Droit applicable">
-              Tout manquement grave autorise la partie lésée à résilier le contrat après préavis écrit de 30 jours. Le présent accord est soumis à la législation sénégalaise relative à la propriété intellectuelle et aux tribunaux compétents de Dakar.
+              Tout manquement grave autorise la partie lésée à résilier le contrat après préavis écrit de 30 jours. Le présent accord est soumis à la législation sénégalaise relative à la propriété intellectuelle et aux tribunaux compétents de Tambacounda, République du Sénégal.
             </Article>
           </div>
 
-          {/* ── SIGNATURES OFFICIELLES (AVEC CACHET ÉLECTRONIQUE DE MADOU KANE) ── */}
+          {/* ── SIGNATURES OFFICIELLES ── */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -161,20 +161,20 @@ export default function ContractDocument({ invite }) {
             {/* Colonne KKD Music avec cachet électronique et signature */}
             <div style={{ flex: 1, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '12px 16px', textAlign: 'center' }}>
               <div style={{ fontSize: '10px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', marginBottom: '8px' }}>
-                Pour KKD Music (Direction des Opérations)
+                Pour KKD Music
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                 <img
                   src={SIGNATURE_URL}
-                  alt="Cachet & Signature Abdoulaye Sylla"
+                  alt="Cachet & Signature KKD Music"
                   crossOrigin="anonymous"
                   style={{ height: '62px', width: 'auto', display: 'block' }}
                 />
               </div>
               <div style={{ height: '1px', background: '#D4AF37', margin: '6px auto', width: '80%' }} />
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>Abdoulaye Sylla</div>
-              <div style={{ fontSize: '9px', fontWeight: 700, color: '#8B1515' }}>Gestionnaire Principal · Direction des Opérations</div>
-              <div style={{ fontSize: '8.5px', color: '#64748B' }}>KKD Music Label Group · Missira, Tambacounda & Dakar</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>Direction du Label</div>
+              <div style={{ fontSize: '9px', fontWeight: 700, color: '#8B1515' }}>Maison de Disques & Distribution</div>
+              <div style={{ fontSize: '8.5px', color: '#64748B' }}>Tambacounda, Sénégal</div>
               <div style={{ fontSize: '8px', fontStyle: 'italic', color: '#059669', marginTop: '2px', fontWeight: 600 }}>
                 ✓ Cachet électronique & signature officielle certifiée
               </div>
@@ -192,7 +192,7 @@ export default function ContractDocument({ invite }) {
               <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>{partyName}</div>
               <div style={{ fontSize: '9px', color: '#64748B' }}>{invite?.email || 'Signature & Date'}</div>
               <div style={{ fontSize: '8px', color: '#94A3B8', marginTop: '2px' }}>
-                Fait à Dakar · Certifié le {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}
+                Fait à Tambacounda · Certifié le {fmt(invite?.created_date || invite?.contract_start || invite?.issued_at)}
               </div>
             </div>
           </div>

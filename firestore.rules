@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'storesmaxim@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isEmailOwner(email) {
+      return isSignedIn() && request.auth.token.email == email;
+    }
+
+    // 1. Profils Utilisateurs
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 2. Sorties Musicales (Catalogue public)
+    match /releases/{releaseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 3. Artistes (Catalogue public)
+    match /artists/{artistId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 4. Événements & Concerts (Public)
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 5. Billets (Sécurisés)
+    match /tickets/{ticketId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.buyer_email == request.auth.token.email);
+      allow create: if true; // Généré lors de l'achat/réservation
+      allow update, delete: if isAdmin();
+    }
+
+    // 6. Licences & Contrats Officiels
+    match /musicLicenses/{licenseId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.grantee_email == request.auth.token.email);
+      allow write: if isAdmin();
+    }
+
+    // 7. Actualités & Presse (Public)
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 8. Vidéos & Clips (Public)
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 9. Achats & Transactions
+    match /purchases/{purchaseId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // 10. Demandes d'accès artiste
+    match /artistAccessRequests/{requestId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // 11. Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
+      allow write: if isAdmin();
+    }
+
+    // Test connection doc
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Sécurité par défaut (Refus de tout accès non spécifié)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

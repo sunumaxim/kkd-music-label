@@ -1,9 +1,9 @@
 {
-  "name": "untitled",
+  "name": "kkd-music-label",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",
-    "serveCommand": "npm run dev",
+    "serveCommand": "node serve.js",
     "outputDirectory": "./dist"
   }
 }

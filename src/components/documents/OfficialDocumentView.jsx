@@ -41,6 +41,13 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
   const recipientName = doc.recipient_name || content.artist_name || 'Bénéficiaire Officiel';
   const recipientEmail = doc.recipient_email || content.email || '';
 
+  // Entité émettrice épurée (KKD Music, KKD Label Entertainment, KKD Distribution, KKD Group)
+  const issuerEntity = content.issuer_entity || doc.issuer_entity || 'KKD MUSIC';
+  const hasStudioPartner = !!(content.has_studio_partner && content.studio_name);
+  const studioName = content.studio_name || '';
+  const studioRole = content.studio_role || 'Studio d\'enregistrement & Mixage';
+  const studioLocation = content.studio_location || 'Tambacounda, Sénégal';
+
   // Téléchargement sécurisé et non bloquant
   const handleDownload = async () => {
     setDownloading(true);
@@ -51,8 +58,13 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
         doc_number: docNumber,
         issued_at: immutableDate,
         recipient_name: recipientName,
-        signer_name: doc.signer_name || 'Abdoulaye Sylla',
-        signer_role: doc.signer_role || 'Gestionnaire Principal · Direction des Opérations',
+        signer_name: 'Pour KKD Music',
+        signer_role: 'Maison de Disques & Distribution',
+        issuer_entity: issuerEntity,
+        has_studio_partner: hasStudioPartner,
+        studio_name: studioName,
+        studio_role: studioRole,
+        studio_location: studioLocation,
       });
       toast({
         title: 'Document PDF prêt',
@@ -229,34 +241,34 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             }}
           >
             {/* Logo & Marque */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div
                 style={{
                   background: '#ffffff',
-                  padding: '5px 8px',
-                  borderRadius: '4px',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                 }}
               >
                 <img
                   src={LOGO_URL}
                   alt="KKD Music Logo"
                   crossOrigin="anonymous"
-                  style={{ height: '36px', width: 'auto', display: 'block' }}
+                  style={{ height: '52px', width: 'auto', display: 'block' }}
                 />
               </div>
               <div>
-                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 900, letterSpacing: '0.06em' }}>
-                  KKD MUSIC
+                <div style={{ color: '#ffffff', fontSize: '19px', fontWeight: 900, letterSpacing: '0.06em' }}>
+                  {issuerEntity}
                 </div>
-                <div style={{ color: '#FDE68A', fontSize: '9px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                  Maison de Disques & Distribution Musicale Internationale
+                <div style={{ color: '#FDE68A', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  Maison de Disques & Distribution Musicale
                 </div>
-                <div style={{ color: '#FCA5A5', fontSize: '8.5px', marginTop: '1px' }}>
-                  Direction des Opérations · Dakar & Missira, Sénégal
+                <div style={{ color: '#FEE2E2', fontSize: '9px', marginTop: '2px', fontWeight: 600 }}>
+                  Tambacounda, Sénégal
                 </div>
               </div>
             </div>
@@ -270,7 +282,7 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
                 DATE D'ÉMISSION : <strong style={{ color: '#ffffff' }}>{formattedDate}</strong>
               </div>
               <div style={{ fontSize: '8px', color: '#E2E8F0', marginTop: '2px', opacity: 0.9 }}>
-                Certifié sous scellé numérique kkdmusic.com
+                Acte officiel kkdmusic.com
               </div>
             </div>
           </div>
@@ -307,11 +319,11 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
               {doc.title || typeConfig.label}
             </h1>
             <p style={{ fontSize: '10px', color: '#64748B', marginTop: '3px', fontWeight: 500 }}>
-              Acte officiel certifié et répertorié au registre permanent de distribution KKD Music
+              Convention juridique d'exploitation et de distribution musicale
             </p>
           </div>
 
-          {/* ── ENCADRÉ JURIDIQUE & DROITS D'AUTEUR (Exigé par l'utilisateur) ── */}
+          {/* ── ENCADRÉ JURIDIQUE & DROITS D'AUTEUR ── */}
           <div
             style={{
               background: '#FFF8F8',
@@ -336,7 +348,7 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             <div>
               Le présent acte confère un cadre juridique conforme à la législation sur la propriété littéraire et artistique.
               <strong> L'artiste demeure l'unique titulaire des droits moraux inaliénables</strong> sur ses créations et enregistrements masters.
-              Toute diffusion, commercialisation ou exploitation s'exécute sous la garantie d'authenticité, de non-contrefaçon et de certification KKD Music.
+              Toute diffusion ou exploitation s'exécute sous la garantie d'authenticité et de certification KKD Music.
             </div>
           </div>
 
@@ -358,14 +370,19 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
               PARTIES DÉSIGNÉES & AYANTS-DROIT :
             </div>
             <div style={{ marginTop: '2px' }}>
-              <strong style={{ color: '#8B1515' }}>1. KKD MUSIC</strong>, représentée par sa Direction des Opérations
-              (<strong>Abdoulaye Sylla</strong>, Gestionnaire Principal), intervenant en qualité d'éditeur et distributeur officiel.
+              <strong style={{ color: '#8B1515' }}>1. {issuerEntity}</strong>, intervenant en qualité d'éditeur et distributeur officiel, Tambacounda, Sénégal.
             </div>
             <div style={{ marginTop: '4px' }}>
               <strong style={{ color: '#8B1515' }}>2. BÉNÉFICIAIRE : {recipientName.toUpperCase()}</strong>
               {recipientEmail ? ` (${recipientEmail})` : ''},
               intervenant en qualité de <em>{doc.type === 'contrat_label' ? 'Label Partenaire' : "Artiste Ayant-Droit"}</em>.
             </div>
+            {hasStudioPartner && (
+              <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px dashed #CBD5E1' }}>
+                <strong style={{ color: '#8B1515' }}>3. STUDIO / ENREGISTREUR PARTENAIRE : {studioName.toUpperCase()}</strong>
+                {studioRole ? ` (${studioRole})` : ''} · {studioLocation}, intervenant en qualité de partenaire technique d'enregistrement et de mastering.
+              </div>
+            )}
           </div>
 
           {/* ── ARTICLES & CONTENU CONTRACTUEL ADAPTÉ ── */}
@@ -414,6 +431,16 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
                     Les versements sont opérés par Wave ou virement direct sur demande.
                   </p>
                 </div>
+
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#8B1515' }}>
+                    Article 5 — Droit Applicable & Juridiction Compétente
+                  </div>
+                  <p style={{ marginTop: '2px', textAlign: 'justify', color: '#334155' }}>
+                    Le présent accord est régi par les dispositions législatives sénégalaises relatives à la propriété littéraire et artistique.
+                    En cas de contestation ou litige relatif à l'exécution du contrat, compétence expresse est attribuée aux tribunaux de <strong>Tambacounda, République du Sénégal</strong>.
+                  </p>
+                </div>
               </>
             ) : (
               /* Licence / Certificat d'authenticité */
@@ -438,13 +465,13 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
 
                 <div style={{ fontSize: '10px', color: '#334155', lineHeight: 1.6 }}>
                   La présente licence confère l'autorisation légale d'exploitation et de diffusion commerciale
-                  dans le respect scrupuleux de l'intégrité morale de l'œuvre. Toute modification non autorisée est expressément prohibée.
+                  dans le respect scrupuleux de l'intégrité morale de l'œuvre. En cas de différend, les juridictions compétentes de <strong>Tambacounda, Sénégal</strong> sont seules habilitées.
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── EMPREINTE CRYPTOGRAPHIQUE SCELLÉE SHA-256 ── */}
+          {/* ── EMPREINTE NUMÉRIQUE SCELLÉE SHA-256 ── */}
           <div
             style={{
               background: '#F1F5F9',
@@ -469,22 +496,20 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             <div style={{ color: '#059669', fontWeight: 700 }}>CERTIFIÉ INTÈGRE</div>
           </div>
 
-          {/* ── SIGNATURES OFFICIELLES (AVEC LE CACHET ÉLECTRONIQUE D'ABDOULAYE SYLLA) ── */}
+          {/* ── SIGNATURES OFFICIELLES (ÉPURÉES, SANS SURCHARGE) ── */}
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'stretch',
+              display: 'grid',
+              gridTemplateColumns: hasStudioPartner ? '1fr 1fr 1fr' : '1fr 1fr',
+              gap: '16px',
               marginTop: '22px',
-              gap: '20px',
               position: 'relative',
               zIndex: 1,
             }}
           >
-            {/* Colonne KKD Music (Avec Cachet et Signature Abdoulaye Sylla) */}
+            {/* Colonne KKD Music */}
             <div
               style={{
-                flex: 1,
                 background: '#FFF8F8',
                 border: '1px solid #FCA5A5',
                 borderRadius: '6px',
@@ -497,18 +522,18 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             >
               <div>
                 <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Pour KKD Music (Direction des Opérations)
+                  Pour {issuerEntity}
                 </div>
 
-                {/* Image du Cachet Électronique avec Signature et Nom */}
+                {/* Cachet Électronique */}
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '66px', margin: '4px 0' }}>
                   <img
                     src={SIGNATURE_SEAL_URL}
-                    alt="Cachet Électronique & Signature Officielle Abdoulaye Sylla"
+                    alt="Cachet & Signature Officielle KKD Music"
                     crossOrigin="anonymous"
                     style={{
                       maxHeight: '68px',
-                      maxWidth: '180px',
+                      maxWidth: '170px',
                       objectFit: 'contain',
                       display: 'block',
                       filter: 'contrast(1.05)',
@@ -520,16 +545,16 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
               <div>
                 <div style={{ height: '1px', background: '#D4AF37', margin: '6px auto', width: '85%' }} />
                 <div style={{ fontSize: '11px', fontWeight: 800, color: '#0F172A' }}>
-                  {doc.signer_name || 'Abdoulaye Sylla'}
+                  Direction du Label
                 </div>
-                <div style={{ fontSize: '9px', fontWeight: 700, color: '#8B1515' }}>
-                  {doc.signer_role || 'Gestionnaire Principal · Direction des Opérations'}
+                <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#8B1515' }}>
+                  Maison de Disques & Distribution
                 </div>
                 <div style={{ fontSize: '8px', color: '#64748B' }}>
-                  KKD Music Label Group · Missira, Tambacounda & Dakar
+                  Tambacounda, Sénégal
                 </div>
                 <div style={{ fontSize: '8px', fontStyle: 'italic', color: '#059669', marginTop: '2px', fontWeight: 600 }}>
-                  ✓ Cachet électronique & signature officielle certifiée
+                  ✓ Cachet & signature scellée
                 </div>
               </div>
             </div>
@@ -537,7 +562,6 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             {/* Colonne Bénéficiaire / Cocontractant */}
             <div
               style={{
-                flex: 1,
                 background: '#F8FAFC',
                 border: '1px solid #E2E8F0',
                 borderRadius: '6px',
@@ -550,7 +574,7 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
             >
               <div>
                 <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#8B1515', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Pour le Cocontractant Ayant-Droit
+                  Pour le Bénéficiaire Ayant-Droit
                 </div>
 
                 <div
@@ -567,7 +591,7 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
                 >
                   <span style={{ color: '#0F172A', fontWeight: 600 }}>« Lu, approuvé et certifié conforme »</span>
                   <span style={{ fontSize: '8px', color: '#94A3B8', marginTop: '3px' }}>
-                    Signature électronique validée par authentification
+                    Authentification électronique d'accord
                   </span>
                 </div>
               </div>
@@ -581,10 +605,63 @@ export default function OfficialDocumentView({ doc, onSendSuccess, showActions =
                   {recipientEmail || 'Ayant-droit répertorié'}
                 </div>
                 <div style={{ fontSize: '8px', color: '#94A3B8', marginTop: '2px' }}>
-                  Fait à Dakar, document immuable scellé le {formattedDate}
+                  Fait à Tambacounda, le {formattedDate}
                 </div>
               </div>
             </div>
+
+            {/* Colonne Optionnelle : Studio / Enregistreur Partenaire (affichée SEULEMENT si sélectionnée) */}
+            {hasStudioPartner && (
+              <div
+                style={{
+                  background: '#F8FAFC',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '6px',
+                  padding: '12px 14px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Pour l'Enregistreur / Studio Partenaire
+                  </div>
+
+                  <div
+                    style={{
+                      height: '66px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#475569',
+                      fontSize: '9px',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    <span style={{ color: '#0F172A', fontWeight: 600 }}>« Visa technique & prise de son certifiée »</span>
+                    <span style={{ fontSize: '8px', color: '#059669', marginTop: '3px', fontWeight: 600 }}>
+                      ✓ Studio partenaire validé
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ height: '1px', background: '#CBD5E1', margin: '6px auto', width: '85%' }} />
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#0F172A' }}>
+                    {studioName}
+                  </div>
+                  <div style={{ fontSize: '8.5px', color: '#64748B' }}>
+                    {studioRole} · {studioLocation}
+                  </div>
+                  <div style={{ fontSize: '8px', color: '#94A3B8', marginTop: '2px' }}>
+                    Visa certifié le {formattedDate}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── PIED DE PAGE INFALSIFIABLE AVEC DATE IMMUABLE ── */}

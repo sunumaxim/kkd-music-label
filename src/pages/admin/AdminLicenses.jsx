@@ -94,13 +94,19 @@ export default function AdminLicenses() {
   // Télécharger le document en PDF sans blocage
   const handleDownloadDoc = async (doc) => {
     try {
+      const content = doc.content_data || {};
       const res = await downloadContractPdf(null, `${doc.doc_number}_${doc.title}`, {
         title: doc.title,
         doc_number: doc.doc_number,
         issued_at: doc.issued_at,
         recipient_name: doc.recipient_name,
-        signer_name: doc.signer_name || 'Abdoulaye Sylla',
-        signer_role: doc.signer_role || 'Gestionnaire Principal · Direction des Opérations',
+        signer_name: 'Direction du Label',
+        signer_role: 'Maison de Disques & Distribution',
+        issuer_entity: content.issuer_entity || doc.issuer_entity || 'KKD MUSIC',
+        has_studio_partner: !!content.has_studio_partner,
+        studio_name: content.studio_name || '',
+        studio_role: content.studio_role || '',
+        studio_location: content.studio_location || 'Tambacounda, Sénégal',
       });
       toast({
         title: 'PDF téléchargé',
@@ -442,12 +448,19 @@ export default function AdminLicenses() {
 function NewDocumentForm({ artists, onSuccess }) {
   const { toast } = useToast();
   const [docType, setDocType] = useState('contrat_artiste');
+  const [issuerEntity, setIssuerEntity] = useState('KKD MUSIC');
   const [artistName, setArtistName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [workTitle, setWorkTitle] = useState('');
   const [contractDurationMonths, setContractDurationMonths] = useState('24');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Signature partenaire / studio optionnelle
+  const [hasStudioPartner, setHasStudioPartner] = useState(false);
+  const [studioName, setStudioName] = useState('');
+  const [studioRole, setStudioRole] = useState("Studio d'enregistrement & Mixage");
+  const [studioLocation, setStudioLocation] = useState('Tambacounda, Sénégal');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -469,9 +482,10 @@ function NewDocumentForm({ artists, onSuccess }) {
         recipient_email: recipientEmail,
         issued_at: now.toISOString(), // Scellé immuable
         status: 'actif',
-        signer_name: 'Abdoulaye Sylla',
-        signer_role: 'Gestionnaire Principal · Direction des Opérations',
+        signer_name: 'Direction du Label',
+        signer_role: 'Maison de Disques & Distribution',
         content_data: {
+          issuer_entity: issuerEntity,
           artist_name: artistName,
           email: recipientEmail,
           work_title: workTitle,
@@ -479,6 +493,10 @@ function NewDocumentForm({ artists, onSuccess }) {
           contract_end: endDate.toISOString().split('T')[0],
           notes: notes || 'Acte officiel de distribution certifié.',
           royalty_split: '90% Artiste / 10% KKD Music',
+          has_studio_partner: hasStudioPartner && !!studioName.trim(),
+          studio_name: studioName.trim(),
+          studio_role: studioRole.trim(),
+          studio_location: studioLocation.trim() || 'Tambacounda, Sénégal',
         }
       });
 
@@ -493,27 +511,44 @@ function NewDocumentForm({ artists, onSuccess }) {
   return (
     <div className="bg-card border border-border/60 rounded-2xl p-6 max-w-2xl mx-auto shadow-xs">
       <div className="mb-5 pb-3 border-b border-border/40">
-        <h2 className="font-heading font-bold text-lg">Générer & Archiver un Acte Officiel</h2>
+        <h2 className="font-heading font-bold text-lg">Générer & Archiver un Acte Juridique</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Le document sera doté de son numéro d'inventaire, de sa date immuable et du cachet officiel d'Abdoulaye Sylla.
+          Le document sera généré avec son numéro de référence, sa date immuable et le cachet officiel scellé (Tambacounda, Sénégal).
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label className="text-xs">Type de document juridique</Label>
-          <Select value={docType} onValueChange={setDocType}>
-            <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="contrat_artiste">Contrat d'Artiste & Distribution Numérique</SelectItem>
-              <SelectItem value="contrat_label">Contrat de Partenariat Label</SelectItem>
-              <SelectItem value="licence_distribution">Licence de Commercialisation Master</SelectItem>
-              <SelectItem value="certificat_authenticite">Certificat d'Authenticité & Empreinte Numérique</SelectItem>
-              <SelectItem value="attestation_droits">Attestation de Déclaration de Droits d'Auteur</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Type de document juridique</Label>
+            <Select value={docType} onValueChange={setDocType}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="contrat_artiste">Contrat d'Artiste & Distribution Numérique</SelectItem>
+                <SelectItem value="contrat_label">Contrat de Partenariat Label</SelectItem>
+                <SelectItem value="licence_distribution">Licence de Commercialisation Master</SelectItem>
+                <SelectItem value="certificat_authenticite">Certificat d'Authenticité & Empreinte Numérique</SelectItem>
+                <SelectItem value="attestation_droits">Attestation de Déclaration de Droits d'Auteur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Entité émettrice officielle</Label>
+            <Select value={issuerEntity} onValueChange={setIssuerEntity}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="KKD MUSIC">KKD MUSIC</SelectItem>
+                <SelectItem value="KKD LABEL ENTERTAINMENT">KKD LABEL ENTERTAINMENT</SelectItem>
+                <SelectItem value="KKD DISTRIBUTION">KKD DISTRIBUTION</SelectItem>
+                <SelectItem value="KKD GROUP">KKD GROUP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -567,13 +602,58 @@ function NewDocumentForm({ artists, onSuccess }) {
           </div>
 
           <div>
-            <Label className="text-xs">Signataire Principal KKD Music</Label>
+            <Label className="text-xs">Signataire du Label</Label>
             <Input
-              value="Abdoulaye Sylla · Gestionnaire Principal"
+              value="Direction du Label · Tambacounda, Sénégal"
               disabled
               className="mt-1 bg-muted/50 cursor-not-allowed font-medium text-xs"
             />
           </div>
+        </div>
+
+        {/* Section optionnelle : Studio / Enregistreur Partenaire */}
+        <div className="p-3 bg-muted/30 border border-border/50 rounded-xl space-y-3">
+          <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasStudioPartner}
+              onChange={(e) => setHasStudioPartner(e.target.checked)}
+              className="rounded text-[#8B1515] focus:ring-[#8B1515]"
+            />
+            <span>Ajouter une signature Studio / Enregistreur Partenaire (Optionnel)</span>
+          </label>
+
+          {hasStudioPartner && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <div>
+                <Label className="text-[11px]">Nom du Studio / Enregistreur</Label>
+                <Input
+                  value={studioName}
+                  onChange={(e) => setStudioName(e.target.value)}
+                  placeholder="Ex: Studio Sahel Sound"
+                  className="mt-1 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px]">Rôle technique</Label>
+                <Input
+                  value={studioRole}
+                  onChange={(e) => setStudioRole(e.target.value)}
+                  placeholder="Studio Enregistrement & Mix"
+                  className="mt-1 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px]">Localisation</Label>
+                <Input
+                  value={studioLocation}
+                  onChange={(e) => setStudioLocation(e.target.value)}
+                  placeholder="Tambacounda, Sénégal"
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

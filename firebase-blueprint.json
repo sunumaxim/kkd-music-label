@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Utilisateur et rôle dans KKD Music",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "full_name": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "partner", "user"] },
+        "account_type": { "type": "string" },
+        "artist_name": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "Release": {
+      "title": "Release",
+      "description": "Sortie musicale officielle KKD Music",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "artist_name": { "type": "string" },
+        "artist_id": { "type": "string" },
+        "cover_url": { "type": "string" },
+        "release_type": { "type": "string", "enum": ["single", "album", "ep", "projet_special"] },
+        "release_date": { "type": "string" },
+        "description": { "type": "string" },
+        "spotify_url": { "type": "string" },
+        "youtube_url": { "type": "string" },
+        "apple_music_url": { "type": "string" },
+        "audio_file_url": { "type": "string" },
+        "is_featured": { "type": "boolean" },
+        "is_for_sale": { "type": "boolean" },
+        "price": { "type": "number" },
+        "plays_count": { "type": "number" }
+      },
+      "required": ["title", "artist_name"]
+    },
+    "Artist": {
+      "title": "Artist",
+      "description": "Fiche artiste du catalogue KKD Music",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "bio": { "type": "string" },
+        "photo_url": { "type": "string" },
+        "genre": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "monthly_listeners": { "type": "number" }
+      },
+      "required": ["name"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Événement scénique et billetterie",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "event_date": { "type": "string" },
+        "location": { "type": "string" },
+        "city": { "type": "string" },
+        "description": { "type": "string" },
+        "ticket_price": { "type": "number" },
+        "image_url": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["title", "event_date"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "Billet électronique officiel horodaté",
+      "type": "object",
+      "properties": {
+        "ticket_number": { "type": "string" },
+        "event_id": { "type": "string" },
+        "event_title": { "type": "string" },
+        "buyer_name": { "type": "string" },
+        "buyer_email": { "type": "string" },
+        "buyer_phone": { "type": "string" },
+        "qr_code_data": { "type": "string" },
+        "status": { "type": "string", "enum": ["valide", "utilise", "annule"] },
+        "price": { "type": "number" }
+      },
+      "required": ["ticket_number", "event_id", "buyer_email", "status"]
+    },
+    "MusicLicense": {
+      "title": "MusicLicense",
+      "description": "Contrat et licence officielle de distribution KKD Music",
+      "type": "object",
+      "properties": {
+        "license_number": { "type": "string" },
+        "license_type": { "type": "string" },
+        "issuer_entity": { "type": "string" },
+        "grantee_name": { "type": "string" },
+        "grantee_email": { "type": "string" },
+        "track_title": { "type": "string" },
+        "artist_name": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "pending", "revoked"] },
+        "content_data": { "type": "string" }
+      },
+      "required": ["license_number", "grantee_name", "status"]
+    },
+    "News": {
+      "title": "News",
+      "description": "Actualités et communiqués officiels",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "image_url": { "type": "string" },
+        "is_published": { "type": "boolean" },
+        "publish_date": { "type": "string" }
+      },
+      "required": ["title"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Clips et vidéos audiovisuelles",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "artist_name": { "type": "string" },
+        "youtube_url": { "type": "string" },
+        "thumbnail_url": { "type": "string" },
+        "publish_date": { "type": "string" }
+      },
+      "required": ["title"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Achat direct ou téléchargement sécurisé",
+      "type": "object",
+      "properties": {
+        "user_email": { "type": "string" },
+        "item_type": { "type": "string" },
+        "item_id": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["user_email", "item_id"]
+    },
+    "ArtistAccessRequest": {
+      "title": "ArtistAccessRequest",
+      "description": "Demande de statut artiste / label partenaire",
+      "type": "object",
+      "properties": {
+        "artist_name": { "type": "string" },
+        "user_email": { "type": "string" },
+        "phone": { "type": "string" },
+        "request_type": { "type": "string" },
+        "status": { "type": "string", "enum": ["en_attente", "approuve", "rejete"] }
+      },
+      "required": ["artist_name", "user_email", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Notification utilisateur",
+      "type": "object",
+      "properties": {
+        "user_email": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["user_email", "title", "message"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Profils des utilisateurs et autorisations d'accès"
+    },
+    "/releases/{releaseId}": {
+      "schema": "Release",
+      "description": "Catalogue de sorties musicales officielles"
+    },
+    "/artists/{artistId}": {
+      "schema": "Artist",
+      "description": "Fiches artistes officiels du label"
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Événements, concerts et spectacles en direct"
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Billets d'accès électroniques avec QR code sécurisé"
+    },
+    "/musicLicenses/{licenseId}": {
+      "schema": "MusicLicense",
+      "description": "Licences et contrats légaux d'exploitation"
+    },
+    "/news/{newsId}": {
+      "schema": "News",
+      "description": "Communiqués de presse et actualités"
+    },
+    "/videos/{videoId}": {
+      "schema": "Video",
+      "description": "Productions audiovisuelles et clips musicaux"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "Purchase",
+      "description": "Transactions et achats de titres ou billets"
+    },
+    "/artistAccessRequests/{requestId}": {
+      "schema": "ArtistAccessRequest",
+      "description": "Candidatures d'artistes et labels affiliés"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Alertes et notifications système"
+    }
+  }
+}
