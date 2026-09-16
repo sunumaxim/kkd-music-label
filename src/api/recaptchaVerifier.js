@@ -1,6 +1,6 @@
 // Vérification côté Backend de Google reCAPTCHA Enterprise
 // Valide le token généré par le client auprès de l'API Google Cloud reCAPTCHA Enterprise
-import firebaseConfig from '../../firebase-applet-config.json' with { type: 'json' };
+import firebaseConfig from '../../firebase-applet-config.json';
 
 const SITE_KEY = firebaseConfig.recaptchaSiteKey || '6LeWJL8tAAAAAG9HBCl-TxymsCKY0SZ3MNjOXECm';
 const DEFAULT_PROJECT_ID = process.env.RECAPTCHA_ENTERPRISE_PROJECT_ID || 'kkdmusic-774df';
