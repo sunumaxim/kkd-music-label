@@ -3,6 +3,8 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { 
   getAuth, 
+  setPersistence,
+  browserLocalPersistence,
   GoogleAuthProvider, 
   signInWithPopup, 
   signInWithEmailAndPassword,
@@ -50,6 +52,14 @@ if (typeof window !== 'undefined') {
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+// Configuration explicite de la persistance de session dans le navigateur
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.debug('Firebase persistence configuration notice:', err?.message);
+  });
+}
 
 // Opérations d'authentification renforcées
 export const firebaseAuthService = {
@@ -193,22 +203,43 @@ export const firebaseAuthService = {
           if (!uDoc) {
             uDoc = await firebaseAuthService.syncFirebaseUserToFirestore(fbUser);
           }
-          callback(uDoc || {
+          const email = (fbUser.email || uDoc?.email || '').toLowerCase().trim();
+          const isSuperAdminEmail = email === 'storesmaxim@gmail.com' || email === 'admin@kkdmusic.com';
+          const verifiedRole = (isSuperAdminEmail || uDoc?.role === 'admin') ? 'admin' : (uDoc?.role || 'user');
+          const verifiedAccountType = uDoc?.account_type || (verifiedRole === 'admin' ? 'admin' : 'listener');
+
+          const verifiedUser = {
             id: fbUser.uid,
             uid: fbUser.uid,
             email: fbUser.email,
-            full_name: fbUser.displayName || fbUser.email?.split('@')[0],
-            photo_url: fbUser.photoURL || null,
-            role: fbUser.email?.toLowerCase() === 'storesmaxim@gmail.com' ? 'admin' : 'user'
-          });
-        } catch {
+            full_name: uDoc?.full_name || fbUser.displayName || fbUser.email?.split('@')[0],
+            photo_url: uDoc?.photo_url || fbUser.photoURL || null,
+            email_verified: fbUser.emailVerified || false,
+            phone: uDoc?.phone || '',
+            city: uDoc?.city || '',
+            country: uDoc?.country || 'Sénégal',
+            bio: uDoc?.bio || '',
+            ...uDoc,
+            // Enforce verified identifiers & role
+            id: fbUser.uid,
+            uid: fbUser.uid,
+            email: fbUser.email,
+            role: verifiedRole,
+            account_type: verifiedAccountType,
+          };
+          callback(verifiedUser);
+        } catch (err) {
+          console.warn('[Firebase subscribeAuthState error]:', err?.message || err);
+          const email = (fbUser.email || '').toLowerCase().trim();
+          const isSuperAdminEmail = email === 'storesmaxim@gmail.com' || email === 'admin@kkdmusic.com';
           callback({
             id: fbUser.uid,
             uid: fbUser.uid,
             email: fbUser.email,
             full_name: fbUser.displayName || fbUser.email?.split('@')[0],
             photo_url: fbUser.photoURL || null,
-            role: fbUser.email?.toLowerCase() === 'storesmaxim@gmail.com' ? 'admin' : 'user'
+            role: isSuperAdminEmail ? 'admin' : 'user',
+            account_type: isSuperAdminEmail ? 'admin' : 'listener',
           });
         }
       } else {

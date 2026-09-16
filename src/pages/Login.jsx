@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
@@ -16,13 +16,22 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const rawRedirect = searchParams.get("redirect");
+  // Assurer que la redirection est interne et sécurisée
+  const targetRedirect = (rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//"))
+    ? rawRedirect
+    : "/";
+  const isAdminTarget = targetRedirect.startsWith("/admin");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      window.location.href = targetRedirect;
     } catch (err) {
       setError(err?.message || "Email ou mot de passe incorrect.");
     } finally {
@@ -35,7 +44,7 @@ export default function Login() {
     setGoogleLoading(true);
     try {
       await base44.auth.loginWithProvider("google");
-      window.location.href = "/";
+      window.location.href = targetRedirect;
     } catch (err) {
       setError("Échec de la connexion Google Firebase : " + (err?.message || "Erreur de popup"));
     } finally {
@@ -82,6 +91,16 @@ export default function Login() {
             <h1 className="font-display text-2xl font-extrabold mb-1">Connexion Sécurisée</h1>
             <p className="text-muted-foreground text-sm">Accédez aux espaces Label, Artistes ou Fan</p>
           </div>
+
+          {isAdminTarget && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold block">Espace Administrateur Requis</span>
+                Veuillez vous authentifier avec vos identifiants administrateur autorisés pour accéder au tableau de bord.
+              </div>
+            </div>
+          )}
 
           {/* Bouton Google Firebase Auth */}
           <Button

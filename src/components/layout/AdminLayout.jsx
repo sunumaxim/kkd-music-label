@@ -63,8 +63,13 @@ const bottomNavItems = [
 
 export default function AdminLayout() {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Protection défensive supplémentaire
+  if (!isAdmin && user?.role !== 'admin') {
+    return null;
+  }
 
   const isActive = (path) => location.pathname === path;
 

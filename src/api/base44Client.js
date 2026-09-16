@@ -243,7 +243,7 @@ if (base44?.auth) {
     try {
       if (originalLogout) await originalLogout();
     } catch {}
-    localDb.setCurrentUser(null);
+    localDb.clearAuthSession();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('kkd:user_updated', { detail: null }));
     }
