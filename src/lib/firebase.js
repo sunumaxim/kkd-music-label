@@ -1,5 +1,6 @@
 // KKD Music — Client Firebase Firestore & Authentication
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -31,7 +32,19 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialisation unique de Firebase
-const app = initializeApp(firebaseConfig);
+export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// Initialisation conditionnelle d'Analytics pour la production et le navigateur
+export let analytics = null;
+if (typeof window !== 'undefined') {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  }).catch((err) => {
+    console.debug('Firebase Analytics is not supported in this environment:', err?.message);
+  });
+}
 
 // Initialisation de Firestore avec l'ID de base de données dédié
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
@@ -103,19 +116,27 @@ export const firebaseAuthService = {
   // Mise à jour du profil utilisateur
   async updateUserProfile(updates) {
     const currentUser = auth.currentUser;
-    const uid = currentUser?.uid || updates.id;
+    const uid = currentUser?.uid || updates.id || updates.uid;
     if (!uid) throw new Error('Utilisateur introuvable');
 
-    if (currentUser && updates.full_name) {
+    if (currentUser && (updates.full_name || updates.photo_url)) {
       try {
-        await updateProfile(currentUser, { displayName: updates.full_name });
+        const authUpdates = {};
+        if (updates.full_name) authUpdates.displayName = updates.full_name;
+        if (updates.photo_url) authUpdates.photoURL = updates.photo_url;
+        await updateProfile(currentUser, authUpdates);
       } catch (e) {
-        console.warn('Update displayName warning:', e?.message);
+        console.warn('Update Firebase Auth profile warning:', e?.message);
       }
     }
 
     // Persistance dans Firestore collection 'users'
-    const cleanData = { ...updates, updated_at: new Date().toISOString() };
+    const cleanData = { 
+      ...updates, 
+      id: uid,
+      uid,
+      updated_at: new Date().toISOString() 
+    };
     await firestoreService.setDocument('users', uid, cleanData);
     return cleanData;
   },
@@ -129,9 +150,13 @@ export const firebaseAuthService = {
     let existing = await firestoreService.getDocument('users', uid);
     if (!existing) {
       // Vérifier si un document existe par email
-      const usersByEmail = await firestoreService.getCollection('users', [where('email', '==', email)]);
-      if (usersByEmail.length > 0) {
-        existing = usersByEmail[0];
+      try {
+        const usersByEmail = await firestoreService.getCollection('users', [where('email', '==', email)]);
+        if (usersByEmail.length > 0) {
+          existing = usersByEmail[0];
+        }
+      } catch (e) {
+        console.warn('Check user by email notice:', e?.message);
       }
     }
 
@@ -140,18 +165,22 @@ export const firebaseAuthService = {
       id: uid,
       uid,
       email,
-      full_name: fbUser.displayName || existing?.full_name || extraData.full_name || email.split('@')[0],
+      full_name: fbUser.displayName || extraData.full_name || existing?.full_name || email.split('@')[0],
       role: isAdmin ? 'admin' : (existing?.role || 'user'),
       account_type: existing?.account_type || (isAdmin ? 'admin' : 'listener'),
       email_verified: fbUser.emailVerified || false,
-      photo_url: fbUser.photoURL || existing?.photo_url || null,
+      photo_url: fbUser.photoURL || extraData.photo_url || existing?.photo_url || null,
       last_login_at: new Date().toISOString(),
       created_at: existing?.created_at || new Date().toISOString(),
       ...existing,
       ...extraData,
     };
 
-    await firestoreService.setDocument('users', uid, userData);
+    try {
+      await firestoreService.setDocument('users', uid, userData);
+    } catch (e) {
+      console.warn('[Firestore sync user notice]:', e?.message);
+    }
     return userData;
   },
 
@@ -160,19 +189,26 @@ export const firebaseAuthService = {
     return onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         try {
-          const uDoc = await firestoreService.getDocument('users', fbUser.uid);
+          let uDoc = await firestoreService.getDocument('users', fbUser.uid);
+          if (!uDoc) {
+            uDoc = await firebaseAuthService.syncFirebaseUserToFirestore(fbUser);
+          }
           callback(uDoc || {
             id: fbUser.uid,
+            uid: fbUser.uid,
             email: fbUser.email,
             full_name: fbUser.displayName || fbUser.email?.split('@')[0],
-            role: fbUser.email === 'storesmaxim@gmail.com' ? 'admin' : 'user'
+            photo_url: fbUser.photoURL || null,
+            role: fbUser.email?.toLowerCase() === 'storesmaxim@gmail.com' ? 'admin' : 'user'
           });
         } catch {
           callback({
             id: fbUser.uid,
+            uid: fbUser.uid,
             email: fbUser.email,
             full_name: fbUser.displayName || fbUser.email?.split('@')[0],
-            role: fbUser.email === 'storesmaxim@gmail.com' ? 'admin' : 'user'
+            photo_url: fbUser.photoURL || null,
+            role: fbUser.email?.toLowerCase() === 'storesmaxim@gmail.com' ? 'admin' : 'user'
           });
         }
       } else {

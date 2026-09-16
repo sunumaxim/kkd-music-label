@@ -51,42 +51,50 @@ export const base44 = createClient({
 
 // ── Auth: sécurisation résiliente contre les erreurs réseau ──
 if (base44?.auth) {
-  const originalMe = base44.auth.me?.bind(base44.auth);
   base44.auth.me = async () => {
     try {
       if (fbAuth?.currentUser) {
         const uid = fbAuth.currentUser.uid;
-        const firestoreUser = await firestoreService.getDocument('users', uid);
+        let firestoreUser = await firestoreService.getDocument('users', uid);
+        if (!firestoreUser) {
+          firestoreUser = await firebaseAuthService.syncFirebaseUserToFirestore(fbAuth.currentUser);
+        }
         if (firestoreUser) {
           localDb.setCurrentUser(firestoreUser);
           return firestoreUser;
         }
+        const fallbackUser = {
+          id: uid,
+          uid,
+          email: fbAuth.currentUser.email,
+          full_name: fbAuth.currentUser.displayName || fbAuth.currentUser.email?.split('@')[0],
+          photo_url: fbAuth.currentUser.photoURL || null,
+          role: fbAuth.currentUser.email?.toLowerCase() === 'storesmaxim@gmail.com' ? 'admin' : 'user',
+        };
+        localDb.setCurrentUser(fallbackUser);
+        return fallbackUser;
       }
-      if (originalMe) {
-        const u = await originalMe();
-        if (u) {
-          localDb.setCurrentUser(u);
-          return u;
-        }
+      
+      // Si aucun utilisateur Firebase connecté, vérifier si une session locale existe
+      const stored = localDb.getCurrentUser();
+      if (stored && stored.email) {
+        return stored;
       }
-      return localDb.getCurrentUser();
+      return null;
     } catch (err) {
-      console.warn('[Base44 Auth.me fallback to localDb]:', err?.message || err);
-      return localDb.getCurrentUser();
+      console.warn('[Base44 Auth.me error]:', err?.message || err);
+      const stored = localDb.getCurrentUser();
+      return (stored && stored.email) ? stored : null;
     }
   };
 
-  const originalIsAuth = base44.auth.isAuthenticated?.bind(base44.auth);
   base44.auth.isAuthenticated = async () => {
     try {
       if (fbAuth?.currentUser) return true;
-      if (originalIsAuth) {
-        const auth = await originalIsAuth();
-        if (auth) return true;
-      }
-      return Boolean(localDb.getCurrentUser());
+      const user = localDb.getCurrentUser();
+      return Boolean(user && user.email);
     } catch {
-      return Boolean(localDb.getCurrentUser());
+      return false;
     }
   };
 

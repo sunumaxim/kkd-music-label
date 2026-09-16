@@ -10,6 +10,12 @@
         "role": { "type": "string", "enum": ["admin", "partner", "user"] },
         "account_type": { "type": "string" },
         "artist_name": { "type": "string" },
+        "photo_url": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "country": { "type": "string" },
+        "bio": { "type": "string" },
+        "updated_at": { "type": "string" },
         "created_at": { "type": "string" }
       },
       "required": ["email", "role"]

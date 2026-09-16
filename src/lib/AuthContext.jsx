@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { localDb } from '@/api/localStore';
+import { firebaseAuthService } from '@/lib/firebase';
 
 const AuthContext = createContext();
 
@@ -14,16 +15,41 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
   useEffect(() => {
-    // Initialisation au montage : active l'indicateur de chargement uniquement ici
-    checkUserAuth(true);
+    // Écoute de l'état d'authentification Firebase en temps réel
+    const unsubscribeFirebase = firebaseAuthService.subscribeAuthState(async (fbUser) => {
+      if (fbUser && fbUser.email) {
+        setUser(fbUser);
+        setIsAuthenticated(true);
+        localDb.setCurrentUser(fbUser);
+      } else {
+        const localUser = localDb.getCurrentUser();
+        if (localUser && localUser.email) {
+          setUser(localUser);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+    });
 
     // Écoute uniquement les mises à jour spécifiques du compte utilisateur
-    const handleUserUpdate = () => {
-      checkUserAuth(false);
+    const handleUserUpdate = (e) => {
+      const updated = e?.detail !== undefined ? e.detail : localDb.getCurrentUser();
+      if (updated && updated.email) {
+        setUser(updated);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
     };
     window.addEventListener('kkd:user_updated', handleUserUpdate);
 
     return () => {
+      if (typeof unsubscribeFirebase === 'function') unsubscribeFirebase();
       window.removeEventListener('kkd:user_updated', handleUserUpdate);
     };
   }, []);
@@ -34,23 +60,17 @@ export const AuthProvider = ({ children }) => {
         setIsLoadingAuth(true);
       }
       const currentUser = await base44.auth.me();
-      if (currentUser) {
+      if (currentUser && currentUser.email) {
         setUser(currentUser);
         setIsAuthenticated(true);
       } else {
-        const localUser = localDb.getCurrentUser();
-        if (localUser) {
-          setUser(localUser);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.warn('User auth check fallback:', error?.message || error);
+      console.warn('User auth check error:', error?.message || error);
       const localUser = localDb.getCurrentUser();
-      if (localUser) {
+      if (localUser && localUser.email) {
         setUser(localUser);
         setIsAuthenticated(true);
       } else {
@@ -65,7 +85,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = (shouldRedirect = true) => {
+  const logout = async (shouldRedirect = true) => {
+    try {
+      await base44.auth.logout();
+    } catch (e) {
+      console.warn('Logout error:', e);
+    }
     localDb.setCurrentUser(null);
     setUser(null);
     setIsAuthenticated(false);

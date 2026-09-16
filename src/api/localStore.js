@@ -1,22 +1,9 @@
 // KKD Music — Magasin de données local résilient (Local Storage & Cache)
 // Assure la continuité de service en cas de panne réseau ou d'indisponibilité du backend Base44/Firebase
 
+// Clés de stockage local
 const USER_STORAGE_KEY = 'kkd_current_user_v1';
 const DB_STORAGE_KEY = 'kkd_local_db_v1';
-
-// Utilisateur par défaut de secours si aucun utilisateur n'est connecté
-const DEFAULT_FALLBACK_USER = {
-  id: 'usr_kkd_admin_default',
-  email: 'storesmaxim@gmail.com',
-  full_name: 'SunuMaxim KKD Music',
-  role: 'admin',
-  account_type: 'label_admin',
-  artist_name: 'KKD Music Label',
-  verified: true,
-  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  bio: 'Administrateur principal du label panafricain KKD Music.',
-  created_at: new Date().toISOString(),
-};
 
 // Données d'exemple pré-remplies pour garantir un affichage immédiat même en cas d'erreur réseau Base44
 const INITIAL_RELEASES = [
@@ -145,16 +132,18 @@ class LocalDatabase {
 
   getCurrentUser() {
     try {
-      if (typeof window === 'undefined') return DEFAULT_FALLBACK_USER;
+      if (typeof window === 'undefined') return null;
       const raw = localStorage.getItem(USER_STORAGE_KEY);
-      if (!raw) {
-        // Enregistrer l'utilisateur admin par défaut pour que l'app soit directement accessible
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(DEFAULT_FALLBACK_USER));
-        return DEFAULT_FALLBACK_USER;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Nettoyage de sécurité : si un faux admin par défaut a été stocké antérieurement
+      if (parsed?.id === 'usr_kkd_admin_default') {
+        localStorage.removeItem(USER_STORAGE_KEY);
+        return null;
       }
-      return JSON.parse(raw);
+      return parsed && parsed.email ? parsed : null;
     } catch {
-      return DEFAULT_FALLBACK_USER;
+      return null;
     }
   }
 

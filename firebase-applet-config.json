@@ -1,12 +1,13 @@
 {
   "projectId": "gen-lang-client-0733536616",
-  "appId": "1:1009572397270:web:1c46681d9868b5fb59c977",
+  "appId": "1:1009572397270:web:1894863095ab6ea259c977",
   "apiKey": "AIzaSyDiKVyT6e2Oyxj4kCjo-1kk1MCw8Q8q-bE",
   "authDomain": "gen-lang-client-0733536616.firebaseapp.com",
+  "databaseURL": "https://gen-lang-client-0733536616-default-rtdb.europe-west1.firebasedatabase.app",
   "firestoreDatabaseId": "ai-studio-kkdmusiclabel-72f4ee1e-8b85-47c9-9e50-772f14f67cb0",
   "storageBucket": "gen-lang-client-0733536616.firebasestorage.app",
   "messagingSenderId": "1009572397270",
-  "measurementId": "",
+  "measurementId": "G-0G98FPWFCY",
   "oAuthClientId": "1009572397270-d8t1a9pb1qlnj147nj00b33v3jlavc05.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

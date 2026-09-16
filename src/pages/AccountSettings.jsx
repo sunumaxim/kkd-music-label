@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import PageMeta from '@/components/shared/PageMeta';
 import {
-  User, Lock,
-  RefreshCw, LogOut, ArrowRight, Music,
-  Mail, Phone, MapPin
+  User, Lock, RefreshCw, LogOut, ArrowRight, Music,
+  Mail, Phone, MapPin, Camera, Upload, CheckCircle2, ShieldCheck, Trash2
 } from 'lucide-react';
 
 const AVATAR_OPTIONS = [
@@ -24,6 +25,8 @@ const AVATAR_OPTIONS = [
 export default function AccountSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { logout } = useAuth();
+  const fileInputRef = useRef(null);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['me'],
@@ -35,8 +38,11 @@ export default function AccountSettings() {
     phone: '',
     city: '',
     country: 'Sénégal',
+    bio: '',
     photo_url: '',
   });
+
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     newPassword: '',
@@ -51,6 +57,7 @@ export default function AccountSettings() {
         phone: user.phone || '',
         city: user.city || '',
         country: user.country || 'Sénégal',
+        bio: user.bio || '',
         photo_url: user.photo_url || '',
       });
     }
@@ -60,23 +67,81 @@ export default function AccountSettings() {
     mutationFn: async (updatedFields) => {
       return await base44.auth.updateMe(updatedFields);
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
       queryClient.invalidateQueries({ queryKey: ['navbar-user'] });
       queryClient.invalidateQueries({ queryKey: ['sidebar-user'] });
       toast({
-        title: 'Profil enregistré',
-        description: 'Vos informations ont été mises à jour avec succès.',
+        title: 'Profil synchronisé',
+        description: 'Vos modifications ont été enregistrées avec succès dans la base de données.',
       });
     },
     onError: (err) => {
       toast({
-        title: 'Erreur',
-        description: err?.message || 'Impossible de sauvegarder votre profil.',
+        title: 'Erreur d’enregistrement',
+        description: err?.message || 'Impossible de sauvegarder votre profil dans la base de données.',
         variant: 'destructive',
       });
     },
   });
+
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Format invalide',
+        description: 'Veuillez sélectionner un fichier image (JPG, PNG, WebP).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPhotoUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxDim = 400;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          }
+        } else {
+          if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setProfileData((p) => ({ ...p, photo_url: dataUrl }));
+        setPhotoUploading(false);
+        toast({
+          title: 'Photo prête',
+          description: 'Cliquez sur "Enregistrer mon profil" pour sauvegarder la photo dans votre compte.',
+        });
+      };
+      img.src = event.target.result;
+    };
+    reader.onerror = () => {
+      setPhotoUploading(false);
+      toast({
+        title: 'Erreur',
+        description: "Impossible de lire le fichier.",
+        variant: 'destructive',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleProfileSubmit = (e) => {
     e.preventDefault();
@@ -108,12 +173,12 @@ export default function AccountSettings() {
       setPasswordData({ newPassword: '', confirmPassword: '' });
       toast({
         title: 'Mot de passe mis à jour',
-        description: 'Votre nouveau mot de passe est désormais actif.',
+        description: 'Votre nouveau mot de passe a été enregistré avec succès.',
       });
     } catch (err) {
       toast({
         title: 'Erreur',
-        description: err?.message || 'Impossible de modifier le mot de passe pour le moment.',
+        description: err?.message || 'Impossible de modifier le mot de passe.',
         variant: 'destructive',
       });
     } finally {
@@ -132,7 +197,40 @@ export default function AccountSettings() {
     );
   }
 
+  // Écran invité si non connecté
+  if (!user || !user.email) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
+        <PageMeta title="Connexion requise — KKD Music" description="Accédez à votre compte" />
+        <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+          <User size={36} />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold font-display text-foreground">Vous n'êtes pas connecté</h1>
+          <p className="text-sm text-muted-foreground">
+            Connectez-vous ou créez un compte pour gérer votre profil, vos billets ou vos publications.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center h-11 px-6 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all shadow-sm"
+          >
+            Se connecter
+          </Link>
+          <Link
+            to="/register"
+            className="inline-flex items-center justify-center h-11 px-6 rounded-xl border border-border bg-secondary hover:bg-secondary/80 font-bold transition-all"
+          >
+            Créer un compte
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const initial = (user?.full_name?.[0] || user?.email?.[0] || 'U').toUpperCase();
+  const isSuperAdmin = user?.email?.toLowerCase() === 'storesmaxim@gmail.com' || user?.role === 'admin';
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 space-y-8">
@@ -141,10 +239,10 @@ export default function AccountSettings() {
         description="Gérez votre profil, vos informations personnelles et votre sécurité sur KKD Music."
       />
 
-      {/* ── En-tête simple et chaleureux ── */}
+      {/* ── En-tête du profil avec statut base de données ── */}
       <div className="bg-card border border-border/80 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 text-center sm:text-left">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-center gap-5">
+          <div className="relative group">
             {profileData.photo_url ? (
               <img
                 src={profileData.photo_url}
@@ -156,18 +254,36 @@ export default function AccountSettings() {
                 {initial}
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+              title="Changer la photo"
+            >
+              <Camera size={20} />
+            </button>
           </div>
 
           <div>
-            <h1 className="text-2xl font-display font-extrabold text-foreground">
-              {user?.full_name || 'Mon Compte'}
-            </h1>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h1 className="text-2xl font-display font-extrabold text-foreground">
+                {user?.full_name || 'Mon Compte'}
+              </h1>
+              {isSuperAdmin && (
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1">
+                  <ShieldCheck size={12} /> Super Administrateur
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
               <Mail size={13} /> {user?.email}
             </p>
             <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-secondary text-foreground font-semibold border border-border">
-                {user?.role === 'admin' ? 'Super Administrateur' : user?.account_type === 'partner' ? 'Partenaire Label' : 'Compte Membre'}
+                {isSuperAdmin ? 'Compte Principal KKD' : user?.account_type === 'partner' ? 'Partenaire Label' : 'Compte Membre'}
+              </span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20 flex items-center gap-1">
+                <CheckCircle2 size={11} /> Synchronisé Firestore
               </span>
             </div>
           </div>
@@ -176,9 +292,8 @@ export default function AccountSettings() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
-            base44.auth.logout();
-            window.location.href = '/login';
+          onClick={async () => {
+            await logout(true);
           }}
           className="text-xs h-9 text-destructive hover:bg-destructive/10 border-border gap-2"
         >
@@ -187,41 +302,93 @@ export default function AccountSettings() {
         </Button>
       </div>
 
-      {/* ── Section 1 : Modifier le Profil ── */}
-      <form onSubmit={handleProfileSubmit} className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5">
+      {/* ── Section 1 : Modifier le Profil & Photo ── */}
+      <form onSubmit={handleProfileSubmit} className="bg-card border border-border/80 rounded-2xl p-6 sm:p-7 shadow-sm space-y-6">
         <div className="border-b border-border pb-3">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <User size={18} className="text-primary" /> Informations du Profil
+            <User size={18} className="text-primary" /> Informations du Profil & Photo
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Mettez à jour vos informations de base facilement
+            Mettez à jour vos informations et votre photo de profil prises en compte par la base de données
           </p>
         </div>
 
-        {/* Choisir un avatar */}
-        <div>
-          <Label className="text-xs font-semibold mb-2 block">Choisir un avatar ou coller une photo</Label>
-          <div className="flex items-center gap-3 flex-wrap mb-2.5">
-            {AVATAR_OPTIONS.map((url, idx) => (
-              <button
+        {/* Gestion de la Photo de Profil */}
+        <div className="rounded-xl border border-border/60 bg-secondary/30 p-4 space-y-3">
+          <Label className="text-xs font-semibold block">Photo de profil</Label>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative shrink-0">
+              {profileData.photo_url ? (
+                <img
+                  src={profileData.photo_url}
+                  alt="Photo de profil"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-primary"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xl">
+                  {initial}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 flex flex-wrap items-center gap-2.5">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
                 type="button"
-                key={idx}
-                onClick={() => setProfileData((p) => ({ ...p, photo_url: url }))}
-                className={`w-11 h-11 rounded-full overflow-hidden border-2 transition-all ${
-                  profileData.photo_url === url ? 'border-primary scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={photoUploading}
+                className="text-xs h-9 font-medium gap-1.5 border-border bg-card hover:bg-secondary"
               >
-                <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
-              </button>
-            ))}
+                {photoUploading ? (
+                  <RefreshCw size={13} className="animate-spin" />
+                ) : (
+                  <Upload size={13} />
+                )}
+                Téléverser depuis l'appareil
+              </Button>
+
+              {profileData.photo_url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setProfileData((p) => ({ ...p, photo_url: '' }))}
+                  className="text-xs h-9 text-muted-foreground hover:text-destructive gap-1"
+                >
+                  <Trash2 size={13} /> Supprimer
+                </Button>
+              )}
+            </div>
           </div>
-          <Input
-            type="url"
-            placeholder="Ou collez le lien d'une photo (URL)"
-            value={profileData.photo_url}
-            onChange={(e) => setProfileData((p) => ({ ...p, photo_url: e.target.value }))}
-            className="text-xs h-9"
-          />
+
+          {/* Avatars prédéfinis */}
+          <div className="pt-2 border-t border-border/40">
+            <p className="text-[11px] text-muted-foreground mb-2">Ou sélectionnez un avatar rapide :</p>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {AVATAR_OPTIONS.map((url, idx) => (
+                <button
+                  type="button"
+                  key={idx}
+                  onClick={() => setProfileData((p) => ({ ...p, photo_url: url }))}
+                  className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
+                    profileData.photo_url === url
+                      ? 'border-primary scale-110 shadow-md ring-2 ring-primary/30'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -273,15 +440,32 @@ export default function AccountSettings() {
               </div>
             </div>
           </div>
+
+          <div>
+            <Label className="text-xs font-semibold mb-1.5 block">Bio / Présentation</Label>
+            <Textarea
+              value={profileData.bio}
+              onChange={(e) => setProfileData((p) => ({ ...p, bio: e.target.value }))}
+              placeholder="Quelques mots sur vous ou votre projet artistique..."
+              rows={3}
+              className="resize-none"
+            />
+          </div>
         </div>
 
         <div className="flex justify-end pt-2">
           <Button
             type="submit"
             disabled={updateProfileMutation.isPending}
-            className="bg-primary hover:bg-primary/90 font-bold px-5 h-10 text-sm"
+            className="bg-primary hover:bg-primary/90 font-bold px-5 h-10 text-sm gap-2"
           >
-            {updateProfileMutation.isPending ? 'Enregistrement...' : 'Enregistrer mon profil'}
+            {updateProfileMutation.isPending ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" /> Enregistrement...
+              </>
+            ) : (
+              'Enregistrer mon profil'
+            )}
           </Button>
         </div>
       </form>
@@ -293,7 +477,7 @@ export default function AccountSettings() {
             <Lock size={18} className="text-primary" /> Sécurité & Mot de passe
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Modifiez votre mot de passe pour protéger votre accès
+            Modifiez votre mot de passe pour protéger votre compte
           </p>
         </div>
 

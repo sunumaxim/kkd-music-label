@@ -51,11 +51,10 @@ export default function PublishForm({ user, onClose, editPublication }) {
   const [newArtist, setNewArtist] = useState(isEditing ? !editPublication?.artist_id : false);
   const [dupCheck, setDupCheck] = useState({ loading: false, duplicates: [], checked: false });
 
-  // Règle de modification de l'audio : 1 modification directe max pour le créateur
-  const audioModifiedCount = Number(editPublication?.audio_modified_count || 0);
+  // Règle de modification de l'audio : verrouillé après publication (modifiable uniquement sur demande auprès de l'équipe KKD Music)
   const isVideo = contentType === 'video_clip';
   const isAlbum = contentType === 'album' || contentType === 'ep';
-  const isAudioLocked = isEditing && !isVideo && !isAlbum && !!editPublication?.file_url && audioModifiedCount >= 1;
+  const isAudioLocked = isEditing && !isVideo && !isAlbum && !!editPublication?.file_url;
   const [audioFileReplaced, setAudioFileReplaced] = useState(false);
   const [showAudioRequestModal, setShowAudioRequestModal] = useState(false);
   const [audioRequestMessage, setAudioRequestMessage] = useState('');
@@ -643,10 +642,10 @@ export default function PublishForm({ user, onClose, editPublication }) {
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-300 space-y-2">
                   <div className="flex items-center gap-2 font-bold text-amber-200">
                     <Lock size={15} className="text-amber-400" />
-                    <span>Master audio vérifié et verrouillé</span>
+                    <span>Master audio verrouillé — Remplacement sous demande uniquement</span>
                   </div>
                   <p className="leading-relaxed text-amber-300/90">
-                    Conformément à la politique KKD Music, le fichier audio ne peut être modifié directement qu'une seule fois par le créateur. Pour remplacer à nouveau le master audio, veuillez soumettre une demande officielle à notre équipe.
+                    Conformément aux règles de diffusion KKD Music, une fois un titre publié, son fichier audio ne peut plus être modifié directement par l'artiste ou partenaire. Vous pouvez librement modifier la pochette, les crédits, le prix et les informations. Pour remplacer le fichier audio master, veuillez soumettre une demande officielle à l'administration KKD Music.
                   </p>
                   <Button
                     type="button"
@@ -658,17 +657,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
                     Demander le remplacement de l'audio à KKD Music
                   </Button>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 text-xs text-blue-300 flex items-start gap-2.5">
-                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-blue-400" />
-                  <div>
-                    <span className="font-bold text-blue-200">Règle de modification du master :</span>
-                    <p className="mt-0.5 text-blue-300/90 leading-relaxed">
-                      Vous pouvez modifier la pochette et les informations sans limite. Le master audio ne peut être modifié directement qu'<strong>une seule fois</strong>. Une deuxième modification nécessitera une demande à KKD Music.
-                    </p>
-                  </div>
-                </div>
-              )
+              ) : null
             )}
 
             <MediaUploader
