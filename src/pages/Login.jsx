@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Mail, Lock, Loader2, ShieldCheck, ShieldAlert, ExternalLink, Shield } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -15,6 +16,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const isInsideIframe = typeof window !== 'undefined' && window.self !== window.top;
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -30,6 +33,11 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
+      // Sécurisation reCAPTCHA Enterprise
+      const recaptchaToken = await executeRecaptcha('LOGIN');
+      if (recaptchaToken) {
+        console.info('[reCAPTCHA Enterprise] Token généré avec succès pour LOGIN');
+      }
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = targetRedirect;
     } catch (err) {
@@ -46,7 +54,13 @@ export default function Login() {
       await base44.auth.loginWithProvider("google");
       window.location.href = targetRedirect;
     } catch (err) {
-      setError("Échec de la connexion Google Firebase : " + (err?.message || "Erreur de popup"));
+      if (err?.code === 'auth/popup-closed-by-user' || err?.isCancelled) {
+        setError("Connexion Google annulée (fenêtre fermée). Vous pouvez réessayer ou vous connecter ci-dessous par email.");
+      } else if (err?.code === 'auth/popup-blocked') {
+        setError("La fenêtre pop-up Google a été bloquée par votre navigateur. Veuillez autoriser les pop-ups ou ouvrir l'application dans un nouvel onglet.");
+      } else {
+        setError(err?.message || "Échec de la connexion Google.");
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -118,6 +132,18 @@ export default function Login() {
             Continuer avec Google
           </Button>
 
+          {isInsideIframe && (
+            <div className="text-center -mt-3">
+              <button
+                type="button"
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" /> Ouvrir en plein écran si le pop-up est restreint
+              </button>
+            </div>
+          )}
+
           <div className="relative flex items-center justify-center text-xs uppercase my-3 text-muted-foreground">
             <span className="w-full border-t border-border" />
             <span className="bg-background px-3 font-medium">Ou avec vos identifiants</span>
@@ -154,9 +180,15 @@ export default function Login() {
               Pas encore de compte ?{" "}
               <Link to="/register" className="text-primary font-medium hover:underline">Créer un compte</Link>
             </p>
-            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground/80 pt-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Données synchronisées & protégées par Firebase Cloud DB</span>
+            <div className="flex flex-col items-center justify-center gap-1 text-[11px] text-muted-foreground/80 pt-2">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Données synchronisées & protégées par Firebase Cloud DB</span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                <Shield className="w-3 h-3 text-primary/70" />
+                <span>Sécurisé par Google reCAPTCHA Enterprise</span>
+              </div>
             </div>
           </div>
         </div>

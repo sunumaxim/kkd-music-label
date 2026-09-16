@@ -70,6 +70,27 @@ export const firebaseAuthService = {
       const fbUser = result.user;
       return await this.syncFirebaseUserToFirestore(fbUser);
     } catch (error) {
+      const errorCode = error?.code || '';
+      if (errorCode === 'auth/popup-closed-by-user') {
+        console.info('[FirebaseAuth] Google Sign-In popup was closed by user before completing sign-in.');
+        const customErr = new Error('La fenêtre de connexion Google a été fermée avant la finalisation.');
+        customErr.code = 'auth/popup-closed-by-user';
+        customErr.isCancelled = true;
+        throw customErr;
+      }
+      if (errorCode === 'auth/cancelled-popup-request') {
+        console.info('[FirebaseAuth] Previous Google Sign-In popup request was cancelled.');
+        const customErr = new Error('La tentative de connexion précédente a été annulée.');
+        customErr.code = 'auth/cancelled-popup-request';
+        customErr.isCancelled = true;
+        throw customErr;
+      }
+      if (errorCode === 'auth/popup-blocked') {
+        console.warn('[FirebaseAuth] Google Sign-In popup was blocked by browser.');
+        const customErr = new Error('La fenêtre de connexion a été bloquée par le navigateur. Veuillez autoriser les pop-ups ou ouvrir l’application dans un nouvel onglet.');
+        customErr.code = 'auth/popup-blocked';
+        throw customErr;
+      }
       console.error('Firebase Google Sign-In Error:', error);
       throw error;
     }

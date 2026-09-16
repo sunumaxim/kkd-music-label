@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, User, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Loader2, ExternalLink, Shield } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -17,6 +18,8 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const isInsideIframe = typeof window !== 'undefined' && window.self !== window.top;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +34,11 @@ export default function Register() {
     }
     setLoading(true);
     try {
+      // Sécurisation reCAPTCHA Enterprise
+      const recaptchaToken = await executeRecaptcha('REGISTER');
+      if (recaptchaToken) {
+        console.info('[reCAPTCHA Enterprise] Token généré avec succès pour REGISTER');
+      }
       await base44.auth.register({
         email: email.trim(),
         password,
@@ -58,7 +66,13 @@ export default function Register() {
       await base44.auth.loginWithProvider("google");
       window.location.href = "/mon-compte";
     } catch (err) {
-      setError("Échec de l'inscription Google : " + (err?.message || "Erreur de connexion"));
+      if (err?.code === 'auth/popup-closed-by-user' || err?.isCancelled) {
+        setError("Inscription Google annulée (fenêtre fermée). Vous pouvez réessayer ou créer votre compte ci-dessous avec votre email.");
+      } else if (err?.code === 'auth/popup-blocked') {
+        setError("La fenêtre pop-up a été bloquée par votre navigateur. Autorisez les pop-ups ou ouvrez l'application dans un nouvel onglet.");
+      } else {
+        setError(err?.message || "Échec de l'inscription avec Google.");
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -90,7 +104,7 @@ export default function Register() {
           <Button 
             type="button"
             variant="outline" 
-            className="w-full h-11 text-sm font-medium mb-6" 
+            className="w-full h-11 text-sm font-medium mb-4" 
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
           >
@@ -101,6 +115,18 @@ export default function Register() {
             )}
             Continuer avec Google
           </Button>
+
+          {isInsideIframe && (
+            <div className="text-center mb-6 -mt-2">
+              <button
+                type="button"
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" /> Ouvrir en plein écran si le pop-up est restreint
+              </button>
+            </div>
+          )}
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
@@ -180,6 +206,11 @@ export default function Register() {
             Déjà un compte ?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">Se connecter</Link>
           </p>
+
+          <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground/60 pt-3">
+            <Shield className="w-3 h-3 text-primary/70" />
+            <span>Sécurisé par Google reCAPTCHA Enterprise</span>
+          </div>
         </div>
       </div>
     </div>

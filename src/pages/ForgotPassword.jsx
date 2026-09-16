@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, Shield } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
+      await executeRecaptcha('PASSWORD_RESET');
       await base44.auth.resetPasswordRequest(email);
     } catch {
       // Always show success regardless
@@ -69,6 +71,10 @@ export default function ForgotPassword() {
               "Send reset link"
             )}
           </Button>
+          <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground/60 pt-2">
+            <Shield className="w-3 h-3 text-primary/70" />
+            <span>Sécurisé par Google reCAPTCHA Enterprise</span>
+          </div>
         </form>
       )}
     </AuthLayout>
