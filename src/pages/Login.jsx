@@ -34,9 +34,12 @@ export default function Login() {
     setLoading(true);
     try {
       // Sécurisation reCAPTCHA Enterprise
-      const recaptchaToken = await executeRecaptcha('LOGIN');
-      if (recaptchaToken) {
-        console.info('[reCAPTCHA Enterprise] Token généré avec succès pour LOGIN');
+      const recaptchaRes = await executeRecaptcha('LOGIN');
+      if (recaptchaRes && recaptchaRes.valid === false) {
+        throw new Error("Validation de sécurité reCAPTCHA non validée. Veuillez réessayer.");
+      }
+      if (recaptchaRes?.token) {
+        console.info('[reCAPTCHA Enterprise] Token validé avec succès pour LOGIN');
       }
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = targetRedirect;

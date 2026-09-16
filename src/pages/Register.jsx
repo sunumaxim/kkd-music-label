@@ -35,9 +35,12 @@ export default function Register() {
     setLoading(true);
     try {
       // Sécurisation reCAPTCHA Enterprise
-      const recaptchaToken = await executeRecaptcha('REGISTER');
-      if (recaptchaToken) {
-        console.info('[reCAPTCHA Enterprise] Token généré avec succès pour REGISTER');
+      const recaptchaRes = await executeRecaptcha('REGISTER');
+      if (recaptchaRes && recaptchaRes.valid === false) {
+        throw new Error("Validation de sécurité reCAPTCHA non validée. Veuillez réessayer.");
+      }
+      if (recaptchaRes?.token) {
+        console.info('[reCAPTCHA Enterprise] Token validé avec succès pour REGISTER');
       }
       await base44.auth.register({
         email: email.trim(),
