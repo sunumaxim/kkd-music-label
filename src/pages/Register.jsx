@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, User, Loader2, ExternalLink, Shield } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
-import { executeRecaptcha } from "@/lib/recaptcha";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -34,14 +33,6 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      // Sécurisation reCAPTCHA Enterprise
-      const recaptchaRes = await executeRecaptcha('REGISTER');
-      if (recaptchaRes && recaptchaRes.valid === false) {
-        throw new Error("Validation de sécurité reCAPTCHA non validée. Veuillez réessayer.");
-      }
-      if (recaptchaRes?.token) {
-        console.info('[reCAPTCHA Enterprise] Token validé avec succès pour REGISTER');
-      }
       await base44.auth.register({
         email: email.trim(),
         password,
@@ -210,9 +201,9 @@ export default function Register() {
             <Link to="/login" className="text-primary font-medium hover:underline">Se connecter</Link>
           </p>
 
-          <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground/60 pt-3">
-            <Shield className="w-3 h-3 text-primary/70" />
-            <span>Sécurisé par Google reCAPTCHA Enterprise</span>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/70 pt-3">
+            <Shield className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Protection Firebase Auth & Synchronisation Cloud Firestore</span>
           </div>
         </div>
       </div>

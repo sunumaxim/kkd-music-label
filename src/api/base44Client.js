@@ -185,6 +185,21 @@ if (base44?.auth) {
     return { success: true, message: 'Code renvoyé' };
   };
 
+  base44.auth.sendPhoneOtp = async (phoneNumber, containerId) => {
+    return await firebaseAuthService.sendPhoneOtp(phoneNumber, containerId);
+  };
+
+  base44.auth.verifyPhoneOtp = async (confirmationResult, otpCode) => {
+    const user = await firebaseAuthService.verifyPhoneOtp(confirmationResult, otpCode);
+    if (user) {
+      localDb.setCurrentUser(user);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kkd:user_updated', { detail: user }));
+      }
+    }
+    return user;
+  };
+
   base44.auth.loginWithProvider = async (provider = 'google') => {
     if (provider === 'google') {
       const user = await firebaseAuthService.signInWithGoogle();

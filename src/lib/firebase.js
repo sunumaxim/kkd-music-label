@@ -10,6 +10,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
   updatePassword,
   updateProfile,
   onAuthStateChanged,
@@ -32,6 +35,12 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+
+// Paramètres de redirection pour les emails Firebase (valide.kkdmusic.com)
+export const ACTION_CODE_SETTINGS = {
+  url: 'https://valide.kkdmusic.com/login?fromAction=true',
+  handleCodeInApp: true,
+};
 
 // Initialisation unique de Firebase
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -59,6 +68,38 @@ if (typeof window !== 'undefined') {
   setPersistence(auth, browserLocalPersistence).catch((err) => {
     console.debug('Firebase persistence configuration notice:', err?.message);
   });
+}
+
+// Fonction universelle d'envoi et d'enregistrement des notifications dans Firestore
+export async function sendAppNotification({
+  userId,
+  userEmail,
+  title,
+  message,
+  type = 'info', // 'inscription' | 'validation' | 'modification' | 'info'
+}) {
+  const notifData = {
+    user_id: userId || '',
+    user_email: userEmail || 'all',
+    title: title || 'Notification KKD Music',
+    message: message || '',
+    type: type,
+    read: false,
+    created_at: new Date().toISOString(),
+    created_date: new Date().toISOString(),
+  };
+
+  try {
+    await firestoreService.addDocument('notifications', notifData);
+  } catch (err) {
+    console.warn('[Firestore] Failed to save notification:', err?.message);
+  }
+
+  // Notifier l'interface locale en temps réel
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('kkd:new_notification', { detail: notifData }));
+  }
+  return notifData;
 }
 
 // Opérations d'authentification renforcées
@@ -114,20 +155,143 @@ export const firebaseAuthService = {
       if (fullName && auth.currentUser) {
         await updateProfile(auth.currentUser, { displayName: fullName });
       }
-      return await this.syncFirebaseUserToFirestore(cred.user, { full_name: fullName });
+      const userData = await this.syncFirebaseUserToFirestore(cred.user, { full_name: fullName });
+      
+      // Notification d'inscription
+      await sendAppNotification({
+        userId: cred.user.uid,
+        userEmail: cred.user.email,
+        title: 'Bienvenue sur KKD Music !',
+        message: `Votre compte a été créé avec succès pour ${fullName || cred.user.email}. Bienvenue sur la plateforme officielle de streaming et distribution !`,
+        type: 'inscription'
+      });
+
+      // Tentative d'envoi d'email de validation avec redirection personnalisée valide.kkdmusic.com
+      try {
+        await sendEmailVerification(cred.user, ACTION_CODE_SETTINGS);
+      } catch (evErr) {
+        console.info('[Firebase Auth] sendEmailVerification notice:', evErr?.message);
+      }
+
+      return userData;
     } catch (error) {
       console.warn('Firebase Register Error:', error?.message || error);
       throw error;
     }
   },
 
-  // Réinitialisation de mot de passe par email
+  // Préparation du RecaptchaVerifier invisible pour l'authentification par SMS
+  initPhoneVerifier(containerId = 'phone-recaptcha-container') {
+    if (typeof window === 'undefined') return null;
+    try {
+      if (window.phoneRecaptchaVerifier) {
+        try { window.phoneRecaptchaVerifier.clear(); } catch (_) {}
+      }
+      window.phoneRecaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: () => {
+          console.info('[Firebase Phone Auth] Recaptcha résolu automatiquement');
+        },
+        'expired-callback': () => {
+          console.warn('[Firebase Phone Auth] Recaptcha expiré');
+        }
+      });
+      return window.phoneRecaptchaVerifier;
+    } catch (err) {
+      console.warn('[Firebase Phone Auth] initPhoneVerifier warning:', err);
+      return null;
+    }
+  },
+
+  // Envoi du code SMS pour la connexion par téléphone
+  async sendPhoneOtp(phoneNumber, containerId = 'phone-recaptcha-container') {
+    try {
+      const cleanPhone = (phoneNumber || '').trim().replace(/\s+/g, '');
+      if (!cleanPhone.startsWith('+')) {
+        throw new Error('Le numéro de téléphone doit inclure l’indicatif international (ex: +221 pour le Sénégal, +33 pour la France).');
+      }
+      const verifier = this.initPhoneVerifier(containerId);
+      if (!verifier) {
+        throw new Error('Impossible d’initialiser le module de vérification SMS.');
+      }
+      const confirmationResult = await signInWithPhoneNumber(auth, cleanPhone, verifier);
+      return confirmationResult;
+    } catch (error) {
+      console.error('[Firebase sendPhoneOtp error]:', error);
+      if (error?.code === 'auth/invalid-phone-number') {
+        throw new Error('Format de numéro de téléphone invalide. Utilisez le format international (ex: +221 77 123 45 67).');
+      }
+      if (error?.code === 'auth/too-many-requests') {
+        throw new Error('Trop de demandes de SMS en peu de temps. Veuillez patienter avant de réessayer.');
+      }
+      if (error?.code === 'auth/quota-exceeded') {
+        throw new Error('Quota de SMS Firebase atteint pour ce projet.');
+      }
+      throw error;
+    }
+  },
+
+  // Validation du code SMS et connexion
+  async verifyPhoneOtp(confirmationResult, otpCode) {
+    if (!confirmationResult || typeof confirmationResult.confirm !== 'function') {
+      throw new Error('Session de vérification SMS invalide ou expirée.');
+    }
+    try {
+      const result = await confirmationResult.confirm(otpCode.trim());
+      const fbUser = result.user;
+      const userData = await this.syncFirebaseUserToFirestore(fbUser, {
+        phone: fbUser.phoneNumber || '',
+        account_type: 'listener',
+      });
+
+      // Notification de validation
+      await sendAppNotification({
+        userId: fbUser.uid,
+        userEmail: fbUser.email || '',
+        title: 'Connexion sécurisée par SMS',
+        message: `Connexion validée avec succès avec le numéro ${fbUser.phoneNumber || ''}.`,
+        type: 'validation'
+      });
+
+      return userData;
+    } catch (error) {
+      console.error('[Firebase verifyPhoneOtp error]:', error);
+      if (error?.code === 'auth/invalid-verification-code') {
+        throw new Error('Code de vérification SMS incorrect. Vérifiez les 6 chiffres reçus par SMS.');
+      }
+      if (error?.code === 'auth/code-expired') {
+        throw new Error('Le code SMS a expiré. Veuillez demander un nouvel envoi.');
+      }
+      throw error;
+    }
+  },
+
+  // Réinitialisation de mot de passe par email avec redirection personnalisée
   async resetPassword(email) {
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await sendPasswordResetEmail(auth, email.trim(), ACTION_CODE_SETTINGS);
       return { success: true };
     } catch (error) {
       console.warn('Firebase Password Reset Error:', error?.message || error);
+      throw error;
+    }
+  },
+
+  // Envoi de l'email de validation avec redirection personnalisée
+  async sendEmailVerificationLink(user = auth.currentUser) {
+    if (!user) throw new Error('Aucun utilisateur connecté');
+    try {
+      await sendEmailVerification(user, ACTION_CODE_SETTINGS);
+      await sendAppNotification({
+        userId: user.uid,
+        userEmail: user.email || '',
+        title: 'Lien de validation envoyé',
+        message: `Un lien de validation vous a été transmis par email avec redirection vers ${ACTION_CODE_SETTINGS.url}.`,
+        type: 'validation'
+      });
+      return { success: true };
+    } catch (error) {
+      console.warn('Firebase Send Verification Error:', error?.message || error);
       throw error;
     }
   },
@@ -137,6 +301,14 @@ export const firebaseAuthService = {
     if (!auth.currentUser) throw new Error('Aucun utilisateur connecté');
     try {
       await updatePassword(auth.currentUser, newPassword);
+      // Notification de modification
+      await sendAppNotification({
+        userId: auth.currentUser.uid,
+        userEmail: auth.currentUser.email || '',
+        title: 'Mot de passe modifié',
+        message: 'Votre mot de passe a été mis à jour avec succès.',
+        type: 'modification'
+      });
       return { success: true };
     } catch (error) {
       console.error('Firebase Update Password Error:', error);
@@ -169,6 +341,16 @@ export const firebaseAuthService = {
       updated_at: new Date().toISOString() 
     };
     await firestoreService.setDocument('users', uid, cleanData);
+
+    // Notification de modification
+    await sendAppNotification({
+      userId: uid,
+      userEmail: cleanData.email || (currentUser?.email || ''),
+      title: 'Profil mis à jour',
+      message: 'Vos modifications de profil et informations personnelles ont été enregistrées avec succès.',
+      type: 'modification'
+    });
+
     return cleanData;
   },
 
