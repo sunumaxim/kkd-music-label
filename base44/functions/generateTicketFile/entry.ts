@@ -144,7 +144,10 @@ function drawCertifiedStamp(doc, cx, cy, r, color) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { ticket_number, app_url } = await req.json();
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
+
+    const { ticket_number } = await req.json();
     if (!ticket_number) return Response.json({ error: 'ticket_number requis' }, { status: 400 });
 
     const tickets = await base44.asServiceRole.entities.Ticket.filter({ ticket_number });
@@ -157,6 +160,15 @@ Deno.serve(async (req) => {
 
     const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
     const ev = events[0];
+
+    // Vérifier l'autorisation : acheteur, organisateur, manager ou admin
+    const isBuyer = ticket.buyer_email && ticket.buyer_email === user.email;
+    const isOrganizer = ev && ev.organizer_email === user.email;
+    const isManager = ev && Array.isArray(ev.managers) && ev.managers.includes(user.email);
+    const isAdmin = user.role === 'admin';
+    if (!isBuyer && !isOrganizer && !isManager && !isAdmin) {
+      return Response.json({ error: 'Accès non autorisé à ce billet' }, { status: 403 });
+    }
 
     // Fetch artist photo (priority: artist photo_url > artist cover_url > event poster)
     let artistPhotoUrl = null;
@@ -173,7 +185,8 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    const base = (app_url || '').replace(/\/+$/, '');
+    // Utiliser l'URL officielle de l'application (non contrôlable par l'appelant)
+    const base = 'https://kkdmusic.com';
     // QR sécurisé : inclut le hash de sécurité pour empêcher la falsification
     const hashParam = ticket.security_hash ? `?h=${ticket.security_hash}` : '';
     const qrData = `${base}/billet/${encodeURIComponent(ticket_number)}${hashParam}`;

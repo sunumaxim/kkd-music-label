@@ -47,20 +47,23 @@ Deno.serve(async (req) => {
     if (!changed_fields?.includes("published_status")) return Response.json({ skipped: true });
 
     const newStatus = data?.published_status;
-    const userEmail = data?.organizer_email;
 
-    if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
+    if (!STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
     if (old_data?.published_status === newStatus) return Response.json({ skipped: true });
 
-    const verified = await verifyStatusChange({ base44, entityName: "Event", id: data?.id, field: "published_status", expected: newStatus });
-    if (!verified) return Response.json({ skipped: true });
+    // Récupérer l'enregistrement réel en base (anti-injection email)
+    const rec = await verifyStatusChange({ base44, entityName: "Event", id: data?.id, field: "published_status", expected: newStatus });
+    if (!rec) return Response.json({ skipped: true });
+
+    const userEmail = rec.organizer_email;
+    if (!userEmail) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
     const infoRows = [
-      ["Événement", data?.title],
-      ["Date", data?.event_date ? new Date(data.event_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null],
-      ["Lieu", data?.location],
-      ["Ville", data?.city],
+      ["Événement", rec.title],
+      ["Date", rec.event_date ? new Date(rec.event_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null],
+      ["Lieu", rec.location],
+      ["Ville", rec.city],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -69,9 +72,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(data),
+      body: cfg.bodyFn(rec),
       infoRows,
-      notes: data?.admin_notes,
+      notes: rec.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Gérer mon événement", url: `${SITE_URL}/mon-espace?tab=evenements` },
     });
@@ -80,7 +83,7 @@ Deno.serve(async (req) => {
       base44,
       userEmail,
       title: cfg.headline,
-      message: stripHtml(cfg.bodyFn(data)),
+      message: stripHtml(cfg.bodyFn(rec)),
       type: cfg.notifType,
       link: "/mon-espace?tab=evenements",
       subject: `KKD Music — ${cfg.title}`,

@@ -344,13 +344,14 @@ export function stripHtml(s) {
  * opts: { base44, entityName, id, field, expected }
  */
 export async function verifyStatusChange({ base44, entityName, id, field, expected }) {
-  if (!id || !field || !expected) return false;
+  if (!id || !field || !expected) return null;
   try {
     const records = await base44.asServiceRole.entities[entityName].filter({ id });
     const rec = records && records[0];
-    return !!rec && rec[field] === expected;
+    if (rec && rec[field] === expected) return rec;
+    return null;
   } catch (e) {
     console.error(`verifyStatusChange(${entityName}) error:`, e);
-    return false;
+    return null;
   }
 }

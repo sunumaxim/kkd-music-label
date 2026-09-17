@@ -1,6 +1,8 @@
 /**
  * Notifie l'admin + envoie une confirmation au demandeur quand une nouvelle
  * demande de service est créée.
+ * Anti-injection : toutes les données proviennent de l'entité en base (data.id),
+ * jamais du corps de la requête.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
@@ -20,14 +22,19 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { data } = body;
 
-    if (!data?.email) return Response.json({ skipped: true });
+    // Récupérer l'enregistrement réel en base (anti-injection email)
+    if (!data?.id) return Response.json({ skipped: true });
+    const records = await base44.asServiceRole.entities.ServiceRequest.filter({ id: data.id });
+    const rec = records[0];
+    if (!rec) return Response.json({ skipped: true });
+    if (!rec.email) return Response.json({ skipped: true });
 
-    const requestType = TYPE_LABELS[data.request_type] || data.request_type;
+    const requestType = TYPE_LABELS[rec.request_type] || rec.request_type;
     const infoRows = [
       ["Type de demande", requestType],
-      ["Artiste", data.artist_name],
-      ["Organisation", data.organization],
-      ["Genre musical", data.genre],
+      ["Artiste", rec.artist_name],
+      ["Organisation", rec.organization],
+      ["Genre musical", rec.genre],
     ];
 
     // === Email de confirmation au demandeur ===
@@ -37,16 +44,16 @@ Deno.serve(async (req) => {
       action: "info",
       actionLabel: "REÇU",
       headline: "Votre demande a été reçue !",
-      body: `Bonjour <strong>${data.full_name}</strong>,<br><br>Nous avons bien reçu votre demande de <strong>${requestType}</strong>. Notre équipe l'examine et vous contactera dans les meilleurs délais.<br><br>Voici le récapitulatif de votre demande :`,
+      body: `Bonjour <strong>${rec.full_name}</strong>,<br><br>Nous avons bien reçu votre demande de <strong>${requestType}</strong>. Notre équipe l'examine et vous contactera dans les meilleurs délais.<br><br>Voici le récapitulatif de votre demande :`,
       infoRows,
-      notes: data.description,
+      notes: rec.description,
       notesLabel: "Votre message",
       cta: { label: "Suivre ma demande", url: `${SITE_URL}/mon-espace?tab=demandes` },
     });
 
     await pushNotification({
       base44,
-      userEmail: data.email,
+      userEmail: rec.email,
       title: "Demande bien reçue !",
       message: `Votre demande de ${requestType} a été enregistrée. Nous reviendrons vers vous très prochainement.`,
       type: "info",
@@ -60,14 +67,14 @@ Deno.serve(async (req) => {
     const admins = allUsers.filter((u) => u.role === "admin" && u.email);
 
     const adminHtml = buildEmailHtml({
-      subject: `Nouvelle demande — ${data.full_name}`,
+      subject: `Nouvelle demande — ${rec.full_name}`,
       preheader: `Nouvelle demande de ${requestType} reçue.`,
       action: "nouveau",
       actionLabel: "NOUVELLE DEMANDE",
       headline: `Nouvelle demande : ${requestType}`,
-      body: `<strong>${data.full_name}</strong> (${data.email}) vient de soumettre une nouvelle demande de <strong>${requestType}</strong>.`,
+      body: `<strong>${rec.full_name}</strong> (${rec.email}) vient de soumettre une nouvelle demande de <strong>${requestType}</strong>.`,
       infoRows,
-      notes: data.description,
+      notes: rec.description,
       notesLabel: "Message du demandeur",
       cta: { label: "Examiner la demande", url: `${SITE_URL}/admin/demandes` },
     });
@@ -76,7 +83,7 @@ Deno.serve(async (req) => {
       admins.map((admin) =>
         base44.asServiceRole.integrations.Core.SendEmail({
           to: admin.email,
-          subject: `KKD Admin — Nouvelle demande de ${data.full_name}`,
+          subject: `KKD Admin — Nouvelle demande de ${rec.full_name}`,
           body: adminHtml,
           from_name: "KKD Music",
         }).catch((e) => console.error("admin email skipped:", e?.message || e))

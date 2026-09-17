@@ -94,9 +94,10 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Réservé admin' }, { status: 403 });
 
     const body = await req.json();
-    const { artist_id, release_id, video_id, license_type, recipient_email, preview_only } = body;
+    const { artist_id, release_id, video_id, license_type, preview_only } = body;
 
     if (!artist_id) return Response.json({ error: 'Artiste manquant' }, { status: 400 });
     if (!license_type) return Response.json({ error: 'Type de licence manquant' }, { status: 400 });
@@ -155,7 +156,8 @@ export default async function(req) {
     const originalityChecks = await runOriginalityChecks(base44, pdfData);
     pdfData.originality_checks = originalityChecks;
 
-    const targetEmail = recipient_email || artist.email || user.email;
+    // Ne pas accepter recipient_email depuis le corps de la requête (anti-exfiltration)
+    const targetEmail = user.email;
 
     // Preview mode: return metadata only (no entity, no upload, no email)
     if (preview_only) {

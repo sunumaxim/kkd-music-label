@@ -90,8 +90,8 @@ export default function PublicVerifTicket() {
     );
   }
 
-  const verifUrl = t.security_hash
-    ? `${window.location.origin}/billet/${t.ticket_number}?h=${t.security_hash}`
+  const verifUrl = securityHash
+    ? `${window.location.origin}/billet/${t.ticket_number}?h=${securityHash}`
     : `${window.location.origin}/billet/${t.ticket_number}`;
 
   // ── Billet en attente d'activation (vente physique) ──

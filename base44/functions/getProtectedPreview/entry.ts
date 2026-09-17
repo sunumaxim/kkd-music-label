@@ -12,8 +12,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
+
     const body = await req.json();
-    const { item_type, item_id, preview_start = 0, preview_duration = 30 } = body;
+    const { item_type, item_id } = body;
 
     if (!item_type || !item_id) {
       return Response.json({ error: 'item_type and item_id required' }, { status: 400 });
@@ -47,10 +50,11 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Failed to sign URL' }, { status: 500 });
     }
 
-    // Estimer le nombre d'octets nécessaires pour couvrir l'extrait
-    // 192 kbits/s = 24 Ko/s ; on couvre (preview_start + preview_duration) secondes
-    // Plafonné à 3 Mo pour éviter les réponses trop lourdes
-    const totalSeconds = Number(preview_start || 0) + Number(preview_duration || 30);
+    // Utiliser les paramètres de prévisualisation stockés sur l'entité (non contrôlables par l'appelant)
+    // Plafonné à 30s maximum pour un extrait gratuit
+    const previewStart = Number(entity.preview_start || 0);
+    const previewDuration = Math.min(Number(entity.preview_duration || 30), 30);
+    const totalSeconds = previewStart + previewDuration;
     const maxBytes = Math.min(Math.ceil(totalSeconds * 192 * 1024 / 8), 3 * 1024 * 1024);
 
     let audioData: ArrayBuffer;

@@ -56,6 +56,7 @@ export default function PublishForm({ user, onClose, editPublication }) {
   const isAlbum = contentType === 'album' || contentType === 'ep';
   const isAudioLocked = isEditing && !isVideo && !isAlbum && !!editPublication?.file_url;
   const [audioFileReplaced, setAudioFileReplaced] = useState(false);
+  const audioModifiedCount = editPublication?.audio_modified_count || 0;
   const [showAudioRequestModal, setShowAudioRequestModal] = useState(false);
   const [audioRequestMessage, setAudioRequestMessage] = useState('');
   const [audioRequestSending, setAudioRequestSending] = useState(false);

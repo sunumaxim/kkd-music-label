@@ -13,14 +13,23 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Non autorisé' }, { status: 401 });
 
     const body = await req.json();
-    const { license_id, recipient_email } = body;
+    const { license_id } = body;
 
     if (!license_id) return Response.json({ error: 'ID de licence manquant' }, { status: 400 });
 
     const license = await base44.asServiceRole.entities.MusicLicense.get(license_id);
     if (!license) return Response.json({ error: 'Licence introuvable' }, { status: 404 });
 
-    const targetEmail = recipient_email || license.sent_to_email || license.requested_by_email;
+    // Vérifier que l'utilisateur est admin ou partie prenante de la licence
+    const isOwner = license.requested_by_email === user.email
+      || license.sent_to_email === user.email
+      || license.created_by_id === user.id;
+    if (!isOwner && user.role !== 'admin') {
+      return Response.json({ error: 'Accès non autorisé à cette licence' }, { status: 403 });
+    }
+
+    // Ne pas accepter recipient_email depuis le corps (anti-exfiltration)
+    const targetEmail = license.sent_to_email || license.requested_by_email || user.email;
     if (!targetEmail) return Response.json({ error: 'Aucun email destinataire' }, { status: 400 });
 
     const workTitle = license.release_title || license.video_title || license.artist_name;

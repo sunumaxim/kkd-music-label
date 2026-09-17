@@ -49,20 +49,23 @@ Deno.serve(async (req) => {
     if (!changed_fields?.includes("status")) return Response.json({ skipped: true });
 
     const newStatus = data?.status;
-    const userEmail = data?.partner_email;
 
-    if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
+    if (!STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
     if (old_data?.status === newStatus) return Response.json({ skipped: true });
 
-    const verified = await verifyStatusChange({ base44, entityName: "PartnerPublication", id: data?.id, field: "status", expected: newStatus });
-    if (!verified) return Response.json({ skipped: true });
+    // Récupérer l'enregistrement réel en base (anti-injection email)
+    const rec = await verifyStatusChange({ base44, entityName: "PartnerPublication", id: data?.id, field: "status", expected: newStatus });
+    if (!rec) return Response.json({ skipped: true });
+
+    const userEmail = rec.partner_email;
+    if (!userEmail) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
-    const contentType = TYPE_LABELS[data?.content_type] || data?.content_type || "Contenu";
+    const contentType = TYPE_LABELS[rec.content_type] || rec.content_type || "Contenu";
     const infoRows = [
-      ["Titre", data?.title],
+      ["Titre", rec.title],
       ["Type", contentType],
-      ["Artiste", data?.artist_name],
+      ["Artiste", rec.artist_name],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -71,9 +74,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(data),
+      body: cfg.bodyFn(rec),
       infoRows,
-      notes: data?.admin_notes,
+      notes: rec.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Voir mes publications", url: `${SITE_URL}/mon-espace?tab=publications` },
     });
@@ -82,7 +85,7 @@ Deno.serve(async (req) => {
       base44,
       userEmail,
       title: cfg.headline,
-      message: stripHtml(cfg.bodyFn(data)),
+      message: stripHtml(cfg.bodyFn(rec)),
       type: cfg.notifType,
       link: "/mon-espace?tab=publications",
       subject: `KKD Music — ${cfg.title}`,

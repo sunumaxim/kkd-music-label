@@ -35,7 +35,6 @@ Deno.serve(async (req) => {
 
     return Response.json({
       ticket_number: ticket.ticket_number,
-      security_hash: ticket.security_hash || null,
       event_title: ticket.event_title,
       event_date: ticket.event_date,
       event_image_url: ev?.image_url || null,
