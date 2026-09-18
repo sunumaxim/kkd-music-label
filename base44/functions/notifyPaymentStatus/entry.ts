@@ -39,20 +39,21 @@ Deno.serve(async (req) => {
     if (!changed_fields?.includes("status")) return Response.json({ skipped: true });
 
     const newStatus = data?.status;
-    const userEmail = data?.user_email;
-
-    if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
+    if (!STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
     if (old_data?.status === newStatus) return Response.json({ skipped: true });
 
     const verified = await verifyStatusChange({ base44, entityName: "WavePayment", id: data?.id, field: "status", expected: newStatus });
     if (!verified) return Response.json({ skipped: true });
 
+    const userEmail = verified.user_email;
+    if (!userEmail) return Response.json({ skipped: true });
+
     const cfg = STATUS_CONFIG[newStatus];
     const infoRows = [
-      ["Contenu", data?.item_title],
-      ["Artiste", data?.artist_name],
-      ["Montant", data?.amount ? `${data.amount.toLocaleString("fr-FR")} FCFA` : null],
-      ["Référence Wave", data?.wave_reference],
+      ["Contenu", verified.item_title],
+      ["Artiste", verified.artist_name],
+      ["Montant", verified.amount ? `${verified.amount.toLocaleString("fr-FR")} FCFA` : null],
+      ["Référence Wave", verified.wave_reference],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -61,9 +62,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(data),
+      body: cfg.bodyFn(verified),
       infoRows,
-      notes: data?.admin_notes,
+      notes: verified.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: newStatus === "valide" ? "Accéder à ma bibliothèque" : "Voir mon espace", url: `${SITE_URL}${cfg.link}` },
     });
@@ -72,7 +73,7 @@ Deno.serve(async (req) => {
       base44,
       userEmail,
       title: cfg.headline,
-      message: stripHtml(cfg.bodyFn(data)),
+      message: stripHtml(cfg.bodyFn(verified)),
       type: cfg.notifType,
       link: cfg.link,
       subject: `KKD Music — ${cfg.title}`,

@@ -37,18 +37,19 @@ Deno.serve(async (req) => {
     if (!changed_fields?.includes("status")) return Response.json({ skipped: true });
 
     const newStatus = data?.status;
-    const userEmail = data?.user_email;
-
-    if (!userEmail || !STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
+    if (!STATUS_CONFIG[newStatus]) return Response.json({ skipped: true });
     if (old_data?.status === newStatus) return Response.json({ skipped: true });
 
     const verified = await verifyStatusChange({ base44, entityName: "ArtistAccessRequest", id: data?.id, field: "status", expected: newStatus });
     if (!verified) return Response.json({ skipped: true });
 
+    const userEmail = verified.user_email;
+    if (!userEmail) return Response.json({ skipped: true });
+
     const cfg = STATUS_CONFIG[newStatus];
     const infoRows = [
-      ["Artiste", data?.artist_name],
-      ["Demandeur", data?.user_email],
+      ["Artiste", verified.artist_name],
+      ["Demandeur", verified.user_email],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -57,9 +58,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(data),
+      body: cfg.bodyFn(verified),
       infoRows,
-      notes: data?.admin_notes,
+      notes: verified.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Accéder à mon espace artiste", url: `${SITE_URL}/mon-espace?tab=artiste` },
     });
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
       base44,
       userEmail,
       title: cfg.headline,
-      message: stripHtml(cfg.bodyFn(data)),
+      message: stripHtml(cfg.bodyFn(verified)),
       type: cfg.notifType,
       link: "/mon-espace?tab=artiste",
       subject: `KKD Music — ${cfg.title}`,

@@ -53,20 +53,21 @@ Deno.serve(async (req) => {
     if (!changed_fields?.includes("status")) return Response.json({ skipped: true });
 
     const newStatus = data?.status;
-    const userEmail = data?.email;
-
-    if (!userEmail || !STATUS_CONFIGS[newStatus]) return Response.json({ skipped: true });
+    if (!STATUS_CONFIGS[newStatus]) return Response.json({ skipped: true });
     if (old_data?.status === newStatus) return Response.json({ skipped: true });
 
     const verified = await verifyStatusChange({ base44, entityName: "ServiceRequest", id: data?.id, field: "status", expected: newStatus });
     if (!verified) return Response.json({ skipped: true });
 
+    const userEmail = verified.email;
+    if (!userEmail) return Response.json({ skipped: true });
+
     const cfg = STATUS_CONFIGS[newStatus];
-    const requestType = TYPE_LABELS[data.request_type] || data.request_type;
+    const requestType = TYPE_LABELS[verified.request_type] || verified.request_type;
     const infoRows = [
       ["Type de demande", requestType],
-      ["Artiste", data.artist_name],
-      ["Organisation", data.organization],
+      ["Artiste", verified.artist_name],
+      ["Organisation", verified.organization],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -75,9 +76,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(data),
+      body: cfg.bodyFn(verified),
       infoRows,
-      notes: data?.admin_notes,
+      notes: verified.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Voir mes demandes", url: `${SITE_URL}/mon-espace?tab=demandes` },
     });
@@ -86,7 +87,7 @@ Deno.serve(async (req) => {
       base44,
       userEmail,
       title: cfg.headline,
-      message: stripHtml(cfg.bodyFn(data)),
+      message: stripHtml(cfg.bodyFn(verified)),
       type: cfg.notifType,
       link: "/mon-espace?tab=demandes",
       subject: `KKD Music — ${cfg.title}`,
