@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, User, Loader2, ExternalLink, Shield } from "lucide-react";
+import { Mail, Lock, User, Loader2, ExternalLink, Shield, AlertTriangle } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import firebaseConfig from "../../firebase-applet-config.json";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -15,6 +16,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [operationNotAllowed, setOperationNotAllowed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -55,6 +57,7 @@ export default function Register() {
 
   const handleGoogleSignUp = async () => {
     setError("");
+    setOperationNotAllowed(false);
     setGoogleLoading(true);
     try {
       await base44.auth.loginWithProvider("google");
@@ -67,6 +70,9 @@ export default function Register() {
       } else if (err?.code === 'auth/unauthorized-domain') {
         const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
         setError(`Le domaine (${currentHost}) n'est pas encore autorisé dans Firebase. Ajoutez '${currentHost}' dans Console Firebase > Authentication > Paramètres > Domaines autorisés.`);
+      } else if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
+        setError("L'inscription Google n'est pas encore activée dans la console Firebase (Authentication > Sign-in method > Google).");
+        setOperationNotAllowed(true);
       } else {
         setError(err?.message || "Échec de l'inscription avec Google.");
       }
@@ -131,6 +137,33 @@ export default function Register() {
           </div>
 
           {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+
+          {operationNotAllowed && (
+            <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-2.5">
+              <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400 font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Activation requise dans la Console Firebase</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[12px]">
+                Pour autoriser la connexion et création de compte par Google :
+              </p>
+              <ol className="list-decimal list-inside text-muted-foreground space-y-1 text-[11px] bg-background/50 p-2.5 rounded-lg border border-border/40">
+                <li>Ouvrez la console Firebase dans l'onglet <strong>Authentication &gt; Sign-in method</strong></li>
+                <li>Cliquez sur <strong>Google</strong> puis activez le bouton <strong>Activer</strong></li>
+                <li>Renseignez l'e-mail d'assistance du projet (ex: <code>storesmaxim@gmail.com</code>) et cliquez sur <strong>Enregistrer</strong></li>
+              </ol>
+              <div className="pt-1">
+                <a
+                  href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Ouvrir la Console Firebase
+                </a>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

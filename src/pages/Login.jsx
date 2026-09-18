@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, Phone, KeyRound, Loader2, ShieldCheck, ShieldAlert, ExternalLink, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Phone, KeyRound, Loader2, ShieldCheck, ShieldAlert, ExternalLink, ArrowLeft, AlertTriangle } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import firebaseConfig from "../../firebase-applet-config.json";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -21,6 +22,7 @@ export default function Login() {
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
 
   const [error, setError] = useState("");
+  const [operationNotAllowed, setOperationNotAllowed] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -93,6 +95,7 @@ export default function Login() {
 
   const handleGoogleSignIn = async () => {
     setError("");
+    setOperationNotAllowed(false);
     setGoogleLoading(true);
     try {
       await base44.auth.loginWithProvider("google");
@@ -105,6 +108,9 @@ export default function Login() {
       } else if (err?.code === 'auth/unauthorized-domain') {
         const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
         setError(`Le domaine (${currentHost}) n'est pas encore autorisé dans la console Firebase. Ajoutez '${currentHost}' dans Console Firebase > Authentication > Paramètres > Domaines autorisés.`);
+      } else if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
+        setError("L'authentification Google n'est pas encore activée dans la console Firebase (Authentication > Sign-in method > Google).");
+        setOperationNotAllowed(true);
       } else {
         setError(err?.message || "Échec de la connexion Google.");
       }
@@ -210,6 +216,41 @@ export default function Login() {
           </div>
 
           {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm font-medium">{error}</div>}
+
+          {operationNotAllowed && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-2.5">
+              <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400 font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Activation requise dans la Console Firebase</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[12px]">
+                Le fournisseur d'authentification <strong>Google</strong> n'est pas encore activé dans votre console Firebase :
+              </p>
+              <ol className="list-decimal list-inside text-muted-foreground space-y-1 text-[11px] bg-background/50 p-2.5 rounded-lg border border-border/40">
+                <li>Ouvrez l'onglet <strong>Authentication &gt; Sign-in method</strong></li>
+                <li>Cliquez sur <strong>Google</strong> puis activez le bouton <strong>Activer</strong></li>
+                <li>Renseignez l'e-mail d'assistance du projet (ex: <code>storesmaxim@gmail.com</code>) et cliquez sur <strong>Enregistrer</strong></li>
+              </ol>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Ouvrir la Console Firebase
+                </a>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode("email"); setOperationNotAllowed(false); }}
+                  className="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground font-semibold text-xs border border-border/60 transition-colors"
+                >
+                  Se connecter avec Email & Mot de passe
+                </button>
+              </div>
+            </div>
+          )}
+
           {successMsg && <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">{successMsg}</div>}
 
           {/* Conteneur invisible requis pour la vérification SMS Firebase */}

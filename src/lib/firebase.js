@@ -132,6 +132,12 @@ export const firebaseAuthService = {
         customErr.code = 'auth/popup-blocked';
         throw customErr;
       }
+      if (errorCode === 'auth/operation-not-allowed') {
+        console.warn('[FirebaseAuth] Google Sign-In provider is disabled in Firebase Console (Authentication > Sign-in method > Google).');
+        const customErr = new Error("L'authentification Google n'est pas activée dans la console Firebase (Authentication > Sign-in method > Google).");
+        customErr.code = 'auth/operation-not-allowed';
+        throw customErr;
+      }
       console.error('Firebase Google Sign-In Error:', error);
       throw error;
     }
@@ -143,6 +149,11 @@ export const firebaseAuthService = {
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       return await this.syncFirebaseUserToFirestore(cred.user);
     } catch (error) {
+      if (error?.code === 'auth/operation-not-allowed') {
+        const customErr = new Error("La connexion par e-mail/mot de passe n'est pas activée dans la console Firebase (Authentication > Sign-in method > E-mail/Mot de passe).");
+        customErr.code = 'auth/operation-not-allowed';
+        throw customErr;
+      }
       console.warn('Firebase Email Sign-In Error:', error?.message || error);
       throw error;
     }
@@ -175,6 +186,11 @@ export const firebaseAuthService = {
 
       return userData;
     } catch (error) {
+      if (error?.code === 'auth/operation-not-allowed') {
+        const customErr = new Error("L'inscription par e-mail/mot de passe n'est pas activée dans la console Firebase (Authentication > Sign-in method > E-mail/Mot de passe).");
+        customErr.code = 'auth/operation-not-allowed';
+        throw customErr;
+      }
       console.warn('Firebase Register Error:', error?.message || error);
       throw error;
     }
@@ -218,6 +234,9 @@ export const firebaseAuthService = {
       return confirmationResult;
     } catch (error) {
       console.error('[Firebase sendPhoneOtp error]:', error);
+      if (error?.code === 'auth/operation-not-allowed') {
+        throw new Error("L'authentification par SMS (Téléphone) n'est pas activée dans la console Firebase (Authentication > Sign-in method > Téléphone).");
+      }
       if (error?.code === 'auth/invalid-phone-number') {
         throw new Error('Format de numéro de téléphone invalide. Utilisez le format international (ex: +221 77 123 45 67).');
       }
