@@ -57,25 +57,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Google reCAPTCHA Enterprise Verification Endpoint
-  if (pathname === '/api/verify-recaptcha' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      try {
-        const { token, action, siteKey, minScore } = JSON.parse(body || '{}');
-        const { verifyRecaptchaToken } = await import('./src/api/recaptchaVerifier.js');
-        const result = await verifyRecaptchaToken({ token, action, siteKey, minScore });
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ valid: false, error: err?.message || 'Erreur interne' }));
-      }
-    });
-    return;
-  }
-
   // Prevent directory traversal
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
   let filePath = path.join(DIST_DIR, safePath);

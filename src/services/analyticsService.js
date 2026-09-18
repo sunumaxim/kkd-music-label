@@ -13,9 +13,9 @@ import { base44 } from '@/api/base44Client';
 
 export const analyticsService = {
   /**
-   * Track un événement analytics custom.
-   * @param {string} eventName — Nom indicatif (ex: "user_purchase_complete").
-   * @param {Record<string, string|number|boolean|null>} [properties] — Props minimes, pas de PII.
+   * Track un evenement analytics custom.
+   * @param {string} eventName - Nom indicatif (ex: "user_purchase_complete").
+   * @param {Record<string, any>} [properties] - Proprietes optionnelles
    */
   track(eventName, properties) {
     return base44.analytics.track({ eventName, properties });
