@@ -64,6 +64,9 @@ export default function Register() {
         setError("Inscription Google annulée (fenêtre fermée). Vous pouvez réessayer ou créer votre compte ci-dessous avec votre email.");
       } else if (err?.code === 'auth/popup-blocked') {
         setError("La fenêtre pop-up a été bloquée par votre navigateur. Autorisez les pop-ups ou ouvrez l'application dans un nouvel onglet.");
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+        setError(`Le domaine (${currentHost}) n'est pas encore autorisé dans Firebase. Ajoutez '${currentHost}' dans Console Firebase > Authentication > Paramètres > Domaines autorisés.`);
       } else {
         setError(err?.message || "Échec de l'inscription avec Google.");
       }

@@ -102,6 +102,9 @@ export default function Login() {
         setError("Connexion Google annulée (fenêtre fermée). Vous pouvez réessayer ou vous connecter par email/SMS ci-dessous.");
       } else if (err?.code === 'auth/popup-blocked') {
         setError("La fenêtre pop-up Google a été bloquée par votre navigateur. Veuillez autoriser les pop-ups ou ouvrir l'application dans un nouvel onglet.");
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+        setError(`Le domaine (${currentHost}) n'est pas encore autorisé dans la console Firebase. Ajoutez '${currentHost}' dans Console Firebase > Authentication > Paramètres > Domaines autorisés.`);
       } else {
         setError(err?.message || "Échec de la connexion Google.");
       }
