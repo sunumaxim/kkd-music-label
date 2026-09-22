@@ -29,18 +29,15 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
 const APP_ID = env.VITE_BASE44_APP_ID || "6a1cbc29f199c6e829efde07";
 const BACKEND_URL = env.VITE_BASE44_BACKEND_URL || env.VITE_BASE44_APP_BASE_URL || 'https://base44.app';
 const API_KEY = env.VITE_BASE44_API_KEY || "fbf8a7a9e51d451ab9380a1637643125";
-const ACCESS_TOKEN = env.VITE_BASE44_ACCESS_TOKEN || "b44u_2e606df0aa32b39eaed888bcfafff27e1c9dc2fb405487ff530fcbc4477730a3";
 
 export const base44 = createClient({
   appId: APP_ID,
   serverUrl: BACKEND_URL,
-  token: ACCESS_TOKEN,
   analytics: {
-    enabled: false, // Désactivé pour éliminer les requêtes POST /analytics/track/batch invalides au démarrage
+    enabled: false,
   },
   headers: {
     "api_key": API_KEY,
-    "Authorization": `Bearer ${ACCESS_TOKEN}`,
   },
   options: {
     onError: (err) => {
