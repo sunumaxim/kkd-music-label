@@ -7,34 +7,55 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function isSuperAdminEmail() {
       return isSignedIn() && (
         request.auth.token.email == 'storesmaxim@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        request.auth.token.email == 'admin@kkdmusic.com'
       );
     }
 
-    function isOwner(userId) {
+    function isAdmin() {
+      return isSuperAdminEmail() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isUserSelf(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isEmailOwner(email) {
-      return isSignedIn() && request.auth.token.email == email;
+    function isResourceOwner() {
+      return isSignedIn() && (
+        (resource.data.user_id != null && resource.data.user_id == request.auth.uid) ||
+        (request.auth.token.email != null && resource.data.user_email != null && resource.data.user_email == request.auth.token.email) ||
+        (request.auth.token.phone_number != null && resource.data.phone != null && resource.data.phone == request.auth.token.phone_number)
+      );
     }
 
-    // 1. Profils Utilisateurs (Lecture publique pour fiches artistes/profils, modification par le propriétaire ou admin)
+    // 1. Profils Utilisateurs (Lecture publique pour fiches/profils, modification sécurisée sans élévation de privilège)
     match /users/{userId} {
       allow read: if true;
       allow create: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Empêcher l'élévation arbitraire de rôle vers 'admin' par un non-admin
+      allow update: if isAdmin() || (
+        isUserSelf(userId) && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+          request.resource.data.role == resource.data.role
+        )
+      );
       allow delete: if isAdmin();
     }
 
-    // 2. Sorties Musicales (Catalogue public)
+    // 2. Sorties Musicales (Catalogue public, modification admin ou incrément d'écoute)
     match /releases/{releaseId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        // Permettre l'incrément de lecture sécurisé
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays_count', 'updated_at'])
+      );
     }
 
     // 3. Artistes (Catalogue public)
@@ -51,14 +72,20 @@ service cloud.firestore {
 
     // 5. Billets (Sécurisés)
     match /tickets/{ticketId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.buyer_email == request.auth.token.email);
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.buyer_uid == request.auth.uid ||
+        (request.auth.token.email != null && resource.data.buyer_email == request.auth.token.email)
+      ));
       allow create: if true; // Généré lors de l'achat/réservation
       allow update, delete: if isAdmin();
     }
 
     // 6. Licences & Contrats Officiels
     match /musicLicenses/{licenseId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.grantee_email == request.auth.token.email);
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.grantee_uid == request.auth.uid ||
+        (request.auth.token.email != null && resource.data.grantee_email == request.auth.token.email)
+      ));
       allow write: if isAdmin();
     }
 
@@ -76,29 +103,31 @@ service cloud.firestore {
 
     // 9. Achats & Transactions
     match /purchases/{purchaseId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
+      allow read: if isAdmin() || isResourceOwner();
       allow create: if true;
       allow update, delete: if isAdmin();
     }
 
     // 10. Demandes d'accès artiste
     match /artistAccessRequests/{requestId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
-      allow create: if true;
+      allow read: if isAdmin() || isResourceOwner();
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    // 11. Notifications
+    // 11. Notifications (Inscription, Validation, Modification, Alertes système)
     match /notifications/{notificationId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
-      allow write: if isAdmin();
+      allow read: if isAdmin() || isResourceOwner() || (resource.data.user_email == 'all');
+      allow create: if isSignedIn();
+      allow update: if isAdmin() || isResourceOwner();
+      allow delete: if isAdmin();
     }
 
     // 12. Playlists des utilisateurs
     match /playlists/{playlistId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.user_email == request.auth.token.email);
+      allow update, delete: if isAdmin() || isResourceOwner();
     }
 
     // 13. Studios & Régies
@@ -117,12 +146,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Test connection doc
+    // 15. Campagnes d'Emails et Mailings (Admin uniquement)
+    match /mailings/{mailingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 16. Audit & Sécurité
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Document de test de connectivité
     match /test/{docId} {
       allow read, write: if true;
     }
 
-    // Sécurité par défaut (Refus de tout accès non spécifié)
+    // Sécurité par défaut (Refus strict de tout accès non spécifié)
     match /{document=**} {
       allow read, write: if false;
     }

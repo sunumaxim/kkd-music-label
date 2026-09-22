@@ -1,0 +1,3 @@
+# Automatically resolve lockfile conflicts by keeping current version
+package-lock.json merge=ours
+bun.lock merge=ours

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft, Loader2 } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 export default function ForgotPassword() {
@@ -16,9 +16,9 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
-      await base44.auth.resetPasswordRequest(email);
+      await base44.auth.resetPasswordRequest(email.trim());
     } catch {
-      // Always show success regardless
+      // Always show confirmation
     } finally {
       setLoading(false);
       setSent(true);
@@ -28,22 +28,27 @@ export default function ForgotPassword() {
   return (
     <AuthLayout
       icon={Mail}
-      title="Reset password"
-      subtitle="We'll send you a link to reset it"
+      title="Mot de passe oublié"
+      subtitle="Recevez un lien de réinitialisation sécurisé"
       footer={
         <Link to="/login" className="text-primary font-medium hover:underline">
-          <ArrowLeft className="w-3 h-3 inline mr-1" />Back to log in
+          <ArrowLeft className="w-3 h-3 inline mr-1" />Retour à la connexion
         </Link>
       }
     >
       {sent ? (
-        <p className="text-sm text-foreground text-center">
-          If an account exists with that email, you'll receive a password reset link shortly.
-        </p>
+        <div className="text-center space-y-3">
+          <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+            Si un compte correspond à cette adresse, vous recevrez un lien de réinitialisation avec redirection vers <span className="font-mono font-bold">valide.kkdmusic.com</span>.
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Vérifiez également votre boîte de courriers indésirables (spams).
+          </p>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
+            <Label htmlFor="email">Adresse email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -51,24 +56,28 @@ export default function ForgotPassword() {
                 type="email"
                 autoComplete="email"
                 autoFocus
-                placeholder="you@example.com"
+                placeholder="votre-email@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12"
+                className="pl-10 h-11"
                 required
               />
             </div>
           </div>
-          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+          <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/80 font-bold" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Sending...
+                Envoi du lien...
               </>
             ) : (
-              "Send reset link"
+              "Envoyer le lien de réinitialisation"
             )}
           </Button>
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/70 pt-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Sécurisé par Firebase Authentication</span>
+          </div>
         </form>
       )}
     </AuthLayout>

@@ -93,9 +93,9 @@ export const accessControlService = {
     }
 
     // 3. Piste 'En vente' : Vérification des droits d'accès
-    // A. Bipasse administrateur
-    const userRole = user?.role || (typeof window !== 'undefined' && localStorage.getItem('kkd_demo_role'));
-    if (isAdmin || userRole === 'admin') {
+    // A. Bipasse administrateur vérifié
+    const isUserAdmin = isAdmin || user?.role === 'admin' || user?.email?.toLowerCase() === 'storesmaxim@gmail.com' || user?.email?.toLowerCase() === 'admin@kkdmusic.com';
+    if (isUserAdmin) {
       return {
         accessMode: 'en_vente',
         statusLabel: 'En vente (Admin)',

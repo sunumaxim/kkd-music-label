@@ -20,7 +20,7 @@ export const paymentService = {
   // ── Stripe ──────────────────────────────────────────────
   /**
    * Crée une session de paiement Stripe Checkout.
-   * @param {{ itemType: string, itemId: string, amount: number, userEmail?: string, itemTitle?: string, artistName?: string }}
+   * @param {{ itemType: string, itemId: string, amount: number, userEmail?: string, itemTitle?: string, artistName?: string }} params
    * @returns {Promise<{ url: string, session_id: string }>}
    */
   async createCheckoutSession(params) {

@@ -161,6 +161,22 @@ class LocalDatabase {
     }
   }
 
+  clearAuthSession() {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem('kkd_demo_role');
+      localStorage.removeItem('kkd_purchase_email');
+      localStorage.removeItem('b44_session');
+      try {
+        sessionStorage.clear();
+      } catch {}
+      this.broadcastUserUpdate();
+    } catch (e) {
+      console.warn('[LocalDb] clearAuthSession warning:', e);
+    }
+  }
+
   getItem(key) {
     try {
       if (typeof window === 'undefined') return null;

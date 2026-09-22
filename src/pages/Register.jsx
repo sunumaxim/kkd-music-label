@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, User, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Loader2, ExternalLink, Shield, AlertTriangle } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
+import firebaseConfig from "../../firebase-applet-config.json";
 
 const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
 
@@ -15,8 +16,11 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [operationNotAllowed, setOperationNotAllowed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const isInsideIframe = typeof window !== 'undefined' && window.self !== window.top;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,12 +57,25 @@ export default function Register() {
 
   const handleGoogleSignUp = async () => {
     setError("");
+    setOperationNotAllowed(false);
     setGoogleLoading(true);
     try {
       await base44.auth.loginWithProvider("google");
       window.location.href = "/mon-compte";
     } catch (err) {
-      setError("Échec de l'inscription Google : " + (err?.message || "Erreur de connexion"));
+      if (err?.code === 'auth/popup-closed-by-user' || err?.isCancelled) {
+        setError("Inscription Google annulée (fenêtre fermée). Vous pouvez réessayer ou créer votre compte ci-dessous avec votre email.");
+      } else if (err?.code === 'auth/popup-blocked') {
+        setError("La fenêtre pop-up a été bloquée par votre navigateur. Autorisez les pop-ups ou ouvrez l'application dans un nouvel onglet.");
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+        setError(`Le domaine (${currentHost}) n'est pas encore autorisé dans Firebase. Ajoutez '${currentHost}' dans Console Firebase > Authentication > Paramètres > Domaines autorisés.`);
+      } else if (err?.code === 'auth/operation-not-allowed' || err?.message?.includes('operation-not-allowed')) {
+        setError("L'inscription Google n'est pas encore activée dans la console Firebase (Authentication > Sign-in method > Google).");
+        setOperationNotAllowed(true);
+      } else {
+        setError(err?.message || "Échec de l'inscription avec Google.");
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -90,7 +107,7 @@ export default function Register() {
           <Button 
             type="button"
             variant="outline" 
-            className="w-full h-11 text-sm font-medium mb-6" 
+            className="w-full h-11 text-sm font-medium mb-4" 
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
           >
@@ -102,12 +119,51 @@ export default function Register() {
             Continuer avec Google
           </Button>
 
+          {isInsideIframe && (
+            <div className="text-center mb-6 -mt-2">
+              <button
+                type="button"
+                onClick={() => window.open(window.location.href, '_blank')}
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 hover:underline transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" /> Ouvrir en plein écran si le pop-up est restreint
+              </button>
+            </div>
+          )}
+
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
             <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">ou avec votre email</span></div>
           </div>
 
           {error && <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+
+          {operationNotAllowed && (
+            <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-2.5">
+              <div className="flex items-start gap-2 text-amber-600 dark:text-amber-400 font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Activation requise dans la Console Firebase</span>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-[12px]">
+                Pour autoriser la connexion et création de compte par Google :
+              </p>
+              <ol className="list-decimal list-inside text-muted-foreground space-y-1 text-[11px] bg-background/50 p-2.5 rounded-lg border border-border/40">
+                <li>Ouvrez la console Firebase dans l'onglet <strong>Authentication &gt; Sign-in method</strong></li>
+                <li>Cliquez sur <strong>Google</strong> puis activez le bouton <strong>Activer</strong></li>
+                <li>Renseignez l'e-mail d'assistance du projet (ex: <code>storesmaxim@gmail.com</code>) et cliquez sur <strong>Enregistrer</strong></li>
+              </ol>
+              <div className="pt-1">
+                <a
+                  href={`https://console.firebase.google.com/project/${firebaseConfig.projectId}/authentication/providers`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Ouvrir la Console Firebase
+                </a>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -180,6 +236,11 @@ export default function Register() {
             Déjà un compte ?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">Se connecter</Link>
           </p>
+
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/70 pt-3">
+            <Shield className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Protection Firebase Auth & Synchronisation Cloud Firestore</span>
+          </div>
         </div>
       </div>
     </div>
