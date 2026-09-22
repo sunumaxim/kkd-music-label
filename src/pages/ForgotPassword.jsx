@@ -39,7 +39,7 @@ export default function ForgotPassword() {
       {sent ? (
         <div className="text-center space-y-3">
           <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-            Si un compte correspond à cette adresse, vous recevrez un lien de réinitialisation avec redirection vers <span className="font-mono font-bold">valide.kkdmusic.com</span>.
+            Si un compte correspond à cette adresse, vous recevrez un lien de réinitialisation par email.
           </div>
           <p className="text-xs text-muted-foreground">
             Vérifiez également votre boîte de courriers indésirables (spams).
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
           </Button>
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/70 pt-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Sécurisé par Firebase Authentication</span>
+            <span>Réinitialisation sécurisée KKD Music</span>
           </div>
         </form>
       )}

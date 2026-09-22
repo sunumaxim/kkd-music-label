@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { localDb } from '@/api/localStore';
-import { firebaseAuthService } from '@/lib/firebase';
 import { queryClientInstance } from '@/lib/query-client';
 
 const AuthContext = createContext(null);
@@ -23,29 +22,52 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    // Écoute de l'état d'authentification Firebase en temps réel avec persistance garantie
-    const unsubscribeFirebase = firebaseAuthService.subscribeAuthState(async (fbUser) => {
+    let cancelled = false;
+
+    const initAuth = async () => {
       try {
-        if (fbUser && fbUser.email) {
-          setUser(fbUser);
-          setIsAuthenticated(true);
-          localDb.setCurrentUser(fbUser);
-          setAuthError(null);
+        const isAuth = await base44.auth.isAuthenticated();
+        if (cancelled) return;
+        if (isAuth) {
+          try {
+            const currentUser = await base44.auth.me();
+            if (cancelled) return;
+            if (currentUser && currentUser.email) {
+              setUser(currentUser);
+              setIsAuthenticated(true);
+              localDb.setCurrentUser(currentUser);
+              setAuthError(null);
+            } else {
+              setUser(null);
+              setIsAuthenticated(false);
+              localDb.clearAuthSession();
+            }
+          } catch (err) {
+            if (cancelled) return;
+            console.warn('[AuthContext] me() notice:', err?.message || err);
+            setUser(null);
+            setIsAuthenticated(false);
+            localDb.clearAuthSession();
+          }
         } else {
-          // Si Firebase confirme qu'aucun utilisateur n'est connecté, purger l'état
           setUser(null);
           setIsAuthenticated(false);
           localDb.clearAuthSession();
         }
       } catch (err) {
-        console.error('[AuthContext] Auth state processing error:', err);
+        if (cancelled) return;
+        console.warn('[AuthContext] isAuthenticated() notice:', err?.message || err);
         setUser(null);
         setIsAuthenticated(false);
       } finally {
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
+        if (!cancelled) {
+          setIsLoadingAuth(false);
+          setAuthChecked(true);
+        }
       }
-    });
+    };
+
+    initAuth();
 
     // Écoute des mises à jour spécifiques du compte utilisateur
     const handleUserUpdate = (e) => {
@@ -61,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('kkd:user_updated', handleUserUpdate);
 
     return () => {
-      if (typeof unsubscribeFirebase === 'function') unsubscribeFirebase();
+      cancelled = true;
       window.removeEventListener('kkd:user_updated', handleUserUpdate);
     };
   }, []);
@@ -89,44 +111,31 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Déconnexion complète et nettoyage approfondi
+  // Déconnexion complète
   const logout = useCallback(async (shouldRedirect = true, redirectPath = '/login') => {
     try {
-      // 1. Déconnexion Firebase Auth
-      await firebaseAuthService.logout();
-    } catch (e) {
-      console.warn('[AuthContext] Firebase logout error:', e);
-    }
-
-    try {
-      // 2. Déconnexion client d'API
       await base44.auth.logout();
     } catch (e) {
-      console.warn('[AuthContext] API client logout error:', e);
+      console.warn('[AuthContext] logout error:', e);
     }
 
-    // 3. Purge du cache React Query en mémoire
     try {
       queryClientInstance.clear();
     } catch (e) {
       console.warn('[AuthContext] QueryClient clear warning:', e);
     }
 
-    // 4. Nettoyage complet du stockage local et de session
     localDb.clearAuthSession();
 
-    // 5. Réinitialisation de l'état React
     setUser(null);
     setIsAuthenticated(false);
     setAuthError(null);
 
-    // 6. Notification globale
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('kkd:user_updated', { detail: null }));
       window.dispatchEvent(new CustomEvent('kkd:auth_logout'));
     }
 
-    // 7. Redirection sécurisée
     if (shouldRedirect && typeof window !== 'undefined') {
       window.location.href = redirectPath;
     }
@@ -139,9 +148,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
       isAdmin,
       isLoadingAuth,
       isLoadingPublicSettings,
@@ -164,4 +173,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
