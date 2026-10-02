@@ -41,7 +41,7 @@ export default function Login() {
     setError("");
     setGoogleLoading(true);
     try {
-      await base44.auth.loginWithProvider("google", targetRedirect);
+      await base44.auth.loginWithProvider("google", window.location.origin + targetRedirect);
     } catch (err) {
       if (err?.isCancelled || err?.code === 'auth/popup-closed-by-user') {
         setError("Connexion Google annulée. Vous pouvez réessayer ou utiliser votre email ci-dessous.");

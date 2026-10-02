@@ -107,7 +107,7 @@ export default function Register() {
     setError("");
     setGoogleLoading(true);
     try {
-      await base44.auth.loginWithProvider("google", targetRedirect);
+      await base44.auth.loginWithProvider("google", window.location.origin + targetRedirect);
     } catch (err) {
       if (err?.isCancelled || err?.code === 'auth/popup-closed-by-user') {
         setError("Inscription Google annulée. Vous pouvez réessayer ou créer votre compte ci-dessous.");
