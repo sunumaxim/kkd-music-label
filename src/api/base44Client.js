@@ -2,6 +2,7 @@
 // Connexion au backend Base44 (base de données, auth, fonctions, intégrations)
 import { createClient } from '@base44/sdk';
 import { localDb } from './localStore';
+import { appParams } from '@/lib/app-params';
 import { firestoreService } from '../lib/firebase';
 
 // Interception préventive des logs d'erreurs réseau de l'intercepteur Axios du SDK Base44
@@ -25,19 +26,17 @@ if (typeof window !== 'undefined' && console && console.error) {
   });
 }
 
-const env = (typeof import.meta !== 'undefined' && import.meta.env) || {};
-const APP_ID = env.VITE_BASE44_APP_ID || "6a1cbc29f199c6e829efde07";
-const BACKEND_URL = env.VITE_BASE44_BACKEND_URL || env.VITE_BASE44_APP_BASE_URL || 'https://base44.app';
-const API_KEY = env.VITE_BASE44_API_KEY || "fbf8a7a9e51d451ab9380a1637643125";
+const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
 export const base44 = createClient({
-  appId: APP_ID,
-  serverUrl: BACKEND_URL,
+  appId,
+  token,
+  functionsVersion,
+  serverUrl: '',
+  requiresAuth: false,
+  appBaseUrl,
   analytics: {
     enabled: false,
-  },
-  headers: {
-    "api_key": API_KEY,
   },
   options: {
     onError: (err) => {
