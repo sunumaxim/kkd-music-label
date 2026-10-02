@@ -71,7 +71,9 @@ export const AuthProvider = ({ children }) => {
 
     // Écoute des mises à jour spécifiques du compte utilisateur
     const handleUserUpdate = (e) => {
-      const updated = e?.detail !== undefined ? e.detail : localDb.getCurrentUser();
+      // Ne réagir qu'aux mises à jour explicites (évite d'écraser la session Base44 par le cache local)
+      if (!e || e.detail === undefined) return;
+      const updated = e.detail;
       if (updated && updated.email) {
         setUser(updated);
         setIsAuthenticated(true);
