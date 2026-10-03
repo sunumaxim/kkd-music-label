@@ -1,0 +1,67 @@
+{
+  "name": "Recherche concerts artistes",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 10 * * 1,4",
+      "one_time_date": null,
+      "timezone": "Europe/Paris",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Deux fois par semaine (lundi et jeudi 10h) : recherche sur le web les concerts \u00e0 venir des artistes v\u00e9rifi\u00e9s ou mis en avant et les publie avec le lien de billetterie.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "recherche_concerts_artistes",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "search_concerts_a": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "concerts",
+              "offset": 0,
+              "limit": 15
+            }
+          },
+          "then": "search_concerts_b",
+          "x-base44": {
+            "title": "Concerts (lot 1)",
+            "description": "15 premiers artistes"
+          }
+        }
+      },
+      {
+        "search_concerts_b": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "concerts",
+              "offset": 15,
+              "limit": 15
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Concerts (lot 2)",
+            "description": "Artistes suivants"
+          }
+        }
+      }
+    ]
+  }
+}

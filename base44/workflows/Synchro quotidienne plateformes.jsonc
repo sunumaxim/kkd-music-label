@@ -1,0 +1,99 @@
+{
+  "name": "Synchro quotidienne plateformes",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 14 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Paris",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Chaque jour \u00e0 14h : importe automatiquement les nouvelles sorties Spotify/Deezer, les vid\u00e9os YouTube et met \u00e0 jour les profils artistes.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "synchro_quotidienne_plateformes",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_spotify": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "spotify",
+              "limit": 100
+            }
+          },
+          "then": "sync_deezer",
+          "x-base44": {
+            "title": "Sorties Spotify",
+            "description": "Nouveaux albums et singles"
+          }
+        }
+      },
+      {
+        "sync_deezer": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "deezer",
+              "limit": 100
+            }
+          },
+          "then": "sync_youtube",
+          "x-base44": {
+            "title": "Sorties Deezer",
+            "description": "Nouveaux albums et singles"
+          }
+        }
+      },
+      {
+        "sync_youtube": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "youtube",
+              "limit": 100
+            }
+          },
+          "then": "sync_profile",
+          "x-base44": {
+            "title": "Vid\u00e9os YouTube",
+            "description": "Nouvelles vid\u00e9os des cha\u00eenes"
+          }
+        }
+      },
+      {
+        "sync_profile": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "profile",
+              "limit": 100
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Profils artistes",
+            "description": "Photo et genre"
+          }
+        }
+      }
+    ]
+  }
+}
