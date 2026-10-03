@@ -72,14 +72,11 @@ export const AuthProvider = ({ children }) => {
     // Écoute des mises à jour spécifiques du compte utilisateur
     const handleUserUpdate = (e) => {
       // Ne réagir qu'aux mises à jour explicites (évite d'écraser la session Base44 par le cache local)
-      if (!e || e.detail === undefined) return;
-      const updated = e.detail;
+      // Un événement sans utilisateur (detail null) ne doit JAMAIS déconnecter : la déconnexion est gérée par logout()
+      const updated = e?.detail;
       if (updated && updated.email) {
         setUser(updated);
         setIsAuthenticated(true);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
       }
     };
     window.addEventListener('kkd:user_updated', handleUserUpdate);
