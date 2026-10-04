@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { waitUntil } from 'base44:runtime';
 
 const DAILY_LIMIT = 2;
+const CLIP_DURATION = 8; // GenerateVideo supporte 4/6/8s max par clip
 
 const KKD_WATERMARK_NOTE =
   ` Un petit logo en filigrane « KKD Music » (texte discret, blanc et orange) ` +
@@ -18,14 +19,16 @@ export default async function (req) {
     const image_file_uri = body.image_file_uri;
     if (!image_file_uri) return Response.json({ error: 'Image manquante' }, { status: 400 });
 
-    const dur = [4, 6, 8].includes(Number(body.duration)) ? Number(body.duration) : 6;
+    const totalDuration = [30, 45, 60].includes(Number(body.duration)) ? Number(body.duration) : 30;
     const ar = body.aspect_ratio === '9:16' ? '9:16' : '16:9';
     const prompt = (body.action_prompt || '').trim().slice(0, 500);
     const songTitle = (body.release_title || '').trim().slice(0, 120);
     const songArtist = (body.artist_name || '').trim().slice(0, 120);
     const exStart = Math.max(0, Number(body.excerpt_start) || 0);
-    const exDur = Math.min(30, Math.max(1, Number(body.excerpt_duration) || dur));
+    const exDur = Math.min(60, Math.max(1, Number(body.excerpt_duration) || totalDuration));
     const audioFileUrl = (body.audio_file_url || '').trim().slice(0, 2048);
+
+    const clipCount = Math.ceil(totalDuration / CLIP_DURATION);
 
     const db = base44.asServiceRole;
 
@@ -38,13 +41,13 @@ export default async function (req) {
       return Response.json({ error: 'quota_epuise', reset_at: reset, remaining: 0 }, { status: 429 });
     }
 
-    // --- Réservation atomique : création du record en_attente ---
+    // --- Réservation : création du record en_attente ---
     const gen = await db.entities.VideoGeneration.create({
       user_email: user.email,
       prompt,
       image_url: image_file_uri,
       status: 'en_attente',
-      duration: dur,
+      duration: totalDuration,
       aspect_ratio: ar,
       release_id: body.release_id || '',
       release_title: songTitle,
@@ -53,15 +56,17 @@ export default async function (req) {
       excerpt_start: exStart,
       excerpt_duration: exDur,
       quota_date: todayUTC,
+      video_clips: [],
     });
 
     // --- Lance la génération en arrière-plan, retourne immédiatement ---
-    waitUntil(processGeneration(base44, gen.id, image_file_uri, prompt, songTitle, songArtist, dur, ar));
+    waitUntil(processGeneration(base44, gen.id, image_file_uri, prompt, songTitle, songArtist, clipCount, ar));
 
     return Response.json({
       generation_id: gen.id,
       status: 'en_attente',
       remaining: DAILY_LIMIT - activeCount - 1,
+      clip_count: clipCount,
     });
   } catch (error) {
     console.error('[generateVideo] fatal', error.message);
@@ -69,11 +74,17 @@ export default async function (req) {
   }
 }
 
-async function processGeneration(base44, genId, imageUri, prompt, songTitle, songArtist, dur, ar) {
+async function processGeneration(base44, genId, imageUri, prompt, songTitle, songArtist, clipCount, ar) {
   const db = base44.asServiceRole;
   try {
-    // Signe l'URL de l'image privée pour la lecture IA
-    const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: imageUri, expires_in: 600 });
+    // Image : URL publique (pochette) ou file_uri privé à signer
+    let imageUrlForLLM;
+    if (imageUri.startsWith('http')) {
+      imageUrlForLLM = imageUri;
+    } else {
+      const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: imageUri, expires_in: 600 });
+      imageUrlForLLM = signed.signed_url;
+    }
 
     const songContext = songTitle
       ? `Cette vidéo illustre le morceau « ${songTitle} »${songArtist ? ` de ${songArtist}` : ''}. ` +
@@ -87,16 +98,29 @@ async function processGeneration(base44, genId, imageUri, prompt, songTitle, son
         (prompt ? `L'action souhaitée par l'utilisateur : « ${prompt} ». Intègre cette action de façon fluide et naturelle. ` : '') +
         `Réponds en français, en 3 à 5 phrases, prête à servir de prompt vidéo. ` +
         `Reste neutre et respectueux : ne produis rien de diffamant, injurieux, ou usurpant l'identité d'une personne réelle identifiable.`,
-      file_urls: [signed.signed_url],
+      file_urls: [imageUrlForLLM],
     });
     const imageDescription = typeof descRes === 'string' ? descRes : (descRes?.description || JSON.stringify(descRes || ''));
 
     const videoPrompt = `${imageDescription}. Animation fluide, réaliste et cinématographique, haute qualité, mouvements naturels.${KKD_WATERMARK_NOTE}`;
-    const videoRes = await base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: dur, aspect_ratio: ar, generate_audio: false });
-    const videoUrl = videoRes?.url;
-    if (!videoUrl) throw new Error('URL vidéo non renvoyée par le générateur');
 
-    await db.entities.VideoGeneration.update(genId, { video_url: videoUrl, status: 'genere', image_description: imageDescription });
+    // Génère N clips de 8s en parallèle pour atteindre la durée totale
+    const clipPromises = Array.from({ length: clipCount }, () =>
+      base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: CLIP_DURATION, aspect_ratio: ar, generate_audio: false })
+        .then((res) => res?.url || null)
+        .catch(() => null)
+    );
+    const results = await Promise.allSettled(clipPromises);
+    const clips = results.filter((r) => r.status === 'fulfilled' && r.value).map((r) => r.value);
+
+    if (clips.length === 0) throw new Error('Aucun clip généré par le service vidéo');
+
+    await db.entities.VideoGeneration.update(genId, {
+      video_clips: clips,
+      video_url: clips[0],
+      status: 'genere',
+      image_description: imageDescription,
+    });
   } catch (err) {
     console.error('[generateVideo] échec génération:', err.message);
     try { await db.entities.VideoGeneration.update(genId, { status: 'echoue' }); } catch (_) {}

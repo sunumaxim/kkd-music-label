@@ -1,15 +1,10 @@
-// Tarifs Studio Vidéo IA — 1 crédit = 1 génération vidéo animée
-export const VIDEO_PACKS = [
-  { id: 'decouverte', label: 'Pack Découverte', credits: 3, amount: 3000, unit: '1 000 F / vidéo', desc: 'Pour tester le studio' },
-  { id: 'createur', label: 'Pack Créateur', credits: 10, amount: 8000, unit: '800 F / vidéo', desc: 'Le plus populaire', popular: true },
-  { id: 'studio', label: 'Pack Studio', credits: 25, amount: 15000, unit: '600 F / vidéo', desc: 'Meilleur tarif vidéo' },
-];
-
-// Coût en crédits selon la durée (adapté à la consommation plateforme)
+// Studio Vidéo IA — durées et formats
+// La plateforme génère des clips de 8s max ; une vidéo de 30/45/60s est obtenue
+// en assemblant plusieurs clips (4, 6 ou 8) lus séquentiellement côté frontend.
 export const VIDEO_DURATIONS = [
-  { value: 4, label: '4 secondes', credits: 1 },
-  { value: 6, label: '6 secondes', credits: 1 },
-  { value: 8, label: '8 secondes', credits: 2 },
+  { value: 30, label: '30 secondes', clips: 4 },
+  { value: 45, label: '45 secondes', clips: 6 },
+  { value: 60, label: '60 secondes', clips: 8 },
 ];
 
 export const VIDEO_ASPECTS = [
@@ -17,5 +12,9 @@ export const VIDEO_ASPECTS = [
   { value: '9:16', label: 'Portrait (9:16)' },
 ];
 
+// Conservé pour rétro-compatibilité (système de crédits retiré)
+export const VIDEO_PACKS = [
+  { id: 'decouverte', label: 'Pack Découverte', credits: 3, amount: 0, unit: 'Gratuit', desc: 'Supprimé' },
+];
 export const packById = (id) => VIDEO_PACKS.find((p) => p.id === id);
-export const creditsForDuration = (d) => VIDEO_DURATIONS.find((x) => x.value === Number(d))?.credits || 1;
+export const creditsForDuration = () => 0;

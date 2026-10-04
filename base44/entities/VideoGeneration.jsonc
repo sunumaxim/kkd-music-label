@@ -12,7 +12,7 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Image source (file_uri priv\u00e9 upload\u00e9 par l'utilisateur)"
+      "description": "Image source (file_uri priv\u00e9 upload\u00e9 par l'utilisateur, ou URL publique de la pochette de la chanson)"
     },
     "image_description": {
       "type": "string",
@@ -20,7 +20,15 @@
     },
     "video_url": {
       "type": "string",
-      "description": "URL de la vid\u00e9o anim\u00e9e g\u00e9n\u00e9r\u00e9e"
+      "description": "URL du premier clip g\u00e9n\u00e9r\u00e9 (r\u00e9tro-compatibilit\u00e9)"
+    },
+    "video_clips": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "URLs des clips de 8s g\u00e9n\u00e9r\u00e9s, assembl\u00e9s s\u00e9quentiellement pour atteindre la dur\u00e9e totale (30\u00e060s)"
     },
     "release_id": {
       "type": "string",
@@ -45,7 +53,7 @@
     },
     "excerpt_duration": {
       "type": "number",
-      "default": 6,
+      "default": 30,
       "description": "Dur\u00e9e de l'extrait audio en secondes"
     },
     "quota_date": {
@@ -69,8 +77,8 @@
     },
     "duration": {
       "type": "number",
-      "default": 6,
-      "description": "Dur\u00e9e de la vid\u00e9o en secondes"
+      "default": 30,
+      "description": "Dur\u00e9e totale souhait\u00e9e de la vid\u00e9o en secondes (30, 45 ou 60)"
     },
     "aspect_ratio": {
       "type": "string",
