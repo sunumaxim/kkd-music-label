@@ -1,13 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Music, Play, Pause, X } from 'lucide-react';
+import { Music, Play, Pause, X, Search } from 'lucide-react';
 
-export default function SongExcerptPicker({ songs, selectedSong, onSelect, excerptStart, setExcerptStart, excerptDuration, setExcerptDuration }) {
+export default function SongExcerptPicker({ songs, selectedSong, onSelect, excerptStart, setExcerptStart, excerptDuration }) {
+  const [search, setSearch] = useState('');
   const audioRef = useRef(null);
   const [audioDuration, setAudioDuration] = useState(0);
   const [previewing, setPreviewing] = useState(false);
   const previewTimer = useRef(null);
 
-  // Réinitialise quand on change de morceau
+  const filtered = songs.filter((s) =>
+    !search ||
+    s.title?.toLowerCase().includes(search.toLowerCase()) ||
+    s.artist_name?.toLowerCase().includes(search.toLowerCase())
+  );
+
   useEffect(() => {
     setAudioDuration(0);
     setExcerptStart(0);
@@ -34,12 +40,12 @@ export default function SongExcerptPicker({ songs, selectedSong, onSelect, excer
     a.currentTime = excerptStart;
     a.play().catch(() => {});
     setPreviewing(true);
-    previewTimer.current = setTimeout(stopPreview, (excerptDuration || 6) * 1000);
+    previewTimer.current = setTimeout(stopPreview, (excerptDuration || 30) * 1000);
   };
 
   useEffect(() => () => stopPreview(), []);
 
-  const maxStart = Math.max(0, (audioDuration || 0) - (excerptDuration || 6));
+  const maxStart = Math.max(0, (audioDuration || 0) - (excerptDuration || 30));
 
   return (
     <div>
@@ -57,30 +63,16 @@ export default function SongExcerptPicker({ songs, selectedSong, onSelect, excer
               <p className="text-xs font-bold truncate">{selectedSong.title}</p>
               <p className="text-[11px] text-muted-foreground truncate">{selectedSong.artist_name}</p>
             </div>
-            <button onClick={() => onSelect(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground">
+            <button onClick={() => { onSelect(null); setSearch(''); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground">
               <X size={14} />
             </button>
           </div>
 
-          {/* Extrait : début + durée + aperçu */}
-          <div className="bg-secondary/20 rounded-xl p-3 space-y-3">
+          {/* Extrait : début + aperçu */}
+          <div className="bg-secondary/20 rounded-xl p-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Extrait audio</span>
-            </div>
-            {/* Durée de l'extrait */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-muted-foreground w-10">Durée</span>
-              {[4, 6, 8, 12].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setExcerptDuration(d)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${
-                    excerptDuration === d ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'
-                  }`}
-                >
-                  {d}s
-                </button>
-              ))}
+              <span className="text-[11px] text-muted-foreground">Durée : {excerptDuration}s</span>
             </div>
             {audioDuration > 0 ? (
               <>
@@ -115,30 +107,41 @@ export default function SongExcerptPicker({ songs, selectedSong, onSelect, excer
           Aucune chanson avec fichier audio KKD n'est encore disponible. Publiez un single gratuit pour l'utiliser ici.
         </p>
       ) : (
-        <select
-          onChange={(e) => {
-            const s = songs.find((x) => x.key === e.target.value);
-            if (s) onSelect(s);
-          }}
-          value=""
-          className="w-full bg-secondary/40 border border-border rounded-xl px-3 py-2.5 text-xs text-foreground focus:outline-none focus:border-primary"
-        >
-          <option value="">-- Choisir une chanson --</option>
-          {songs.map((s) => (
-            <option key={s.key} value={s.key}>{s.title} · {s.artist_name}</option>
-          ))}
-        </select>
+        <div className="space-y-2">
+          {/* Barre de recherche */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher une chanson ou un artiste…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-secondary/40 border border-border rounded-xl pl-9 pr-3 py-2.5 text-xs text-foreground focus:outline-none focus:border-primary"
+            />
+          </div>
+          {/* Liste filtrée */}
+          <div className="max-h-48 overflow-y-auto no-scrollbar space-y-1">
+            {filtered.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground text-center py-4">Aucune chanson trouvée pour « {search} ».</p>
+            ) : filtered.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => onSelect(s)}
+                className="w-full flex items-center gap-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/60 p-2 text-left transition-colors"
+              >
+                {s.cover_url && <img src={s.cover_url} alt="" className="w-8 h-8 rounded-md object-cover shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{s.title}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{s.artist_name}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Élément audio caché pour le chargement des métadonnées et l'aperçu */}
       {selectedSong && (
-        <audio
-          ref={audioRef}
-          src={selectedSong.audio_url}
-          onLoadedMetadata={onLoadedMetadata}
-          preload="metadata"
-          className="hidden"
-        />
+        <audio ref={audioRef} src={selectedSong.audio_url} onLoadedMetadata={onLoadedMetadata} preload="metadata" className="hidden" />
       )}
     </div>
   );

@@ -10,7 +10,7 @@ import SongExcerptPicker from '@/components/studio/SongExcerptPicker';
 import VideoWithAudio from '@/components/studio/VideoWithAudio';
 import {
   Sparkles, Loader2, Wand2, Film, LogIn, ImageIcon,
-  AlertTriangle, History, Clock, Music,
+  AlertTriangle, History, Clock, Music, Upload,
 } from 'lucide-react';
 
 const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
@@ -22,16 +22,16 @@ export default function VideoStudio() {
   const [imageUri, setImageUri] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [action, setAction] = useState('');
-  const [duration, setDuration] = useState(6);
+  const [duration, setDuration] = useState(30);
   const [aspect, setAspect] = useState('16:9');
   const [consent, setConsent] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [genStatus, setGenStatus] = useState(null); // null | 'preparation' | 'generation' | 'termine' | 'echec'
+  const [genStatus, setGenStatus] = useState(null);
   const [result, setResult] = useState(null);
   const [pendingId, setPendingId] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
   const [excerptStart, setExcerptStart] = useState(0);
-  const [excerptDuration, setExcerptDuration] = useState(6);
+  const [excerptDuration, setExcerptDuration] = useState(30);
   const pollRef = useRef(null);
 
   const todayUTC = new Date().toISOString().slice(0, 10);
@@ -85,10 +85,10 @@ export default function VideoStudio() {
           qc.invalidateQueries({ queryKey: ['video-generations'] });
         }
       } catch (e) { /* retry au prochain interval */ }
-    }, 4000);
+    }, 5000);
   }, [stopPolling, qc]);
 
-  // Au chargement : reprend une génération en attente (après navigation/rechargement)
+  // Au chargement : reprend une génération en attente
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
@@ -105,11 +105,21 @@ export default function VideoStudio() {
     return () => { cancelled = true; stopPolling(); };
   }, [user?.email, startPolling, stopPolling]);
 
-  // La durée de l'extrait suit la durée vidéo par défaut
+  // La durée de l'extrait suit la durée vidéo
   useEffect(() => { setExcerptDuration(duration); }, [duration]);
 
   const isGenerating = genStatus === 'preparation' || genStatus === 'generation';
   const canGenerate = !!imageUri && consent && remaining > 0 && !isGenerating;
+  const clipCount = Math.ceil(duration / 8);
+
+  // Sélection d'une chanson → utilise automatiquement sa pochette comme image
+  const handleSelectSong = (song) => {
+    setSelectedSong(song);
+    if (song?.cover_url) {
+      setImagePreview(song.cover_url);
+      setImageUri(song.cover_url);
+    }
+  };
 
   const handleImage = async (e) => {
     const file = e.target.files[0];
@@ -178,7 +188,7 @@ export default function VideoStudio() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-12">
-      {/* Header avec logo KKD */}
+      {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary/10 border border-border flex items-center justify-center shrink-0">
@@ -186,10 +196,9 @@ export default function VideoStudio() {
           </div>
           <div>
             <h1 className="font-heading text-xl md:text-2xl font-extrabold leading-none">Studio Vidéo IA</h1>
-            <p className="text-xs text-muted-foreground mt-1">Transformez une image en vidéo animée</p>
+            <p className="text-xs text-muted-foreground mt-1">Vidéo animée de 30 à 60 secondes</p>
           </div>
         </div>
-        {/* Compteur de générations restantes */}
         <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${remaining > 0 ? 'bg-secondary/40 border-border' : 'bg-amber-500/10 border-amber-500/30'}`}>
           <Clock size={16} className={remaining > 0 ? 'text-accent' : 'text-amber-500'} />
           <div className="leading-tight">
@@ -225,6 +234,11 @@ export default function VideoStudio() {
               </div>
               <input type="file" className="hidden" onChange={handleImage} accept="image/*" disabled={uploading} />
             </label>
+            {selectedSong?.cover_url && (
+              <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                <Upload size={10} /> Pochette de « {selectedSong.title} » utilisée. Vous pouvez téléverser une autre image pour remplacer.
+              </p>
+            )}
           </div>
 
           {/* Action souhaitée */}
@@ -245,11 +259,10 @@ export default function VideoStudio() {
           <SongExcerptPicker
             songs={songs}
             selectedSong={selectedSong}
-            onSelect={setSelectedSong}
+            onSelect={handleSelectSong}
             excerptStart={excerptStart}
             setExcerptStart={setExcerptStart}
             excerptDuration={excerptDuration}
-            setExcerptDuration={setExcerptDuration}
           />
 
           {/* Durée + format */}
@@ -323,10 +336,10 @@ export default function VideoStudio() {
               <p className="font-heading font-bold text-sm">Résultat</p>
             </div>
             {isGenerating ? (
-              <GenerationProgress status={genStatus} />
-            ) : result?.video_url ? (
+              <GenerationProgress status={genStatus} duration={duration} clipCount={clipCount} />
+            ) : result?.video_clips?.length > 0 || result?.video_url ? (
               <VideoWithAudio
-                videoUrl={result.video_url}
+                clips={result.video_clips?.length > 0 ? result.video_clips : (result.video_url ? [result.video_url] : [])}
                 audioUrl={result.audio_file_url}
                 excerptStart={result.excerpt_start}
                 excerptDuration={result.excerpt_duration}
@@ -369,22 +382,22 @@ export default function VideoStudio() {
   );
 }
 
-function GenerationProgress({ status }) {
-  const steps = [
-    { id: 'preparation', label: 'Préparation', icon: Loader2 },
-    { id: 'generation', label: 'Génération en cours', icon: Loader2 },
-  ];
-  const currentIdx = status === 'preparation' ? 0 : 1;
+function GenerationProgress({ status, duration, clipCount }) {
   return (
     <div className="aspect-video rounded-xl bg-secondary/40 flex flex-col items-center justify-center gap-4 p-6">
       <Loader2 size={32} className="animate-spin text-primary" />
       <div className="text-center space-y-1">
-        <p className="text-sm font-heading font-bold">{steps[currentIdx].label}…</p>
-        <p className="text-xs text-muted-foreground">Cela prend généralement 30 à 60 secondes.<br />Vous pouvez quitter la page, la vidéo apparaîtra dans votre historique.</p>
+        <p className="text-sm font-heading font-bold">
+          {status === 'preparation' ? 'Préparation…' : `Génération de ${clipCount} clips en cours…`}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Vidéo de {duration} secondes : {clipCount} clips de 8s générés en parallèle.<br />
+          Cela peut prendre 2 à 5 minutes. Vous pouvez quitter la page,<br />la vidéo apparaîtra dans votre historique.
+        </p>
       </div>
-      <div className="flex gap-2">
-        {steps.map((s, i) => (
-          <div key={s.id} className={`h-1.5 w-12 rounded-full transition-colors ${i <= currentIdx ? 'bg-primary' : 'bg-muted'}`} />
+      <div className="flex gap-1.5">
+        {[...Array(Math.min(clipCount, 8))].map((_, i) => (
+          <div key={i} className="h-1.5 w-6 rounded-full bg-primary animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
         ))}
       </div>
     </div>
@@ -392,11 +405,12 @@ function GenerationProgress({ status }) {
 }
 
 function GenerationHistoryItem({ gen, onPlay }) {
+  const clips = gen.video_clips?.length > 0 ? gen.video_clips : (gen.video_url ? [gen.video_url] : []);
   return (
     <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-2">
       <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-        {gen.status === 'genere' && gen.video_url ? (
-          <video src={gen.video_url} className="w-full h-full object-cover" muted />
+        {gen.status === 'genere' && clips.length > 0 ? (
+          <video src={clips[0]} className="w-full h-full object-cover" muted />
         ) : gen.status === 'echoue' ? (
           <AlertTriangle size={16} className="text-destructive" />
         ) : (
@@ -413,7 +427,7 @@ function GenerationHistoryItem({ gen, onPlay }) {
           {gen.duration}s · {new Date(gen.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
         </p>
       </div>
-      {gen.status === 'genere' && gen.video_url && (
+      {gen.status === 'genere' && clips.length > 0 && (
         <button onClick={() => onPlay(gen)} className="text-primary hover:underline text-[10px] font-bold">Voir</button>
       )}
     </div>
