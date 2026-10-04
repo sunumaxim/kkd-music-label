@@ -4,7 +4,7 @@ import {
   Users, Music, Video, Newspaper, CalendarDays,
   LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
   Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet, Ticket, Mic, Scissors, FileText,
-  ShieldCheck
+  ShieldCheck, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -47,6 +47,7 @@ const navGroups = [
       { label: 'Billetterie', path: '/admin/tickets', icon: Ticket },
       { label: 'Studios & Caméramans', path: '/admin/studios', icon: Mic },
       { label: 'Studio Médias', path: '/admin/studio-medias', icon: Scissors },
+      { label: 'Studio Vidéo IA', path: '/admin/studio-video', icon: Sparkles },
       { label: 'Documents & Licences', path: '/admin/documents', icon: FileText },
     ]
   },

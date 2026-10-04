@@ -1,0 +1,77 @@
+{
+  "name": "VideoCreditPurchase",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email de l'acheteur"
+    },
+    "pack_id": {
+      "type": "string",
+      "description": "Identifiant du pack choisi"
+    },
+    "pack_label": {
+      "type": "string",
+      "description": "Nom du pack (d\u00e9normalis\u00e9 pour l'affichage)"
+    },
+    "credits": {
+      "type": "number",
+      "description": "Nombre de cr\u00e9dits du pack"
+    },
+    "amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Montant pay\u00e9 en FCFA"
+    },
+    "wave_reference": {
+      "type": "string",
+      "description": "R\u00e9f\u00e9rence de transaction Wave"
+    },
+    "proof_file_url": {
+      "type": "string",
+      "description": "Capture du re\u00e7u Wave (facultatif)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "en_attente",
+        "valide",
+        "refuse"
+      ],
+      "default": "en_attente",
+      "description": "Statut de validation admin"
+    }
+  },
+  "required": [
+    "user_email",
+    "credits",
+    "wave_reference"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

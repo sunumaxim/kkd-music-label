@@ -47,6 +47,7 @@ import ControleAcces from './pages/ControleAcces';
 import PublicVerifTicket from './pages/PublicVerifTicket';
 import Playlists from './pages/Playlists';
 import DocumentViewer from './pages/DocumentViewer';
+import VideoStudio from './pages/VideoStudio';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -68,6 +69,7 @@ import AdminTickets from './pages/admin/AdminTickets';
 import AdminStudios from './pages/admin/AdminStudios.jsx';
 import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
 import AdminLicenses from './pages/admin/AdminLicenses.jsx';
+import AdminVideoStudio from './pages/admin/AdminVideoStudio.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import DevenirArtiste from './pages/DevenirArtiste.jsx';
 import AccountSettings from './pages/AccountSettings.jsx';
@@ -146,6 +148,7 @@ const AuthenticatedApp = () => {
         <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
         <Route path="/explorer" element={<Explorer />} />
+        <Route path="/studio-video" element={<VideoStudio />} />
         <Route path="/devenir-artiste" element={<DevenirArtiste />} />
         <Route path="/demande-artiste" element={<DevenirArtiste />} />
         <Route path="/parametres" element={<AccountSettings />} />
@@ -185,6 +188,7 @@ const AuthenticatedApp = () => {
           <Route path="/admin/tickets" element={<AdminTickets />} />
           <Route path="/admin/studios" element={<AdminStudios />} />
           <Route path="/admin/studio-medias" element={<AdminMediaStudio />} />
+          <Route path="/admin/studio-video" element={<AdminVideoStudio />} />
           <Route path="/admin/documents" element={<AdminLicenses />} />
         </Route>
       </Route>

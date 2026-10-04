@@ -176,6 +176,17 @@ export default function PublicSidebar() {
               <CalendarDays size={18} className={isActive('/evenements') ? 'text-primary' : ''} />
               <span>Concerts & Billetterie</span>
             </Link>
+
+            <Link
+              to="/studio-video"
+              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                isActive('/studio-video') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              <Sparkles size={18} className={isActive('/studio-video') ? 'text-primary' : ''} />
+              <span>Studio Vidéo IA</span>
+              <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold uppercase">New</span>
+            </Link>
           </div>
         </div>
 

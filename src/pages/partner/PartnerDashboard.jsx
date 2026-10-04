@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, Music, Clock, CheckCircle, XCircle, LogOut, Trash2, Plus, ExternalLink, Pencil,
-  User, LayoutDashboard, UserCheck, Megaphone, CalendarDays, Ticket, Wallet, Loader2
+  User, LayoutDashboard, UserCheck, Megaphone, CalendarDays, Ticket, Wallet, Loader2, Sparkles, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
@@ -452,6 +452,19 @@ export default function PartnerDashboard() {
                 </button>
               )}
             </div>
+
+            {/* Studio Vidéo IA */}
+            <Link to="/studio-video"
+              className="flex items-center gap-4 p-5 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent hover:from-primary/20 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/30 transition-colors">
+                <Sparkles size={24} className="text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-display font-extrabold text-base">Studio Vidéo IA</p>
+                <p className="text-sm text-muted-foreground">Générez des clips animés à partir de vos images</p>
+              </div>
+              <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
+            </Link>
 
           </div>
         )}

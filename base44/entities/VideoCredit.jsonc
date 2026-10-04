@@ -1,0 +1,57 @@
+{
+  "name": "VideoCredit",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email du propri\u00e9taire du solde de cr\u00e9dits"
+    },
+    "balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Cr\u00e9dits vid\u00e9o disponibles"
+    },
+    "total_purchased": {
+      "type": "number",
+      "default": 0,
+      "description": "Total des cr\u00e9dits achet\u00e9s ou offerts"
+    },
+    "total_used": {
+      "type": "number",
+      "default": 0,
+      "description": "Total des cr\u00e9dits consomm\u00e9s"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
