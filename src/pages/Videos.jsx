@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Play, X, Eye, ExternalLink, Plus } from 'lucide-react';
+import { Play, X, Eye, ExternalLink, Plus, Sparkles } from 'lucide-react';
 import PageMeta from '@/components/shared/PageMeta';
 
 const VIDEO_TYPES = [
@@ -192,13 +192,22 @@ export default function Videos() {
               </p>
             )}
           </div>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish-video'))}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
-          >
-            <Plus size={16} />
-            <span>Publier un clip / vidéo</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/studio-video"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
+            >
+              <Sparkles size={16} />
+              <span>Studio TikTok & Vidéo</span>
+            </Link>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish-video'))}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-lg shadow-primary/25 hover:scale-105 active:scale-95 transition-all self-start sm:self-auto"
+            >
+              <Plus size={16} />
+              <span>Publier un clip / vidéo</span>
+            </button>
+          </div>
         </div>
 
         {/* Filtres type */}

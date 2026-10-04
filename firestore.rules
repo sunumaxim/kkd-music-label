@@ -151,7 +151,21 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // 16. Audit & Sécurité
+    // 16. Projets Vidéos (TikTok / Reels / YouTube)
+    match /videoProjects/{projectId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isResourceOwner();
+    }
+
+    // 17. Transactions de Crédits & Abonnements
+    match /creditTransactions/{txId} {
+      allow read: if isAdmin() || isResourceOwner();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // 18. Audit & Sécurité
     match /auditLogs/{logId} {
       allow read: if isAdmin();
       allow create: if isSignedIn();

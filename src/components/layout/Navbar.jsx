@@ -12,9 +12,9 @@ const navLinks = [
   { label: 'Artistes', path: '/artistes' },
   { label: 'Musique', path: '/musique' },
   { label: 'Vidéos', path: '/videos' },
+  { label: 'Studio Vidéo', path: '/studio-video' },
   { label: 'Actualités', path: '/actualites' },
   { label: 'Événements', path: '/evenements' },
-  { label: 'Fans', path: '/fans', highlight: false },
   { label: 'Partenaires', path: '/partenaires', highlight: true },
 ];
 

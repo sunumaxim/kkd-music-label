@@ -10,15 +10,28 @@ import { buildEntitySlug } from '@/lib/slugify';
  * (validés par l'admin, paiement reçu, période en cours).
  */
 export default function SponsoredShelf() {
-  const { data: placements = [] } = useQuery({
+  const { data: rawPlacements = [] } = useQuery({
     queryKey: ['sponsored-active'],
-    queryFn: () => base44.entities.SponsoredPlacement.filter({ status: 'actif' }, '-end_date', 20),
+    queryFn: async () => {
+      try {
+        const res = await base44.entities.SponsoredPlacement.filter({ status: 'actif' }, '-end_date', 20);
+        if (Array.isArray(res)) return res;
+        if (Array.isArray(res?.data)) return res.data;
+        return [];
+      } catch (err) {
+        console.warn('Sponsored placements query notice:', err?.message || err);
+        return [];
+      }
+    },
   });
 
   const active = useMemo(() => {
+    const list = Array.isArray(rawPlacements) 
+      ? rawPlacements 
+      : (Array.isArray(rawPlacements?.data) ? rawPlacements.data : []);
     const today = new Date();
-    return placements.filter((p) => p.end_date && new Date(p.end_date) >= today);
-  }, [placements]);
+    return list.filter((p) => p && p.end_date && new Date(p.end_date) >= today);
+  }, [rawPlacements]);
 
   if (!active.length) return null;
 

@@ -160,11 +160,24 @@ export default function PublicSidebar() {
             <Link
               to="/videos"
               className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/videos') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                isActive('/videos') && !location.pathname.startsWith('/studio-video') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
               }`}
             >
-              <Video size={18} className={isActive('/videos') ? 'text-primary' : ''} />
+              <Video size={18} className={isActive('/videos') && !location.pathname.startsWith('/studio-video') ? 'text-primary' : ''} />
               <span>Clips & Live Sessions</span>
+            </Link>
+
+            <Link
+              to="/studio-video"
+              className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                isActive('/studio-video') ? 'bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Sparkles size={18} className="text-amber-400" />
+                <span>Studio Vidéo & TikTok</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono font-bold border border-amber-500/30">Créer</span>
             </Link>
 
             <Link

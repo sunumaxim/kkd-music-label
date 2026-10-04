@@ -171,9 +171,13 @@ if (base44?.entities) {
               try {
                 if (typeof handlerTarget.list === 'function') {
                   const res = await handlerTarget.list(...args);
-                  if (Array.isArray(res) && res.length > 0) {
-                    localDb.setCollection(collectionName, res);
+                  if (Array.isArray(res)) {
+                    if (res.length > 0) localDb.setCollection(collectionName, res);
                     return res;
+                  }
+                  if (Array.isArray(res?.data)) {
+                    if (res.data.length > 0) localDb.setCollection(collectionName, res.data);
+                    return res.data;
                   }
                 }
                 // Tentative via Firestore en priorité de fallback
@@ -183,11 +187,11 @@ if (base44?.entities) {
                   return firestoreItems;
                 }
                 const cached = localDb.getCollection(collectionName);
-                return cached.length > 0 ? cached : [];
+                return Array.isArray(cached) ? cached : [];
               } catch (err) {
                 console.warn(`[Base44 entities.${entityName}.list fallback]:`, err?.message || err);
                 const cached = localDb.getCollection(collectionName);
-                return cached.length > 0 ? cached : [];
+                return Array.isArray(cached) ? cached : [];
               }
             };
           }
@@ -196,12 +200,16 @@ if (base44?.entities) {
             return async (...args) => {
               try {
                 if (typeof handlerTarget.filter === 'function') {
-                  return await handlerTarget.filter(...args);
+                  const res = await handlerTarget.filter(...args);
+                  if (Array.isArray(res)) return res;
+                  if (Array.isArray(res?.data)) return res.data;
                 }
-                return localDb.getCollection(collectionName);
+                const cached = localDb.getCollection(collectionName);
+                return Array.isArray(cached) ? cached : [];
               } catch (err) {
                 console.warn(`[Base44 entities.${entityName}.filter fallback]:`, err?.message || err);
-                return localDb.getCollection(collectionName);
+                const cached = localDb.getCollection(collectionName);
+                return Array.isArray(cached) ? cached : [];
               }
             };
           }

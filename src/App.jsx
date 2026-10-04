@@ -32,6 +32,7 @@ import Music from './pages/Music';
 import ReleaseDetail from './pages/ReleaseDetail';
 import Videos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
+import StudioVideo from './pages/StudioVideo';
 import Actualites from './pages/Actualites';
 import ArticleDetail from './pages/ArticleDetail';
 import Events from './pages/Events';
@@ -135,6 +136,7 @@ const AuthenticatedApp = () => {
         <Route path="/musique/:slug" element={<ReleaseDetail />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/videos/:id" element={<VideoDetail />} />
+        <Route path="/studio-video" element={<StudioVideo />} />
         <Route path="/actualites" element={<Actualites />} />
         <Route path="/actualites/:id" element={<ArticleDetail />} />
         <Route path="/evenements" element={<Events />} />

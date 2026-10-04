@@ -171,6 +171,40 @@
         "created_at": { "type": "string" }
       },
       "required": ["user_email", "title", "message"]
+    },
+    "VideoProject": {
+      "title": "VideoProject",
+      "description": "Projet de vidéo musicale générée (TikTok / Reels / YouTube)",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "user_email": { "type": "string" },
+        "title": { "type": "string" },
+        "artist_name": { "type": "string" },
+        "track_id": { "type": "string" },
+        "format": { "type": "string", "enum": ["tiktok_9_16", "reels_9_16", "youtube_16_9"] },
+        "duration": { "type": "number" },
+        "theme": { "type": "string" },
+        "video_url": { "type": "string" },
+        "thumbnail_url": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["user_id", "title", "format"]
+    },
+    "CreditTransaction": {
+      "title": "CreditTransaction",
+      "description": "Transaction de crédits de génération vidéo et abonnement",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "user_email": { "type": "string" },
+        "type": { "type": "string", "enum": ["subscription_grant", "top_up_purchase", "video_generation_spend"] },
+        "credits": { "type": "number" },
+        "amount_eur": { "type": "number" },
+        "description": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["user_id", "type", "credits"]
     }
   },
   "firestore": {
@@ -217,6 +251,14 @@
     "/notifications/{notificationId}": {
       "schema": "Notification",
       "description": "Alertes et notifications système"
+    },
+    "/videoProjects/{projectId}": {
+      "schema": "VideoProject",
+      "description": "Projets de clips et teasers vidéo des artistes"
+    },
+    "/creditTransactions/{txId}": {
+      "schema": "CreditTransaction",
+      "description": "Historique des recharges et débits de crédits vidéo"
     }
   }
 }

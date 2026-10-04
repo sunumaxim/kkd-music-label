@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Music, User, Headphones, CheckCircle2, ExternalLink, Video as VideoIcon, Play } from 'lucide-react';
+import { ArrowLeft, Music, User, Headphones, CheckCircle2, ExternalLink, Video as VideoIcon, Play, Sparkles } from 'lucide-react';
 import { cleanArtistName } from '@/services/artistSyncService';
 import BuyCard from '@/components/marketplace/BuyCard';
 import PlayReleaseButton from '@/components/player/PlayReleaseButton';
@@ -346,6 +346,15 @@ export default function ReleaseDetail() {
           <ShareBar title={`${release.title} — ${release.artist_name}`} url={sharePreviewUrl} />
 
           {playable && <AddToPlaylist release={release} />}
+
+          <Link
+            to={`/studio-video?trackId=${release.id}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-amber-500/15 to-rose-500/15 hover:from-amber-500/25 hover:to-rose-500/25 border border-amber-500/40 text-amber-400 text-xs font-bold transition-all hover:scale-105"
+            title="Créer un clip vidéo TikTok pour ce titre"
+          >
+            <Sparkles size={14} />
+            <span>Créer clip TikTok</span>
+          </Link>
         </div>
 
         {/* Achat exclusif D2C (Wave / Orange Money) */}
