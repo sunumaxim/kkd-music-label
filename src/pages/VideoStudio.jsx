@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { VIDEO_DURATIONS, VIDEO_ASPECTS, creditsForDuration } from '@/lib/videoPacks';
 import CreditPurchaseModal from '@/components/video/CreditPurchaseModal';
 import {
-  Sparkles, Loader2, Upload, Wand2, Film, LogIn, Coins, ImageIcon,
-  AlertTriangle, Download, History, Clapperboard,
+  Sparkles, Loader2, Wand2, Film, LogIn, Coins, ImageIcon,
+  AlertTriangle, Download, History, Clapperboard, Music, X,
 } from 'lucide-react';
+
+const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
 
 export default function VideoStudio() {
   const { toast } = useToast();
@@ -25,6 +26,7 @@ export default function VideoStudio() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [showPurchase, setShowPurchase] = useState(false);
+  const [linkedRelease, setLinkedRelease] = useState(null);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
 
@@ -38,6 +40,13 @@ export default function VideoStudio() {
     queryKey: ['video-generations', user?.email],
     queryFn: () => base44.entities.VideoGeneration.filter({ user_email: user.email }, '-created_date', 20),
     enabled: !!user?.email,
+  });
+
+  const { data: releases = [] } = useQuery({
+    queryKey: ['studio-releases'],
+    queryFn: () => base44.entities.Release.list('-created_date', 50),
+    enabled: !!user?.email,
+    staleTime: 60_000,
   });
 
   const balance = credit?.balance || 0;
@@ -68,6 +77,9 @@ export default function VideoStudio() {
         action_prompt: action,
         duration,
         aspect_ratio: aspect,
+        release_id: linkedRelease?.id || '',
+        release_title: linkedRelease?.title || '',
+        artist_name: linkedRelease?.artist_name || '',
       });
       const data = res.data || res;
       if (data?.error) throw new Error(data.error);
@@ -84,10 +96,10 @@ export default function VideoStudio() {
   if (!user) {
     return (
       <div className="max-w-md mx-auto py-20 text-center px-4">
-        <Clapperboard size={48} className="mx-auto mb-4 text-muted-foreground/40" />
-        <h1 className="font-display text-2xl font-extrabold mb-2">Studio Vidéo IA</h1>
+        <img src={KKD_LOGO} alt="KKD Music" className="w-14 h-14 mx-auto mb-4 rounded-xl object-cover" />
+        <h1 className="font-heading text-2xl font-extrabold mb-2">Studio Vidéo IA</h1>
         <p className="text-sm text-muted-foreground mb-6">Connectez-vous pour générer des vidéos animées à partir de vos images.</p>
-        <Link to="/login" className="inline-flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-primary-foreground font-bold">
+        <Link to="/login" className="kkd-btn-primary">
           <LogIn size={16} /> Se connecter
         </Link>
       </div>
@@ -95,40 +107,40 @@ export default function VideoStudio() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-12">
-      {/* Header */}
+    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-12">
+      {/* Header avec logo KKD */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
-            <Sparkles size={22} className="text-primary" />
+          <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary/10 border border-border flex items-center justify-center shrink-0">
+            <img src={KKD_LOGO} alt="KKD" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h1 className="font-display text-xl md:text-2xl font-extrabold">Studio Vidéo IA</h1>
-            <p className="text-xs text-muted-foreground">Transformez une image en vidéo animée</p>
+            <h1 className="font-heading text-xl md:text-2xl font-extrabold leading-none">Studio Vidéo IA</h1>
+            <p className="text-xs text-muted-foreground mt-1">Transformez une image en vidéo animée</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/60 border border-border">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/40 border border-border">
             <Coins size={16} className="text-accent" />
             <div className="leading-tight">
               <p className="text-[10px] text-muted-foreground uppercase">Solde</p>
-              <p className="font-display font-extrabold text-sm">{balance} crédit{balance > 1 ? 's' : ''}</p>
+              <p className="font-heading font-extrabold text-sm">{balance} crédit{balance > 1 ? 's' : ''}</p>
             </div>
           </div>
-          <Button onClick={() => setShowPurchase(true)} size="sm" className="bg-primary gap-2">
+          <button onClick={() => setShowPurchase(true)} className="kkd-btn-primary !px-4 !py-2.5 !text-xs">
             <Coins size={14} /> Acheter
-          </Button>
+          </button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Form */}
+      <div className="grid md:grid-cols-2 gap-6 items-start">
+        {/* Formulaire */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
-          {/* Image upload */}
+          {/* Image source */}
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Image source</label>
             <label className="block cursor-pointer">
-              <div className={`relative rounded-xl border-2 border-dashed ${imagePreview ? 'border-primary/40' : 'border-border'} bg-secondary/30 aspect-video flex items-center justify-center overflow-hidden`}>
+              <div className={`relative rounded-xl border-2 border-dashed ${imagePreview ? 'border-primary/40' : 'border-border'} bg-secondary/20 aspect-video flex items-center justify-center overflow-hidden`}>
                 {imagePreview ? (
                   <img src={imagePreview} alt="source" className="w-full h-full object-cover" />
                 ) : (
@@ -147,20 +159,56 @@ export default function VideoStudio() {
             </label>
           </div>
 
-          {/* Action prompt */}
+          {/* Action souhaitée (petit prompt) */}
           <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Action souhaitée (optionnel)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+              Action souhaitée <span className="text-muted-foreground/60 normal-case font-normal">(optionnel)</span>
+            </label>
             <Textarea
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              placeholder="Ex : La personne marche souriante vers la caméra, regard confiant, ambiance cinématique"
+              placeholder="Ex : la personne marche souriante vers la caméra, ambiance cinématique"
               rows={3}
               maxLength={500}
             />
-            <p className="text-[10px] text-muted-foreground mt-1">L'IA décrit votre image puis anime la scène selon cette action.</p>
           </div>
 
-          {/* Duration + aspect */}
+          {/* Lien chanson (optionnel) */}
+          <div>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block flex items-center gap-1.5">
+              <Music size={12} className="text-primary" /> Lier à une chanson <span className="text-muted-foreground/60 normal-case font-normal">(optionnel)</span>
+            </label>
+            {linkedRelease ? (
+              <div className="flex items-center gap-3 rounded-xl bg-secondary/40 border border-border p-2.5">
+                {linkedRelease.cover_url && (
+                  <img src={linkedRelease.cover_url} alt="" className="w-9 h-9 rounded-md object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold truncate">{linkedRelease.title}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{linkedRelease.artist_name}</p>
+                </div>
+                <button onClick={() => setLinkedRelease(null)} className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground">
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <select
+                onChange={(e) => {
+                  const r = releases.find((x) => x.id === e.target.value);
+                  if (r) setLinkedRelease(r);
+                }}
+                value=""
+                className="w-full bg-secondary/40 border border-border rounded-xl px-3 py-2.5 text-xs text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">-- Aucune chanson liée --</option>
+                {releases.map((r) => (
+                  <option key={r.id} value={r.id}>{r.title} · {r.artist_name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Durée + format */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Durée</label>
@@ -197,22 +245,22 @@ export default function VideoStudio() {
             </div>
           </div>
 
-          {/* Consent */}
+          {/* Consentement */}
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 accent-[var(--brand-primary)]" />
             <span className="text-[11px] text-muted-foreground leading-relaxed">
-              Je confirme disposer des droits sur cette image et m'engage à ne pas porter atteinte à l'image, à la vie privée ou à l'identité d'autrui (usurpation, diffamation).
+              Je confirme disposer des droits sur cette image et m'engage à ne pas porter atteinte à l'image, à la vie privée ou à l'identité d'autrui.
             </span>
           </label>
 
-          {/* Generate */}
-          <Button onClick={generate} disabled={!canGenerate} className="w-full bg-primary gap-2 h-11">
+          {/* Générer */}
+          <button onClick={generate} disabled={!canGenerate} className="kkd-btn-primary w-full !justify-center disabled:opacity-50 disabled:cursor-not-allowed">
             {generating ? (
               <><Loader2 size={18} className="animate-spin" /> Génération en cours…</>
             ) : (
               <><Wand2 size={18} /> Générer · {cost} crédit{cost > 1 ? 's' : ''}</>
             )}
-          </Button>
+          </button>
 
           {balance < cost && (
             <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
@@ -224,7 +272,7 @@ export default function VideoStudio() {
           )}
         </div>
 
-        {/* Result */}
+        {/* Résultat + historique */}
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
@@ -238,20 +286,27 @@ export default function VideoStudio() {
               </div>
             ) : result?.video_url ? (
               <div className="space-y-3">
-                <video src={result.video_url} controls autoPlay loop className="w-full rounded-xl bg-black" />
+                <div className="relative rounded-xl overflow-hidden bg-black">
+                  <video src={result.video_url} controls autoPlay loop className="w-full" />
+                  {/* Filigrane logo KKD sur la vidéo */}
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/45 backdrop-blur-sm rounded-md px-2 py-1 pointer-events-none">
+                    <img src={KKD_LOGO} alt="" className="w-4 h-4 rounded-sm object-cover" />
+                    <span className="text-[10px] font-heading font-bold tracking-wide text-white">KKD Music</span>
+                  </div>
+                </div>
                 <a href={result.video_url} download className="inline-flex items-center gap-2 text-xs text-primary hover:underline">
                   <Download size={14} /> Télécharger la vidéo
                 </a>
               </div>
             ) : (
-              <div className="aspect-video rounded-xl bg-secondary/30 flex flex-col items-center justify-center gap-2 text-center p-6">
+              <div className="aspect-video rounded-xl bg-secondary/20 flex flex-col items-center justify-center gap-2 text-center p-6">
                 <Sparkles size={28} className="text-muted-foreground/40" />
                 <p className="text-xs text-muted-foreground">Votre vidéo générée apparaîtra ici.</p>
               </div>
             )}
           </div>
 
-          {/* History */}
+          {/* Historique */}
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <History size={16} className="text-primary" />
@@ -262,7 +317,7 @@ export default function VideoStudio() {
             ) : generations.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">Aucune génération pour le moment.</p>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+              <div className="space-y-2 max-h-72 overflow-y-auto no-scrollbar">
                 {generations.map((g) => (
                   <div key={g.id} className="flex items-center gap-3 rounded-lg bg-secondary/30 p-2">
                     <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
@@ -275,7 +330,7 @@ export default function VideoStudio() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{g.prompt || 'Sans action précisée'}</p>
+                      <p className="text-xs font-medium truncate">{g.release_title ? `${g.release_title}` : (g.prompt || 'Sans action précisée')}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {g.duration}s · {g.credits_used} cr · {new Date(g.created_date).toLocaleDateString('fr-FR')}
                       </p>

@@ -32,7 +32,6 @@ import Music from './pages/Music';
 import ReleaseDetail from './pages/ReleaseDetail';
 import Videos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
-import StudioVideo from './pages/StudioVideo';
 import Actualites from './pages/Actualites';
 import ArticleDetail from './pages/ArticleDetail';
 import Events from './pages/Events';
@@ -136,7 +135,7 @@ const AuthenticatedApp = () => {
         <Route path="/musique/:slug" element={<ReleaseDetail />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/videos/:id" element={<VideoDetail />} />
-        <Route path="/studio-video" element={<StudioVideo />} />
+        <Route path="/studio-video" element={<VideoStudio />} />
         <Route path="/actualites" element={<Actualites />} />
         <Route path="/actualites/:id" element={<ArticleDetail />} />
         <Route path="/evenements" element={<Events />} />
@@ -150,7 +149,6 @@ const AuthenticatedApp = () => {
         <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route path="/recherche" element={<Search />} />
         <Route path="/explorer" element={<Explorer />} />
-        <Route path="/studio-video" element={<VideoStudio />} />
         <Route path="/devenir-artiste" element={<DevenirArtiste />} />
         <Route path="/demande-artiste" element={<DevenirArtiste />} />
         <Route path="/parametres" element={<AccountSettings />} />
