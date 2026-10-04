@@ -34,6 +34,24 @@
       "type": "string",
       "description": "Nom de l'artiste de la chanson li\u00e9e (d\u00e9normalis\u00e9, optionnel)"
     },
+    "audio_file_url": {
+      "type": "string",
+      "description": "URL du fichier audio public de la chanson li\u00e9e (pour lecture synchronis\u00e9e c\u00f4t\u00e9 frontend)"
+    },
+    "excerpt_start": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00e9but de l'extrait audio en secondes"
+    },
+    "excerpt_duration": {
+      "type": "number",
+      "default": 6,
+      "description": "Dur\u00e9e de l'extrait audio en secondes"
+    },
+    "quota_date": {
+      "type": "string",
+      "description": "Date UTC (YYYY-MM-DD) de la g\u00e9n\u00e9ration, pour le calcul du quota quotidien"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -46,8 +64,8 @@
     },
     "credits_used": {
       "type": "number",
-      "default": 1,
-      "description": "Cr\u00e9dits consomm\u00e9s pour cette g\u00e9n\u00e9ration"
+      "default": 0,
+      "description": "Obsol\u00e8te (syst\u00e8me de cr\u00e9dits retir\u00e9) \u2014 conserv\u00e9 pour compatibilit\u00e9"
     },
     "duration": {
       "type": "number",
