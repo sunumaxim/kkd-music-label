@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon, Loader2 } from 'lucide-react';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { slugify } from '@/lib/slugify';
+import PageMeta from '@/components/shared/PageMeta';
 
 function Section({ title, children }) {
   return (
@@ -49,6 +50,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen pb-24">
+      <PageMeta title="Recherche — KKD Music" description="Recherchez artistes, musique, vidéos et événements sur KKD Music." />
       <MobileHeader title="Rechercher" backPath="/" />
       <div className="max-w-5xl mx-auto px-4 py-6 md:py-12">
         <h1 className="font-display text-2xl md:text-3xl font-extrabold mb-4 hidden md:block">Rechercher</h1>

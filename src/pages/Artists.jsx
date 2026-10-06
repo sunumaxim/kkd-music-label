@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, X } from 'lucide-react';
 import { slugify } from '@/lib/slugify';
+import PageMeta from '@/components/shared/PageMeta';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 
 export default function Artists() {
@@ -23,6 +24,11 @@ export default function Artists() {
 
   return (
     <div className="min-h-screen px-4 py-16 md:py-24">
+      <PageMeta
+        title="Artistes — KKD Music"
+        description="Découvrez tous les artistes africains sur KKD Music : biographies, sorties, clips, concerts et profils vérifiés."
+        jsonLd={{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Artistes KKD Music', url: 'https://kkdmusic.com/artistes' }}
+      />
       <div className="max-w-7xl mx-auto">
         <div className="mb-16">
           <span className="text-xs font-mono text-primary tracking-widest uppercase">Le Roster</span>

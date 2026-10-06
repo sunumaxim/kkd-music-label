@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, Music, Video, Radio, Handshake, Globe, Upload } from 'lucide-react';
+import PageMeta from '@/components/shared/PageMeta';
 
 const requestTypes = [
   { value: 'distribution', label: 'Distribution musicale', icon: Globe, desc: 'Distribuer votre musique sur Spotify, Apple Music, Audiomack et plus via KKD.' },
@@ -73,6 +74,10 @@ export default function Partnership() {
 
   return (
     <div className="min-h-screen">
+      <PageMeta
+        title="Partenaires & Devenir Artiste — KKD Music"
+        description="Publiez votre musique, vos clips et événements sur KKD Music. Espace partenaire pour artistes, labels et organisateurs de concerts."
+      />
       {/* Header */}
       <div className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background" />

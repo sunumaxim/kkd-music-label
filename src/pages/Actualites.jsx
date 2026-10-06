@@ -6,6 +6,7 @@ import { Loader2, Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import PageMeta from '@/components/shared/PageMeta';
 import { Link } from 'react-router-dom';
 
 const CATEGORY_LABELS = {
@@ -46,6 +47,11 @@ export default function Actualites() {
 
   return (
     <div ref={containerRef} className="min-h-screen pb-24">
+      <PageMeta
+        title="Actualités — KKD Music"
+        description="Toute l'actualité musicale africaine : communiqués, nouveautés, infos artistes et articles exclusifs sur KKD Music."
+        jsonLd={{ '@context': 'https://schema.org', '@type': 'Blog', name: 'Actualités KKD Music', url: 'https://kkdmusic.com/actualites' }}
+      />
       {(isRefreshing || pullY > 20) && (
         <div className="md:hidden flex justify-center pb-2 pt-4 text-primary">
           <Loader2 size={20} className={isRefreshing ? 'animate-spin' : ''} />

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Music, Globe, Users, Zap, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PageMeta from '@/components/shared/PageMeta';
 
 const VALUES = [
   { icon: Music, title: 'Distribution', desc: "Diffusion de votre musique sur plus de 150 plateformes mondiales : Spotify, Apple Music, Deezer, Audiomack, YouTube Music et plus." },
@@ -13,6 +14,11 @@ const VALUES = [
 export default function About() {
   return (
     <div className="min-h-screen pb-24 bg-background">
+      <PageMeta
+        title="À Propos — KKD Music"
+        description="KKD Music, la plateforme de streaming et distribution musicale pour artistes africains indépendants. Découvrez notre mission, nos services et notre engagement pour la scène ouest-africaine."
+        jsonLd={{ '@context': 'https://schema.org', '@type': 'AboutPage', name: 'À Propos de KKD Music', url: 'https://kkdmusic.com/a-propos' }}
+      />
       {/* Hero */}
       <section className="relative overflow-hidden px-4 py-24 md:py-36">
         <div className="absolute inset-0 opacity-5" style={{

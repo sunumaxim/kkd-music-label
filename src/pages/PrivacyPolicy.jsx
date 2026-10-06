@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
+import PageMeta from '@/components/shared/PageMeta';
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen pb-24 bg-background">
+      <PageMeta title="Politique de Confidentialité — KKD Music" description="Politique de confidentialité et protection des données sur KKD Music." />
       <div className="max-w-3xl mx-auto px-4 py-16 md:py-24">
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-10 transition-colors group">
           <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />

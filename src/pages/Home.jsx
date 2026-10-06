@@ -2,6 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import PageMeta from '@/components/shared/PageMeta';
 import HeroSlider from '@/components/home/HeroSlider';
 import LatestReleases from '@/components/home/LatestReleases';
 import TrendingSongs from '@/components/home/TrendingSongs';
@@ -47,6 +48,10 @@ export default function Home() {
 
   return (
     <div ref={containerRef}>
+      <PageMeta
+        title="KKD Music — Streaming & Distribution Musicale Africaine"
+        description="Écoutez la musique africaine en streaming illimité. Artistes, clips, concerts, licences musicales et billetterie sur KKD Music — la plateforme de la scène ouest-africaine."
+      />
       {(isRefreshing || pullY > 20) && (
         <div className="md:hidden flex justify-center py-3 text-primary">
           <Loader2
