@@ -17,12 +17,12 @@
       "ends_after_count": null
     }
   },
-  "description": "Chaque jour \u00e0 14h : importe automatiquement les nouvelles sorties Spotify/Deezer, les vid\u00e9os YouTube et met \u00e0 jour les profils artistes.",
+  "description": "Chaque jour \u00e0 14h : importe les nouvelles sorties Spotify/Deezer, vid\u00e9os YouTube, met \u00e0 jour les profils artistes et collecte les liens officiels v\u00e9rifi\u00e9s (Linktree).",
   "definition": {
     "document": {
       "dsl": "1.0.0",
       "name": "synchro_quotidienne_plateformes",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -87,10 +87,27 @@
               "limit": 100
             }
           },
-          "then": "end",
+          "then": "sync_links",
           "x-base44": {
             "title": "Profils artistes",
             "description": "Photo et genre"
+          }
+        }
+      },
+      {
+        "sync_links": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoSyncArtists",
+            "args": {
+              "action": "links",
+              "limit": 50
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Liens officiels",
+            "description": "Profils sociaux et web v\u00e9rifi\u00e9s via recherche web"
           }
         }
       }

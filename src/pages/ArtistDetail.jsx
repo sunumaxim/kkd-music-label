@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Youtube, Share2, Check, Disc3, Calendar, MapPin, ChevronRight,
-  Play, Eye, Heart, ShoppingCart, Newspaper, Sparkles,
+  Play, Eye, Heart, ShoppingCart, Newspaper, Sparkles, Link2, Loader2,
 } from 'lucide-react';
 import { artistSyncService, dspSyncWatcherService } from '@/services/artistSyncService';
 import { StreamingLinks } from '@/components/shared/StreamingEmbed';
@@ -52,6 +52,8 @@ export default function ArtistDetail() {
   const [videoFilter, setVideoFilter] = useState('all');
   const [isDspSyncing, setIsDspSyncing] = useState(false);
   const [dspSyncNotice, setDspSyncNotice] = useState(null);
+  const [isCollectingLinks, setIsCollectingLinks] = useState(false);
+  const [collectNotice, setCollectNotice] = useState(null);
   const queryClient = useQueryClient();
 
   const handleShare = () => {
@@ -107,6 +109,28 @@ export default function ArtistDetail() {
       setTimeout(() => setDspSyncNotice(null), 4000);
     } finally {
       setIsDspSyncing(false);
+    }
+  };
+
+  const handleCollectLinks = async () => {
+    if (!artist?.id || isCollectingLinks) return;
+    setIsCollectingLinks(true);
+    try {
+      const res = await base44.functions.invoke('collectArtistLinks', { artist_id: artist.id });
+      const data = res.data || res;
+      if (data?.updated_count > 0) {
+        queryClient.invalidateQueries(['artist', id]);
+        queryClient.invalidateQueries(['artist-detail', slugParam]);
+        setCollectNotice(`${data.updated_count} lien(s) vérifié(s) et mis à jour.`);
+      } else {
+        setCollectNotice(data?.summary || 'Tous les liens sont déjà à jour.');
+      }
+      setTimeout(() => setCollectNotice(null), 6000);
+    } catch (err) {
+      setCollectNotice('Collecte des liens échouée');
+      setTimeout(() => setCollectNotice(null), 4000);
+    } finally {
+      setIsCollectingLinks(false);
     }
   };
 
@@ -284,13 +308,21 @@ export default function ArtistDetail() {
           <ArrowLeft size={14} /> Artistes
         </Link>
 
-        <button
-          onClick={handleShare}
-          className="absolute top-6 right-6 flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm font-medium transition-colors z-10"
-        >
-          {copied ? <Check size={14} /> : <Share2 size={14} />}
-          {copied ? 'Copié !' : 'Partager'}
-        </button>
+        <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+          <Link
+            to={`/l/${artist.slug || slugify(artist.name)}`}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm font-medium transition-colors"
+          >
+            <Link2 size={14} /> Linktree
+          </Link>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm font-medium transition-colors"
+          >
+            {copied ? <Check size={14} /> : <Share2 size={14} />}
+            {copied ? 'Copié !' : 'Partager'}
+          </button>
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-10 max-w-6xl mx-auto">
           {artist.genre && (
@@ -341,6 +373,21 @@ export default function ArtistDetail() {
             <span>{dspSyncNotice}</span>
           </div>
         )}
+
+        {/* Collecte des liens officiels (Linktree) */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={handleCollectLinks}
+            disabled={isCollectingLinks}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/20 border border-secondary/40 hover:bg-secondary/30 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+          >
+            {isCollectingLinks ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {isCollectingLinks ? 'Collecte...' : 'Collecter mes liens'}
+          </button>
+          {collectNotice && (
+            <span className="text-xs text-zinc-300">{collectNotice}</span>
+          )}
+        </div>
 
         {/* Onglets style Spotify */}
         <div className="flex items-center gap-4 sm:gap-6 border-b border-white/[0.08] mb-6 overflow-x-auto no-scrollbar">

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { secrets } from 'base44:runtime';
+import { collectLinksForArtist } from '../../shared/collectLinks.ts';
 
 const UA = { 'User-Agent': 'Mozilla/5.0 (compatible; KKDMusicBot/1.0)', Accept: 'application/json' };
 
@@ -230,6 +231,12 @@ async function syncConcerts(db, artist, ctx) {
   return created;
 }
 
+// ── LINKS (récherche web via LLM pour profils sociaux et web) ──
+async function syncLinks(db, artist, ctx) {
+  const result = await collectLinksForArtist(db, artist);
+  return result.updated_count;
+}
+
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -244,7 +251,7 @@ export default async function (req) {
     const limit = Math.min(Number(body.limit) || 100, 200);
     const db = base44.asServiceRole;
 
-    const handlers = { spotify: syncSpotify, deezer: syncDeezer, profile: syncProfile, youtube: syncYoutube, concerts: syncConcerts };
+    const handlers = { spotify: syncSpotify, deezer: syncDeezer, profile: syncProfile, youtube: syncYoutube, concerts: syncConcerts, links: syncLinks };
     if (!handlers[action]) return Response.json({ error: 'action invalide' }, { status: 400 });
 
     const all = await db.entities.Artist.list('created_date', 1000);
@@ -253,6 +260,7 @@ export default async function (req) {
       if (action === 'deezer') return deezerId(a.deezer_url);
       if (action === 'profile') return spotifyId(a.spotify_url) || deezerId(a.deezer_url);
       if (action === 'youtube') return !!a.youtube_url;
+      if (action === 'links') return a.is_verified || a.is_featured;
       return a.is_verified || a.is_featured;
     });
     const total = artists.length;

@@ -48,6 +48,7 @@ import PublicVerifTicket from './pages/PublicVerifTicket';
 import Playlists from './pages/Playlists';
 import DocumentViewer from './pages/DocumentViewer';
 import VideoStudio from './pages/VideoStudio';
+import ArtistLinktree from './pages/ArtistLinktree';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -193,6 +194,7 @@ const AuthenticatedApp = () => {
         </Route>
       </Route>
 
+      <Route path="/l/:slug" element={<ArtistLinktree />} />
       <Route path="/document/:id" element={<DocumentViewer />} />
       <Route path="/auth/tiktok/callback" element={<TikTokOAuthCallback />} />
       <Route path="/auth/callback" element={<TikTokOAuthCallback />} />
