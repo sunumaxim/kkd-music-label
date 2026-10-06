@@ -17,6 +17,7 @@ function uniqueSlug(base, used) {
 }
 const spotifyId = (u) => (u || '').match(/spotify\.com\/(?:intl-[a-z]+\/)?artist\/([a-zA-Z0-9]+)/)?.[1] || null;
 const deezerId = (u) => (u || '').match(/deezer\.com\/(?:[a-z]+\/)?artist\/([0-9]+)/)?.[1] || null;
+const cleanName = (s) => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 async function spotifyToken() {
   const id = secrets.get('SPOTIFY_CLIENT_ID');
@@ -139,7 +140,8 @@ async function syncProfile(db, artist, ctx) {
     const res = await fetch(`https://api.deezer.com/artist/${did}`, { headers: UA });
     if (res.ok) {
       const d = await res.json();
-      if (!d.error && d.picture_xl && !patch.photo_url && fromCdn(artist.photo_url) && d.picture_xl !== artist.photo_url) patch.photo_url = d.picture_xl;
+      // Vérifier que le nom Deezer correspond bien à l'artiste avant d'écraser la photo
+      if (!d.error && d.name && cleanName(d.name) === cleanName(artist.name) && d.picture_xl && !patch.photo_url && fromCdn(artist.photo_url) && d.picture_xl !== artist.photo_url) patch.photo_url = d.picture_xl;
     }
   }
   if (Object.keys(patch).length === 0) return 0;

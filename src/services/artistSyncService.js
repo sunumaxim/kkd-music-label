@@ -103,7 +103,7 @@ export async function fetchExactArtistProfilePhoto(artistName) {
       query: clean,
     });
     const deezerList = bRes.data?.deezer || [];
-    const match = deezerList.find(d => cleanArtistName(d.name || '').toLowerCase() === clean.toLowerCase()) || deezerList[0];
+    const match = deezerList.find(d => cleanArtistName(d.name || '').toLowerCase() === clean.toLowerCase());
     if (match?.image && !match.image.includes('default') && !match.image.includes('placeholder')) {
       return match.image;
     }
@@ -117,7 +117,7 @@ export async function fetchExactArtistProfilePhoto(artistName) {
     if (res.ok) {
       const data = await res.json();
       const artists = data.data || [];
-      const match = artists.find(a => cleanArtistName(a.name || '').toLowerCase() === clean.toLowerCase()) || artists[0];
+      const match = artists.find(a => cleanArtistName(a.name || '').toLowerCase() === clean.toLowerCase());
       if (match) {
         const photo = match.picture_xl || match.picture_big || match.picture_medium || match.picture;
         if (photo && !photo.includes('default') && !photo.includes('placeholder')) {

@@ -57,22 +57,43 @@ class DspSyncWatcherService {
     let deezerId = null;
     let directDeezerUrl = null;
 
-    // 1. Interroger Deezer Artist Search API
-    try {
-      const dRes = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`);
-      if (dRes.ok) {
-        const dJson = await dRes.json();
-        const artists = dJson.data || [];
-        const match = artists.find(a => cleanArtistName(a.name).toLowerCase() === name.toLowerCase()) || artists[0];
-        if (match) {
-          deezerData = match;
-          deezerId = match.id;
-          deezerPhoto = match.picture_xl || match.picture_big || match.picture_medium || match.picture;
-          directDeezerUrl = match.link || `https://www.deezer.com/artist/${match.id}`;
+    // 1. Si l'artiste a déjà un lien Deezer valide, utiliser CET ID directement (jamais de recherche par nom)
+    const existingDeezerId = (artist?.deezer_url || '').match(/deezer\.com\/(?:[a-z]+\/)?artist\/([0-9]+)/)?.[1];
+    if (existingDeezerId) {
+      try {
+        const dRes = await fetch(`https://api.deezer.com/artist/${existingDeezerId}`);
+        if (dRes.ok) {
+          const dJson = await dRes.json();
+          if (!dJson.error && cleanArtistName(dJson.name).toLowerCase() === name.toLowerCase()) {
+            deezerData = dJson;
+            deezerId = dJson.id;
+            deezerPhoto = dJson.picture_xl || dJson.picture_big || dJson.picture_medium || dJson.picture;
+            directDeezerUrl = dJson.link || `https://www.deezer.com/artist/${dJson.id}`;
+          }
         }
+      } catch (err) {
+        console.warn('[dspSyncWatcher] Erreur Deezer direct profile fetch:', err);
       }
-    } catch (err) {
-      console.warn('[dspSyncWatcher] Erreur Deezer profile search:', err);
+    }
+
+    // 2. Si pas de lien Deezer valide, recherche par nom — MATCH STRICT uniquement (jamais de fallback au 1er résultat)
+    if (!deezerId) {
+      try {
+        const dRes = await fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`);
+        if (dRes.ok) {
+          const dJson = await dRes.json();
+          const artists = dJson.data || [];
+          const match = artists.find(a => cleanArtistName(a.name).toLowerCase() === name.toLowerCase());
+          if (match) {
+            deezerData = match;
+            deezerId = match.id;
+            deezerPhoto = match.picture_xl || match.picture_big || match.picture_medium || match.picture;
+            directDeezerUrl = match.link || `https://www.deezer.com/artist/${match.id}`;
+          }
+        }
+      } catch (err) {
+        console.warn('[dspSyncWatcher] Erreur Deezer profile search:', err);
+      }
     }
 
     // 2. Si l'artiste a un lien Spotify direct d'artiste, interroger Spotify oEmbed
@@ -91,7 +112,7 @@ class DspSyncWatcherService {
       }
     }
 
-    // 3. Si aucune photo encore trouvée, tenter via Base44 backend function
+    // 3. Si aucune photo encore trouvée, tenter via Base44 backend function (match strict uniquement)
     if (!deezerPhoto && !spotifyPhoto) {
       try {
         const bRes = await base44.functions.invoke('searchArtistOnPlatforms', {
@@ -99,7 +120,7 @@ class DspSyncWatcherService {
           query: name,
         });
         const dList = bRes.data?.deezer || [];
-        const match = dList.find(d => cleanArtistName(d.name || '').toLowerCase() === name.toLowerCase()) || dList[0];
+        const match = dList.find(d => cleanArtistName(d.name || '').toLowerCase() === name.toLowerCase());
         if (match?.image && !match.image.includes('placeholder')) {
           deezerPhoto = match.image;
         }
@@ -212,32 +233,36 @@ class DspSyncWatcherService {
       }
     }
 
-    // B. Recherche Deezer complémentaire
+    // B. Recherche Deezer complémentaire (match strict du nom de l'artiste uniquement)
     try {
       const sRes = await fetch(`https://api.deezer.com/search/album?q=artist:"${encodeURIComponent(artistName)}"&limit=25`);
       if (sRes.ok) {
         const sJson = await sRes.json();
         for (const item of (sJson.data || [])) {
-          dspReleases.push({
-            title: item.title,
-            release_date: item.release_date || '',
-            cover_url: item.cover_xl || item.cover_big || item.cover_medium,
-            deezer_url: item.link || (item.id ? `https://www.deezer.com/album/${item.id}` : ''),
-            spotify_url: `https://open.spotify.com/search/${encodeURIComponent(`${artistName} ${item.title}`)}`,
-            release_type: item.record_type === 'single' ? 'single' : 'album',
-            record_label: item.label || 'Distribution Digitale',
-          });
+          // Vérifier que l'album appartient bien à CET artiste (nom strict)
+          const itemArtist = cleanArtistName(item.artist?.name || '').toLowerCase();
+          if (itemArtist && itemArtist === artistName.toLowerCase()) {
+            dspReleases.push({
+              title: item.title,
+              release_date: item.release_date || '',
+              cover_url: item.cover_xl || item.cover_big || item.cover_medium,
+              deezer_url: item.link || (item.id ? `https://www.deezer.com/album/${item.id}` : ''),
+              spotify_url: `https://open.spotify.com/search/${encodeURIComponent(`${artistName} ${item.title}`)}`,
+              release_type: item.record_type === 'single' ? 'single' : 'album',
+              record_label: item.label || 'Distribution Digitale',
+            });
+          }
         }
       }
     } catch {}
 
-    // C. Compléter avec iTunes (pour singles très récents)
+    // C. Compléter avec iTunes (match strict du nom de l'artiste uniquement)
     try {
       const itRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=30`);
       if (itRes.ok) {
         const itJson = await itRes.json();
         for (const track of (itJson.results || [])) {
-          if (cleanArtistName(track.artistName).toLowerCase().includes(artistName.toLowerCase())) {
+          if (cleanArtistName(track.artistName).toLowerCase() === artistName.toLowerCase()) {
             dspReleases.push({
               title: track.trackName,
               release_date: track.releaseDate ? track.releaseDate.slice(0, 10) : '',

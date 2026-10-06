@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, is_featured: false });
+        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
         created++;
       }
 
@@ -295,7 +295,7 @@ Deno.serve(async (req) => {
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, is_featured: false });
+        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
         created++;
       }
 
@@ -324,7 +324,7 @@ Deno.serve(async (req) => {
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, is_featured: false });
+        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
         created++;
       }
 
