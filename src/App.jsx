@@ -49,6 +49,7 @@ import Playlists from './pages/Playlists';
 import DocumentViewer from './pages/DocumentViewer';
 import VideoStudio from './pages/VideoStudio';
 import ArtistLinktree from './pages/ArtistLinktree';
+import Showcase from './pages/Showcase';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -195,6 +196,7 @@ const AuthenticatedApp = () => {
       </Route>
 
       <Route path="/l/:slug" element={<ArtistLinktree />} />
+      <Route path="/showcase" element={<Showcase />} />
       <Route path="/document/:id" element={<DocumentViewer />} />
       <Route path="/auth/tiktok/callback" element={<TikTokOAuthCallback />} />
       <Route path="/auth/callback" element={<TikTokOAuthCallback />} />
