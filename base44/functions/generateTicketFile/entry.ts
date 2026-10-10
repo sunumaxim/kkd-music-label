@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { jsPDF } from 'npm:jspdf@4.2.1';
 import { getTheme } from '../../shared/ticketThemes.ts';
 
-const LOGO_URL = 'https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/99cb11fce_InShot_20261010_094620549.png';
 
 function bufToB64(buf) {
   const bytes = new Uint8Array(buf);

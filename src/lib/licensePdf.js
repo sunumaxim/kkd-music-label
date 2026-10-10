@@ -1,7 +1,8 @@
 import { jsPDF } from 'jspdf';
 
 // Logo officiel KKD Music (fourni par la marque)
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/024af26bb_InShot_20260907_090958170.png';
+import { LOGO_SIGNATURE } from '@/lib/logos';
+const LOGO_URL = LOGO_SIGNATURE;
 // Cachet électronique & Signature officielle — Madou Kane (PDG & Fondateur KKD Music)
 const SIGNATURE_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/dcbcb9b1a_InShot_20260722_181043759.jpg';
 

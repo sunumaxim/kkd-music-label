@@ -13,7 +13,7 @@ import {
   AlertTriangle, History, Clock, Music, Upload,
 } from 'lucide-react';
 
-const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
+import { LOGO_MAIN as KKD_LOGO } from '@/lib/logos';
 const DAILY_LIMIT = 2;
 
 export default function VideoStudio() {

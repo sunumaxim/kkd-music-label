@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+import { LOGO_MAIN } from '@/lib/logos';
 
 export default function Footer() {
   return (
@@ -9,13 +9,13 @@ export default function Footer() {
       {/* Big brand mark */}
       <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 bg-card">
         <div className="text-center mb-12 flex flex-col items-center">
-          <img src="https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png" alt="KKDmusic" style={{ height: 56, width: 'auto' }} />
+          <img src={LOGO_MAIN} alt="KKDmusic" style={{ height: 56, width: 'auto' }} />
           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">La scène ouest-africaine, en direct de chez vous.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 hidden">
           <div>
-            <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto mb-4" />
+            <img src={LOGO_MAIN} alt="KKD Music" className="h-12 w-auto mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Label indépendant dédié à la promotion d'artistes talentueux.
             </p>

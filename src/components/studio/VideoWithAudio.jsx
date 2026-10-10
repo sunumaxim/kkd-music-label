@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause } from 'lucide-react';
 
-const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
+import { LOGO_MAIN as KKD_LOGO } from '@/lib/logos';
 
 export default function VideoWithAudio({ clips, audioUrl, excerptStart = 0, excerptDuration = 30 }) {
   const videoRef = useRef(null);

@@ -12,7 +12,7 @@ import {
   Share2, Check, Disc3, ExternalLink, BookOpen, Loader2,
 } from 'lucide-react';
 
-const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
+import { LOGO_ARTIST as KKD_LOGO } from '@/lib/logos';
 
 const STREAMING = [
   { field: 'spotify_url', label: 'Spotify', icon: Music, color: '#1DB954' },

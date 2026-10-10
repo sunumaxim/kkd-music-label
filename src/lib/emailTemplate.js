@@ -5,7 +5,8 @@
  */
 
 export const SITE_URL = "https://kkdmusic.com";
-export const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+import { LOGO_SIGNATURE } from '@/lib/logos';
+export const LOGO_URL = LOGO_SIGNATURE;
 
 // Single clean theme — all emails use the same simple design
 export const EMAIL_THEMES = {

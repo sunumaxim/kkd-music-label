@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { SITE_URL } from '@/lib/slugify';
+import { LOGO_UI } from '@/lib/logos';
 
 /**
  * Injects dynamic Open Graph / Twitter meta tags + JSON-LD structured data
@@ -36,7 +37,7 @@ export default function PageMeta({ title, description, image, url, type = 'websi
     setMeta('og:url', pageUrl);
     setMeta('og:site_name', siteName);
     setMeta('og:locale', 'fr_FR');
-    if (image) setMeta('og:image', image);
+    setMeta('og:image', image || LOGO_UI);
 
     // Twitter Card
     setMeta('twitter:card', image ? 'summary_large_image' : 'summary', true);

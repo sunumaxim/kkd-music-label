@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import PageMeta from '@/components/shared/PageMeta';
 
-const KKD_LOGO = 'https://media.base44.com/images/public/695179b6b73caf48a00876c1/d0c46d8b9_generated_acb63943.png';
+import { LOGO_MAIN as KKD_LOGO } from '@/lib/logos';
 const QR_URL = (data) => `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data)}&size=240x240&color=228-98-43&bgcolor=22-17-14&margin=0&qzone=1`;
 
 function compact(n) {

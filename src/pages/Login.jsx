@@ -8,7 +8,7 @@ import { Mail, Lock, Loader2, ShieldCheck, ExternalLink } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
-const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");

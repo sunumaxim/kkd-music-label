@@ -5,7 +5,8 @@
  */
 
 export const SITE_URL = "https://kkdmusic.com";
-export const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+// Logo signature officiel — documents et emails
+export const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/99cb11fce_InShot_20261010_094620549.png";
 
 // Minimal brand palette
 const C = {

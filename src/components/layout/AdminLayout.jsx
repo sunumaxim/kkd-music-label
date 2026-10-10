@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
-const LOGO_URL = "https://media.base44.com/images/public/user_695179b6b73caf48a00876c2/77512c866_file_00000000154471f49577836863a10da3.png";
+import { LOGO_MAIN } from '@/lib/logos';
+const LOGO_URL = LOGO_MAIN;
 
 const navGroups = [
   {
