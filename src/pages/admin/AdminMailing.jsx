@@ -39,14 +39,34 @@ const CONTENT_TYPES = [
   { value: 'news', label: 'Article / Actualité', icon: Newspaper },
 ];
 
-// 5 Modèles stylés pré-configurés avec adaptation contextuelle
+// 6 Modèles stylés pré-configurés avec adaptation contextuelle
 const PRESET_TEMPLATES = [
+  {
+    id: 'newsletter',
+    title: 'Newsletter Hebdomadaire',
+    icon: Newspaper,
+    badge: 'NEWSLETTER KKD MUSIC',
+    theme: 'clean',
+    signer: 'abdoulaye',
+    context_type: 'news',
+    context_meta: {
+      press_ref: `NL-KKD-${new Date().toISOString().slice(0,7)}`,
+      press_topic: 'Newsletter de la semaine',
+      publication_date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    },
+    context_notice: "Newsletter officielle de KKD Music — les nouveautés de la scène ouest-africaine.",
+    subject: 'Newsletter KKD Music — Les nouveautés de la semaine',
+    headline: 'La scène ouest-africaine, en direct de chez vous',
+    body: `Chers mélomanes,\n\nVoici les nouveautés de la semaine sur KKD Music : nouveaux sons, clips officiels et événements à venir.\n\nDécouvrez les artistes indépendants qui font vibrer la scène ouest-africaine aujourd'hui.\n\nBonne écoute,`,
+    cta_label: 'Découvrir la scène',
+    cta_url: 'https://kkdmusic.com',
+  },
   {
     id: 'release',
     title: 'Sortie Single / EP / Album',
     icon: Music2,
     badge: 'NOUVELLE SORTIE OFFICIELLE',
-    theme: 'prestige_dark',
+    theme: 'clean',
     signer: 'abdoulaye',
     context_type: 'release',
     context_meta: {
@@ -69,7 +89,7 @@ const PRESET_TEMPLATES = [
     title: 'Note Officielle de la Direction',
     icon: ShieldCheck,
     badge: 'NOTE DU GESTIONNAIRE PRINCIPAL',
-    theme: 'noble_red',
+    theme: 'clean',
     signer: 'abdoulaye',
     context_type: 'circular',
     context_meta: {
@@ -91,7 +111,7 @@ const PRESET_TEMPLATES = [
     title: 'Invitation Partenaires & Nouveaux Labels',
     icon: Award,
     badge: 'OPPORTUNITÉ PARTENARIAT B2B',
-    theme: 'gold_luxury',
+    theme: 'clean',
     signer: 'abdoulaye',
     context_type: 'partnership',
     context_meta: {
@@ -113,7 +133,7 @@ const PRESET_TEMPLATES = [
     title: 'Événement & Billetterie VIP',
     icon: Calendar,
     badge: 'ÉVÉNEMENT EXCLUSIF VIP',
-    theme: 'prestige_dark',
+    theme: 'clean',
     signer: 'abdoulaye',
     context_type: 'event',
     context_meta: {
@@ -136,7 +156,7 @@ const PRESET_TEMPLATES = [
     title: 'Circulaire & Conformité Légale',
     icon: FileText,
     badge: 'CIRCULAIRE ADMINISTRATIVE',
-    theme: 'official_white',
+    theme: 'clean',
     signer: 'abdoulaye',
     context_type: 'contract',
     context_meta: {
@@ -169,7 +189,7 @@ export default function AdminMailing() {
     audience: 'partners',
     custom_emails: '',
     image_url: '',
-    theme: 'prestige_dark',
+    theme: 'clean',
     badge_label: 'COMMUNICATION OFFICIELLE',
     signer_id: 'abdoulaye',
     show_streaming: true,
@@ -948,7 +968,7 @@ Règles :
                           cta_label: item.cta_label || '',
                           cta_url: item.cta_url || '',
                           image_url: item.image_url || '',
-                          theme: item.theme || 'prestige_dark',
+                          theme: item.theme || 'clean',
                         }));
                         setActiveTab('compose');
                       }}

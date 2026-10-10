@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       audience,
       image_url,
       custom_emails,
-      theme = "prestige_dark",
+      theme = "clean",
       badge_label = "COMMUNICATION OFFICIELLE",
       sender = null,
       signer_id = "abdoulaye",
