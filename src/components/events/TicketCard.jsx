@@ -6,6 +6,7 @@ import Barcode from '@/components/events/Barcode';
 import { CheckCircle2, Clock, XCircle, MapPin, Calendar, User, Phone, ShieldCheck, Download, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import BrandLogo from '@/components/brand/BrandLogo';
 const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png';
 
 const STATUS = {
@@ -83,7 +84,7 @@ export default function TicketCard({ ticket, onDownload, downloading = false }) 
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-border/60">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                <img src={LOGO_URL} alt="KKD" className="h-5 w-auto object-contain" />
+                <BrandLogo logo={LOGO_URL} height={20} alt="KKD" radius={4} />
               </div>
               <div>
                 <span className="font-display font-black text-sm tracking-wider uppercase text-foreground">KKD Music</span>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Lock, User, Loader2, ExternalLink, Shield, KeyRound } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import BrandLogo from "@/components/brand/BrandLogo";
 
 const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png";
 
@@ -124,7 +125,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex bg-background">
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-card border-r border-border/30 p-12">
-        <img src={LOGO_URL} alt="KKD Music" className="h-16 w-auto" />
+        <BrandLogo logo={LOGO_URL} height={64} />
         <div>
           <p className="font-display text-4xl font-extrabold leading-tight">
             Rejoignez<br /><span className="text-primary">KKD Music</span>
@@ -139,7 +140,7 @@ export default function Register() {
       <div className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex justify-center mb-8">
-            <img src={LOGO_URL} alt="KKD Music" className="h-14 w-auto" />
+            <BrandLogo logo={LOGO_URL} height={56} />
           </div>
 
           {step === "form" && (

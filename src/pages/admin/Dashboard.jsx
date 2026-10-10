@@ -9,6 +9,7 @@ import {
   AlertTriangle, Bell, Megaphone
 } from 'lucide-react';
 
+import BrandLogo from '@/components/brand/BrandLogo';
 const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png";
 
 export default function Dashboard() {
@@ -68,7 +69,7 @@ export default function Dashboard() {
             {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
         </div>
-        <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto opacity-90" />
+        <BrandLogo logo={LOGO_URL} height={48} className="opacity-90" />
       </div>
 
       {/* ── Alertes ── */}

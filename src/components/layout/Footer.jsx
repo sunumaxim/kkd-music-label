@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { LOGO_MAIN } from '@/lib/logos';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 export default function Footer() {
   return (
@@ -9,13 +10,13 @@ export default function Footer() {
       {/* Big brand mark */}
       <div className="max-w-7xl mx-auto px-4 pt-16 pb-8 bg-card">
         <div className="text-center mb-12 flex flex-col items-center">
-          <img src={LOGO_MAIN} alt="KKDmusic" style={{ height: 56, width: 'auto' }} />
+          <BrandLogo height={56} alt="KKDmusic" />
           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-4">La scène ouest-africaine, en direct de chez vous.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 hidden">
           <div>
-            <img src={LOGO_MAIN} alt="KKD Music" className="h-12 w-auto mb-4" />
+            <BrandLogo height={48} alt="KKD Music" className="mb-4" />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Label indépendant dédié à la promotion d'artistes talentueux.
             </p>

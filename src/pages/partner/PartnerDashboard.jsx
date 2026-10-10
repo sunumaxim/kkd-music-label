@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
 import NotificationsPanel from '@/components/shared/NotificationsPanel';
 import ContractDownloader from '@/components/partner/ContractDownloader';
+import BrandLogo from '@/components/brand/BrandLogo';
 import GoldLabelBadge from '@/components/shared/GoldLabelBadge';
 import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import PublishForm from '@/components/partner/PublishForm';
@@ -215,7 +216,7 @@ export default function PartnerDashboard() {
         <div className="max-w-6xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2 group">
-              <img src={LOGO_URL} alt="KKD Music" className="h-9 w-auto" />
+              <BrandLogo logo={LOGO_URL} height={36} />
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5">
                   <span className="font-heading font-extrabold text-sm text-white tracking-wide">KKD Creator</span>

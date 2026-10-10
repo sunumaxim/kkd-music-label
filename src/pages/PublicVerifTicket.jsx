@@ -10,6 +10,7 @@ import QrWithLogo from '@/components/events/QrWithLogo';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import BrandLogo from '@/components/brand/BrandLogo';
 import { Loader2, MapPin, Calendar, CheckCircle2, Ticket, ShieldCheck, User, UserPlus, Sparkles } from 'lucide-react';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png';
@@ -183,7 +184,7 @@ export default function PublicVerifTicket() {
           <div className="p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <img src={LOGO_URL} alt="KKD" className="h-6 w-auto" />
+                <BrandLogo logo={LOGO_URL} height={24} alt="KKD" />
                 <span className="text-[10px] font-mono uppercase tracking-widest text-primary">Billet KKD</span>
               </div>
               {t.checked_in ? (

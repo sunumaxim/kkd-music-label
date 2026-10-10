@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/lib/AuthContext';
 
 import { LOGO_MAIN } from '@/lib/logos';
+import BrandLogo from '@/components/brand/BrandLogo';
 const LOGO_URL = LOGO_MAIN;
 
 const navGroups = [
@@ -81,7 +82,7 @@ export default function AdminLayout() {
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden md:flex flex-col w-60 border-r border-border/20 bg-card/40 backdrop-blur-sm shrink-0">
         <div className="p-5 border-b border-border/20">
-          <img src={LOGO_URL} alt="KKD Music" className="h-9 w-auto" />
+          <BrandLogo logo={LOGO_URL} height={36} />
           <span className="mt-1.5 inline-block text-[10px] font-mono text-muted-foreground/50 tracking-widest uppercase">Admin</span>
         </div>
         <nav className="flex-1 py-4 overflow-y-auto">
@@ -135,7 +136,7 @@ export default function AdminLayout() {
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
           <div className="relative ml-auto w-72 bg-background border-l border-border/20 flex flex-col h-full shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-border/20">
-              <img src={LOGO_URL} alt="KKD Music" className="h-8 w-auto" />
+              <BrandLogo logo={LOGO_URL} height={32} />
               <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground">
                 <X size={18} />
               </button>
@@ -193,7 +194,7 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile top header */}
         <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border/20 bg-background/90 backdrop-blur-md">
-          <img src={LOGO_URL} alt="KKD Music" className="h-7 w-auto" />
+          <BrandLogo logo={LOGO_URL} height={28} />
           <button
             onClick={() => setDrawerOpen(true)}
             className="p-2 rounded-xl bg-secondary text-foreground"

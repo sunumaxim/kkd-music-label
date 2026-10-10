@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2, ShieldCheck, ExternalLink } from "lucide-react";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import BrandLogo from "@/components/brand/BrandLogo";
 
 const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png";
 
@@ -58,7 +59,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-background">
       <div className="hidden lg:flex flex-col justify-between w-1/2 bg-card border-r border-border/30 p-12">
-        <img src={LOGO_URL} alt="KKD Music" className="h-16 w-auto" />
+        <BrandLogo logo={LOGO_URL} height={64} />
         <div>
           <p className="font-display text-4xl font-extrabold leading-tight">
             Plateforme D2C<br />
@@ -85,7 +86,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-sm space-y-6">
           <div className="lg:hidden flex justify-center mb-4">
-            <img src={LOGO_URL} alt="KKD Music" className="h-12 w-auto" />
+            <BrandLogo logo={LOGO_URL} height={48} />
           </div>
 
           <div>

@@ -6,6 +6,7 @@ import { LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { LOGO_MAIN } from '@/lib/logos';
+import BrandLogo from '@/components/brand/BrandLogo';
 const LOGO_URL = LOGO_MAIN;
 
 /**
@@ -24,7 +25,7 @@ export default function ControleLayout() {
       <header className="border-b border-border/30 bg-card/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <img src={LOGO_URL} alt="KKD" className="h-8 w-auto" />
+            <BrandLogo logo={LOGO_URL} height={32} alt="KKD" />
             <div className="flex items-center gap-1.5 pl-2.5 border-l border-border/40">
               <ShieldCheck size={16} className="text-primary" />
               <span className="font-heading font-bold text-sm">Contrôle d'accès</span>
