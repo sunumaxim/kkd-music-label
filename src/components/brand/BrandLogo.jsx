@@ -16,7 +16,7 @@ export default function BrandLogo({
   return (
     <div
       className={`inline-flex items-center justify-center overflow-hidden shrink-0 ${className}`}
-      style={{ background: '#000', borderRadius: radius }}
+      style={{ background: '#fff', borderRadius: radius }}
     >
       <img
         src={logo}

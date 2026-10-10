@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/99cb11fce_InShot_20261010_094620549.png";
+const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png";
 const SIGNATURE_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/dcbcb9b1a_InShot_20260722_181043759.jpg";
 
 const CONTACT_EMAILS = [

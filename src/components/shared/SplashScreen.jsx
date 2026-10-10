@@ -26,7 +26,7 @@ export default function SplashScreen({ onDone }) {
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center cursor-pointer"
       onClick={dismiss}
-      style={{ background: '#000', transition: 'opacity 0.2s ease' }}
+      style={{ background: '#fff', transition: 'opacity 0.2s ease' }}
     >
       <img
         src={LOGO_MAIN}

@@ -7,7 +7,7 @@ import { CheckCircle2, Clock, XCircle, MapPin, Calendar, User, Phone, ShieldChec
 import { Button } from '@/components/ui/button';
 
 import BrandLogo from '@/components/brand/BrandLogo';
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
 
 const STATUS = {
   valide: { label: 'Billet Valide', icon: CheckCircle2, badge: 'bg-emerald-600 text-white', text: 'text-emerald-700' },

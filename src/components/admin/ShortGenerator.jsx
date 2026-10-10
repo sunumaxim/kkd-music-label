@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { Download, Loader2, Film, Scissors, AlertTriangle, Instagram, Facebook, Music2, Video as VideoIcon, Headphones, Pause } from 'lucide-react';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/d21ed5db1_InShot_20261010_094217909.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
 const ACCENT = '#E11D2E';
 
 const FORMATS = {
