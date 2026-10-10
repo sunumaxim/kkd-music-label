@@ -7,24 +7,24 @@
 /* ===== KKD MUSIC BRAND DESIGN SYSTEM (DARK) ===== */
 @layer base {
   :root {
-    --background: 22 22% 7%;
-    --foreground: 30 39% 93%;
-    --card: 22 19% 12%;
-    --card-foreground: 30 39% 93%;
-    --popover: 22 19% 12%;
-    --popover-foreground: 30 39% 93%;
+    --background: 40 30% 98%;
+    --foreground: 20 14% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 12%;
     --primary: 18 77% 53%;
-    --primary-foreground: 20 12% 5%;
-    --secondary: 154 63% 33%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 39 67% 55%;
-    --accent-foreground: 0 0% 9%;
-    --muted: 26 18% 15%;
-    --muted-foreground: 30 13% 60%;
-    --destructive: 0 54% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 154 30% 90%;
+    --secondary-foreground: 154 50% 20%;
+    --accent: 39 50% 50%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 30 10% 95%;
+    --muted-foreground: 20 10% 40%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 22 16% 20%;
-    --input: 22 16% 20%;
+    --border: 20 10% 90%;
+    --input: 20 10% 90%;
     --ring: 18 77% 53%;
     --radius: 10px;
     --font-heading: 'Archivo Black', sans-serif;
@@ -34,19 +34,19 @@
     --font-heading-line-height: 1.05;
     --font-heading-letter-spacing: 0.01em;
     --font-body-line-height: 1.5;
-    --sidebar-background: 22 19% 12%;
-    --sidebar-foreground: 30 39% 93%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 20 14% 12%;
     --sidebar-primary: 18 77% 53%;
-    --sidebar-primary-foreground: 20 12% 5%;
-    --sidebar-accent: 26 18% 15%;
-    --sidebar-accent-foreground: 30 39% 93%;
-    --sidebar-border: 22 16% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 10% 95%;
+    --sidebar-accent-foreground: 20 14% 12%;
+    --sidebar-border: 20 10% 90%;
     --sidebar-ring: 18 77% 53%;
     --chart-1: 18 77% 53%;
-    --chart-2: 154 63% 33%;
-    --chart-3: 39 67% 55%;
-    --chart-4: 217 91% 60%;
-    --chart-5: 271 91% 65%;
+    --chart-2: 154 50% 40%;
+    --chart-3: 39 50% 50%;
+    --chart-4: 217 70% 55%;
+    --chart-5: 271 70% 60%;
   }
 
   .dark {
@@ -81,15 +81,15 @@
 
   :root {
     --brand-primary: #E4622B;
-    --brand-on-primary: #0E0C0B;
+    --brand-on-primary: #FFFFFF;
     --brand-secondary: #1F8A5C;
-    --brand-accent: #D9A441;
-    --brand-background: #16110E;
-    --brand-surface: #231C18;
-    --brand-text: #F4EDE6;
-    --brand-muted: #2E2620;
-    --brand-muted-foreground: #A6998C;
-    --brand-border: #3A302A;
+    --brand-accent: #C89232;
+    --brand-background: #FAFAF8;
+    --brand-surface: #FFFFFF;
+    --brand-text: #1A1714;
+    --brand-muted: #F3F1ED;
+    --brand-muted-foreground: #6B6258;
+    --brand-border: #E5E0D8;
     --brand-destructive: #C43C3C;
     --brand-font-heading: 'Archivo Black', sans-serif;
     --brand-font-body: 'Work Sans', sans-serif;
@@ -111,10 +111,10 @@
     --brand-radius-full: 9999px;
     --brand-radius: 10px;
     --brand-shadow-none: none;
-    --brand-shadow-sm: 0 1px 2px rgba(0,0,0,.35);
-    --brand-shadow-md: 0 4px 10px rgba(0,0,0,.45);
-    --brand-shadow-lg: 0 10px 24px rgba(0,0,0,.55);
-    --brand-shadow: 0 4px 10px rgba(0,0,0,.45);
+    --brand-shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --brand-shadow-md: 0 4px 12px rgba(0,0,0,.10);
+    --brand-shadow-lg: 0 10px 28px rgba(0,0,0,.14);
+    --brand-shadow: 0 4px 12px rgba(0,0,0,.10);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -136,7 +136,7 @@
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     overflow-x: clip;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   button, a, nav, [role="tab"], [role="button"], label, header, footer, .select-none {
