@@ -79,16 +79,16 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          className="relative w-full max-w-3xl bg-[#0F1420] border border-border/70 rounded-2xl shadow-2xl overflow-hidden text-foreground"
+          className="relative w-full max-w-3xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden text-foreground"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-border/50 bg-[#141B2D]">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-slate-50/90">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500">
                 <Sparkles size={22} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white tracking-tight">Crédits Vidéo & Abonnements</h3>
+                <h3 className="text-lg font-bold text-foreground tracking-tight">Crédits Vidéo & Abonnements</h3>
                 <p className="text-xs text-muted-foreground">
                   Générez vos clips musicaux et teasers pour TikTok, Instagram Reels et YouTube
                 </p>
@@ -98,14 +98,14 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <span className="block text-[11px] text-muted-foreground uppercase font-bold tracking-wider">Votre solde</span>
-                <span className="font-mono text-base font-bold text-amber-400 tabular-nums">
+                <span className="font-mono text-base font-bold text-amber-600 tabular-nums">
                   {currentCredits} crédit{currentCredits > 1 ? 's' : ''}
                 </span>
               </div>
 
               <button
                 onClick={onClose}
-                className="p-2 text-muted-foreground hover:text-white rounded-lg hover:bg-secondary/60 transition-colors"
+                className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-slate-100 transition-colors"
                 aria-label="Fermer"
               >
                 <X size={18} />
@@ -115,13 +115,13 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
 
           {/* Navigation Onglets */}
           <div className="flex items-center gap-2 px-6 pt-5 pb-2">
-            <div className="flex items-center p-1 bg-secondary/40 rounded-xl border border-border/40">
+            <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-border">
               <button
                 onClick={() => setActiveTab('packs')}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                   activeTab === 'packs'
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                    : 'text-muted-foreground hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Packs de Crédits (À la demande)
@@ -130,8 +130,8 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
                 onClick={() => setActiveTab('subscriptions')}
                 className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                   activeTab === 'subscriptions'
-                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                    : 'text-muted-foreground hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Abonnements Mensuels
@@ -151,12 +151,12 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
                     key={pack.id}
                     className={`relative flex flex-col justify-between p-5 rounded-xl border transition-all ${
                       pack.popular
-                        ? 'bg-gradient-to-b from-amber-500/10 to-transparent border-amber-500/50 shadow-lg shadow-amber-500/5'
-                        : 'bg-card/50 border-border/60 hover:border-border'
+                        ? 'bg-gradient-to-b from-amber-500/10 via-amber-50/20 to-white border-amber-400 shadow-md'
+                        : 'bg-white border-border hover:border-primary/40 shadow-xs'
                     }`}
                   >
                     {pack.badge && (
-                      <div className="absolute -top-2.5 right-4 bg-amber-500 text-slate-950 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                      <div className="absolute -top-2.5 right-4 bg-amber-500 text-slate-950 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs">
                         {pack.badge}
                       </div>
                     )}
@@ -167,10 +167,10 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
                       </div>
 
                       <div className="flex items-baseline gap-1.5 my-3">
-                        <span className="text-3xl font-black text-white font-mono tabular-nums">{pack.credits}</span>
+                        <span className="text-3xl font-black text-foreground font-mono tabular-nums">{pack.credits}</span>
                         <span className="text-xs font-medium text-muted-foreground">crédits</span>
                         {pack.bonus && (
-                          <span className="ml-2 text-[11px] font-bold text-amber-400">
+                          <span className="ml-2 text-[11px] font-bold text-amber-600">
                             {pack.bonus}
                           </span>
                         )}
@@ -182,9 +182,9 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
                     </div>
 
                     <div>
-                      <div className="flex items-baseline justify-between pt-3 border-t border-border/40 mb-4">
+                      <div className="flex items-baseline justify-between pt-3 border-t border-border mb-4">
                         <span className="text-xs text-muted-foreground">Tarif TTC</span>
-                        <span className="text-lg font-bold text-white font-mono tabular-nums">{pack.price.toFixed(2)} €</span>
+                        <span className="text-lg font-bold text-foreground font-mono tabular-nums">{pack.price.toFixed(2)} €</span>
                       </div>
 
                       <button
@@ -192,8 +192,8 @@ export default function CreditModal({ isOpen, onClose, user, currentCredits, onC
                         disabled={isProcessing}
                         className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                           pack.popular
-                            ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
-                            : 'bg-secondary hover:bg-secondary/80 text-white border border-border/60'
+                            ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm'
+                            : 'bg-slate-100 hover:bg-slate-200 text-foreground border border-border'
                         } disabled:opacity-60`}
                       >
                         {isProcessing && processingId === pack.id ? (

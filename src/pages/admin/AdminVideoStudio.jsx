@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { VIDEO_PACKS } from '@/lib/videoPacks';
 import {
   Check, X, Loader2, Sparkles, Coins, Gift, Film, ExternalLink, Wallet, Users,
 } from 'lucide-react';

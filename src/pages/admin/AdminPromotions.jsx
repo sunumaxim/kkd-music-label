@@ -29,17 +29,23 @@ export default function AdminPromotions() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-promotions'] }),
   });
 
+  const placementList = useMemo(() => {
+    if (Array.isArray(placements)) return placements;
+    if (Array.isArray(placements?.data)) return placements.data;
+    return [];
+  }, [placements]);
+
   const counts = useMemo(
     () => ({
-      all: placements.length,
-      en_attente: placements.filter((p) => p.status === 'en_attente').length,
-      actif: placements.filter((p) => p.status === 'actif').length,
-      refuse: placements.filter((p) => p.status === 'refuse').length,
+      all: placementList.length,
+      en_attente: placementList.filter((p) => p && p.status === 'en_attente').length,
+      actif: placementList.filter((p) => p && p.status === 'actif').length,
+      refuse: placementList.filter((p) => p && p.status === 'refuse').length,
     }),
-    [placements]
+    [placementList]
   );
 
-  const filtered = filter === 'all' ? placements : placements.filter((p) => p.status === filter);
+  const filtered = filter === 'all' ? placementList : placementList.filter((p) => p && p.status === filter);
 
   const activate = (p) => {
     const today = new Date();

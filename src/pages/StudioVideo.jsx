@@ -333,7 +333,7 @@ export default function StudioVideo() {
   const currentDurationOpt = DURATION_OPTIONS.find(d => d.duration === selectedDuration) || DURATION_OPTIONS[0];
 
   return (
-    <div className="min-h-screen bg-[#07090E] text-slate-100 pb-24">
+    <div className="min-h-screen bg-background text-foreground pb-24">
       <PageMeta
         title="Studio Vidéo & TikTok — KKD Music"
         description="Générez vos clips musicaux et teasers pour TikTok, Instagram Reels et YouTube synchronisés avec vos morceaux."
@@ -365,16 +365,16 @@ export default function StudioVideo() {
       />
 
       {/* ── Top Bar Studio ── */}
-      <div className="border-b border-border/50 bg-[#0E131E]/90 backdrop-blur-md sticky top-16 z-30 px-4 sm:px-8 py-3.5">
+      <div className="border-b border-border bg-card/95 backdrop-blur-md sticky top-16 z-30 px-4 sm:px-8 py-3.5 shadow-xs">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center shadow-md shadow-amber-500/10">
-              <Film size={18} className="text-slate-950 font-bold" />
+              <Film size={18} className="text-white font-bold" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold tracking-tight text-white">Studio Vidéo & TikTok</h1>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">
+                <h1 className="text-base font-bold tracking-tight text-foreground">Studio Vidéo & TikTok</h1>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold border border-amber-500/30">
                   9:16 & 16:9
                 </span>
               </div>
@@ -389,24 +389,24 @@ export default function StudioVideo() {
             {/* Badge Abonnement */}
             <button
               onClick={() => setCreditModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/40 border border-border/60 hover:border-amber-500/50 transition-colors text-xs"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border transition-colors text-xs"
             >
-              <Crown size={14} className={userSub.id !== 'free' ? 'text-amber-400' : 'text-muted-foreground'} />
-              <span className="font-semibold text-white">{userSub.name}</span>
+              <Crown size={14} className={userSub.id !== 'free' ? 'text-amber-500' : 'text-muted-foreground'} />
+              <span className="font-semibold text-foreground">{userSub.name}</span>
             </button>
 
             {/* Solde Crédits */}
-            <div className="flex items-center gap-2 bg-[#141B2D] px-3.5 py-1.5 rounded-xl border border-amber-500/30">
-              <Zap size={14} className="text-amber-400 fill-amber-400" />
+            <div className="flex items-center gap-2 bg-amber-50 px-3.5 py-1.5 rounded-xl border border-amber-200">
+              <Zap size={14} className="text-amber-500 fill-amber-500" />
               <span className="text-xs text-muted-foreground">Solde :</span>
-              <span className="font-mono text-xs font-bold text-amber-400 tabular-nums">
+              <span className="font-mono text-xs font-bold text-amber-600 tabular-nums">
                 {credits} crédit{credits > 1 ? 's' : ''}
               </span>
             </div>
 
             <button
               onClick={() => setCreditModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md transition-all flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-all flex items-center gap-1.5"
             >
               <Zap size={13} />
               <span>Recharger</span>
@@ -423,10 +423,10 @@ export default function StudioVideo() {
           <div className="lg:col-span-5 space-y-6">
             
             {/* 1. Sélection Audio */}
-            <div className="p-5 rounded-2xl bg-[#0D121D] border border-border/60 space-y-4">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <Music size={14} className="text-amber-400" />
+                  <Music size={14} className="text-amber-500" />
                   1. Piste Sonore
                 </span>
                 <button
@@ -447,7 +447,7 @@ export default function StudioVideo() {
                     const found = releases.find(r => r.title === e.target.value);
                     if (found) handleSelectRelease(found);
                   }}
-                  className="w-full bg-[#141B2D] border border-border/60 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:border-amber-500 shadow-xs"
                 >
                   <option value="">-- Choisir un morceau officiel --</option>
                   {releases.map((rel) => (
@@ -459,10 +459,10 @@ export default function StudioVideo() {
               </div>
 
               {/* Ajustement du segment audio */}
-              <div className="pt-2 border-t border-border/40">
+              <div className="pt-2 border-t border-border">
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-muted-foreground">Début de l'extrait :</span>
-                  <span className="font-mono text-amber-400 tabular-nums font-bold">
+                  <span className="font-mono text-amber-600 tabular-nums font-bold">
                     {Math.floor(audioStartOffset / 60)}:{String(Math.floor(audioStartOffset % 60)).padStart(2, '0')}
                   </span>
                 </div>
@@ -489,9 +489,9 @@ export default function StudioVideo() {
             </div>
 
             {/* 2. Format & Durée */}
-            <div className="p-5 rounded-2xl bg-[#0D121D] border border-border/60 space-y-4">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Smartphone size={14} className="text-amber-400" />
+                <Smartphone size={14} className="text-amber-500" />
                 2. Format & Réseau Social
               </span>
 
@@ -503,8 +503,8 @@ export default function StudioVideo() {
                     onClick={() => setSelectedFormat(fmt.id)}
                     className={`p-3 rounded-xl border text-left transition-all ${
                       selectedFormat === fmt.id
-                        ? 'bg-amber-500/10 border-amber-500 text-white shadow-sm'
-                        : 'bg-[#141B2D]/60 border-border/60 text-muted-foreground hover:text-white'
+                        ? 'bg-amber-500/10 border-amber-500 text-foreground font-bold shadow-xs'
+                        : 'bg-slate-50/80 border-border text-muted-foreground hover:text-foreground hover:bg-slate-100'
                     }`}
                   >
                     <span className="block text-xs font-bold">{fmt.label}</span>
@@ -523,12 +523,12 @@ export default function StudioVideo() {
                       onClick={() => setSelectedDuration(opt.duration)}
                       className={`p-2.5 rounded-xl border text-center transition-all ${
                         selectedDuration === opt.duration
-                          ? 'bg-amber-500/15 border-amber-500 text-white font-bold'
-                          : 'bg-[#141B2D]/60 border-border/60 text-muted-foreground hover:text-white'
+                          ? 'bg-amber-500/15 border-amber-500 text-foreground font-bold shadow-xs'
+                          : 'bg-slate-50/80 border-border text-muted-foreground hover:text-foreground hover:bg-slate-100'
                       }`}
                     >
                       <span className="block text-xs">{opt.duration} secondes</span>
-                      <span className="block text-[10px] text-amber-400 font-mono font-bold mt-0.5">
+                      <span className="block text-[10px] text-amber-600 font-mono font-bold mt-0.5">
                         {opt.credits} crédit{opt.credits > 1 ? 's' : ''}
                       </span>
                     </button>
@@ -538,9 +538,9 @@ export default function StudioVideo() {
             </div>
 
             {/* 3. Thèmes Visuels & Motion */}
-            <div className="p-5 rounded-2xl bg-[#0D121D] border border-border/60 space-y-4">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Layers size={14} className="text-amber-400" />
+                <Layers size={14} className="text-amber-500" />
                 3. Preset Visuel & Animation
               </span>
 
@@ -555,12 +555,12 @@ export default function StudioVideo() {
                     }}
                     className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
                       selectedTheme === th.id
-                        ? 'bg-amber-500/10 border-amber-500 text-white shadow-sm'
-                        : 'bg-[#141B2D]/60 border-border/60 text-muted-foreground hover:text-white'
+                        ? 'bg-amber-500/10 border-amber-500 text-foreground font-semibold shadow-xs'
+                        : 'bg-slate-50/80 border-border text-muted-foreground hover:text-foreground hover:bg-slate-100'
                     }`}
                   >
                     <div>
-                      <span className="block text-xs font-bold text-white">{th.name}</span>
+                      <span className="block text-xs font-bold text-foreground">{th.name}</span>
                       <span className="block text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
                         {th.description}
                       </span>
@@ -575,9 +575,9 @@ export default function StudioVideo() {
             </div>
 
             {/* 4. Textes & Personnalisation */}
-            <div className="p-5 rounded-2xl bg-[#0D121D] border border-border/60 space-y-3.5">
+            <div className="p-5 rounded-2xl bg-card border border-border shadow-sm space-y-3.5">
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Sliders size={14} className="text-amber-400" />
+                <Sliders size={14} className="text-amber-500" />
                 4. Textes & Pochette
               </span>
 
@@ -588,7 +588,7 @@ export default function StudioVideo() {
                     type="text"
                     value={trackTitle}
                     onChange={(e) => setTrackTitle(e.target.value)}
-                    className="w-full bg-[#141B2D] border border-border/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
                 <div>
@@ -597,7 +597,7 @@ export default function StudioVideo() {
                     type="text"
                     value={artistName}
                     onChange={(e) => setArtistName(e.target.value)}
-                    className="w-full bg-[#141B2D] border border-border/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                    className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
               </div>
@@ -609,22 +609,22 @@ export default function StudioVideo() {
                   value={lyricsText}
                   onChange={(e) => setLyricsText(e.target.value)}
                   placeholder="Ex: Le beat qui fait bouger tout Dakar !"
-                  className="w-full bg-[#141B2D] border border-border/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-amber-500 shadow-xs"
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+              <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Pochette :</span>
                   {coverUrl ? (
                     <img src={coverUrl} alt="Cover" className="w-7 h-7 rounded object-cover border border-border" />
                   ) : (
-                    <span className="text-[11px] text-slate-500">Par défaut</span>
+                    <span className="text-[11px] text-muted-foreground">Par défaut</span>
                   )}
                 </div>
                 <button
                   onClick={() => coverInputRef.current?.click()}
-                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+                  className="text-xs text-amber-600 hover:text-amber-500 font-semibold transition-colors"
                 >
                   Changer la pochette
                 </button>
@@ -637,11 +637,11 @@ export default function StudioVideo() {
           <div className="lg:col-span-7 space-y-6">
             
             {/* Cadre de Prévisualisation Directe */}
-            <div className="p-6 rounded-2xl bg-[#0D121D] border border-border/70 flex flex-col items-center">
+            <div className="p-6 rounded-2xl bg-card border border-border shadow-sm flex flex-col items-center">
               <div className="w-full flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
                     Prévisualisation Temps Réel (60 FPS)
                   </span>
                 </div>
@@ -652,7 +652,7 @@ export default function StudioVideo() {
               </div>
 
               {/* Conteneur Canvas adaptatif */}
-              <div className="relative flex items-center justify-center p-3 rounded-2xl bg-black/60 border border-border/50 shadow-2xl overflow-hidden max-w-full">
+              <div className="relative flex items-center justify-center p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl overflow-hidden max-w-full">
                 <canvas
                   ref={canvasRef}
                   className={`rounded-xl shadow-2xl object-contain max-h-[520px] ${
@@ -663,7 +663,7 @@ export default function StudioVideo() {
                 {/* Bouton Play/Pause superposé au survol ou pause */}
                 <button
                   onClick={handleTogglePlay}
-                  className={`absolute p-4 rounded-full bg-amber-500/90 text-slate-950 shadow-xl hover:scale-110 transition-all ${
+                  className={`absolute p-4 rounded-full bg-amber-500 text-slate-950 shadow-xl hover:scale-110 transition-all ${
                     isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-90'
                   }`}
                   aria-label={isPlaying ? 'Pause' : 'Lecture'}
@@ -676,7 +676,7 @@ export default function StudioVideo() {
               <div className="w-full mt-4 flex items-center justify-between gap-4 px-2">
                 <button
                   onClick={handleTogglePlay}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/60 hover:bg-secondary text-white text-xs font-semibold transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold transition-colors border border-border"
                 >
                   {isPlaying ? <Pause size={14} /> : <Play size={14} />}
                   <span>{isPlaying ? 'Pause' : 'Préécouter l\'extrait'}</span>
@@ -689,22 +689,22 @@ export default function StudioVideo() {
             </div>
 
             {/* Bouton d'Action de Génération Vidéo */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#121826] to-[#1E1B2E] border border-amber-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-50/70 via-white to-rose-50/50 border border-amber-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600 block mb-1">
                   Prêt à exporter
                 </span>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-foreground">
                   Générer le clip vidéo pour TikTok & Reels
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Coût de l'opération : <strong className="text-amber-400 font-mono tabular-nums">{currentDurationOpt.credits} crédit{currentDurationOpt.credits > 1 ? 's' : ''}</strong> (Solde : {credits})
+                  Coût de l'opération : <strong className="text-amber-600 font-mono tabular-nums">{currentDurationOpt.credits} crédit{currentDurationOpt.credits > 1 ? 's' : ''}</strong> (Solde : {credits})
                 </p>
               </div>
 
               <button
                 onClick={handleStartGeneration}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2.5 uppercase tracking-wider shrink-0"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2.5 uppercase tracking-wider shrink-0"
               >
                 <Sparkles size={16} />
                 <span>Générer la vidéo MP4</span>
@@ -713,7 +713,7 @@ export default function StudioVideo() {
 
             {/* Historique des vidéos générées */}
             {userProjects.length > 0 && (
-              <div className="p-5 rounded-2xl bg-[#0D121D] border border-border/60">
+              <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
                 <div className="flex items-center justify-between mb-3.5">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Mes clips récents ({userProjects.length})
@@ -724,20 +724,20 @@ export default function StudioVideo() {
                   {userProjects.slice(0, 4).map((proj, idx) => (
                     <div
                       key={proj.id || idx}
-                      className="p-3 rounded-xl bg-[#141B2D]/70 border border-border/40 flex items-center gap-3 hover:border-border transition-colors"
+                      className="p-3 rounded-xl bg-slate-50 border border-border flex items-center gap-3 hover:border-primary/40 transition-colors shadow-xs"
                     >
-                      <div className="w-12 h-12 rounded-lg bg-black/40 overflow-hidden shrink-0 flex items-center justify-center border border-border/50">
+                      <div className="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden shrink-0 flex items-center justify-center border border-border">
                         {proj.thumbnail_url ? (
                           <img src={proj.thumbnail_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Film size={18} className="text-amber-400" />
+                          <Film size={18} className="text-amber-500" />
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <span className="block text-xs font-bold text-white truncate">{proj.title}</span>
+                        <span className="block text-xs font-bold text-foreground truncate">{proj.title}</span>
                         <span className="block text-[11px] text-muted-foreground truncate">{proj.artist_name}</span>
-                        <span className="block text-[10px] text-amber-400 font-mono mt-0.5">
+                        <span className="block text-[10px] text-amber-600 font-mono mt-0.5">
                           {proj.duration}s · {proj.format?.includes('9_16') ? '9:16' : '16:9'}
                         </span>
                       </div>

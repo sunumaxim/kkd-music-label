@@ -198,14 +198,14 @@ export default function ReleaseDetail() {
               alt=""
               className="w-full h-full object-cover blur-3xl scale-125 opacity-25"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0e1117]/80 to-background" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-background" />
           </div>
         )}
 
         <div className="relative max-w-6xl mx-auto px-4 md:px-8">
           <Link
             to="/musique"
-            className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white bg-black/40 hover:bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full mb-6 transition-all"
+            className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground bg-white/90 hover:bg-white backdrop-blur-md px-3 py-1.5 rounded-full mb-6 border border-border transition-all shadow-xs"
           >
             <ArrowLeft size={13} /> Retour au catalogue
           </Link>
@@ -220,7 +220,7 @@ export default function ReleaseDetail() {
                 <img
                   src={release.cover_url}
                   alt={release.title}
-                  className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl object-cover shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-white/[0.1]"
+                  className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl object-cover shadow-xl border border-border"
                 />
                 {effectivelyPaid && (
                   <span className="absolute top-3 left-3 bg-amber-500 text-black text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-lg">
@@ -229,24 +229,24 @@ export default function ReleaseDetail() {
                 )}
               </motion.div>
             ) : (
-              <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl bg-[#141821] border border-white/[0.1] flex items-center justify-center shrink-0 shadow-2xl">
-                <Music size={56} className="text-zinc-600" />
+              <div className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-2xl bg-slate-100 border border-border flex items-center justify-center shrink-0 shadow-lg">
+                <Music size={56} className="text-muted-foreground" />
               </div>
             )}
 
             <div className="flex-1 min-w-0 text-center md:text-left space-y-2.5">
               <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                <span className="text-[11px] font-mono uppercase font-black tracking-widest px-2.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                <span className="text-[11px] font-mono uppercase font-black tracking-widest px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                   {TYPE_LABELS[release.release_type] || release.release_type || 'Single'}
                 </span>
                 {effectivelyPaid && (
-                  <span className="text-[11px] font-mono uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <span className="text-[11px] font-mono uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
                     Direct-to-Consumer (D2C)
                   </span>
                 )}
               </div>
 
-              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight break-words text-white tracking-tight">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight break-words text-foreground tracking-tight">
                 {release.title}
               </h1>
 
@@ -264,17 +264,17 @@ export default function ReleaseDetail() {
                         className="w-7 h-7 rounded-full object-cover ring-2 ring-white/10 group-hover/art:ring-primary transition-all"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">
+                      <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-muted-foreground border border-border">
                         <User size={14} />
                       </div>
                     )}
-                    <span className="font-bold text-sm sm:text-base text-white group-hover/art:text-primary transition-colors flex items-center gap-1">
+                    <span className="font-bold text-sm sm:text-base text-foreground group-hover/art:text-primary transition-colors flex items-center gap-1">
                       {release.artist_name}
                       <CheckCircle2 size={13} className="text-primary fill-primary/20" />
                     </span>
                   </Link>
                 ) : (
-                  <span className="font-bold text-sm sm:text-base text-white">
+                  <span className="font-bold text-sm sm:text-base text-foreground">
                     {release.artist_name}
                   </span>
                 )}
@@ -362,9 +362,9 @@ export default function ReleaseDetail() {
 
         {/* Notice discrète sur les extraits audio (30s) avec accès aux plateformes officielles */}
         {isAudioPreviewOnly && (
-          <div className="rounded-xl bg-[#141821] border border-white/[0.08] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-            <p className="text-xs text-zinc-300">
-              <span className="font-semibold text-white">Extrait audio (30s)</span> — Écoutez l'œuvre complète sur les plateformes officielles :
+          <div className="rounded-xl bg-card border border-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Extrait audio (30s)</span> — Écoutez l'œuvre complète sur les plateformes officielles :
             </p>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {release.spotify_url && (
@@ -372,7 +372,7 @@ export default function ReleaseDetail() {
                   href={release.spotify_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1db954]/15 hover:bg-[#1db954]/25 border border-[#1db954]/30 text-[#1db954] text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1db954]/10 hover:bg-[#1db954]/20 border border-[#1db954]/30 text-[#1db954] text-xs font-semibold transition-colors"
                 >
                   <span>Spotify</span>
                   <ExternalLink size={11} />
@@ -383,7 +383,7 @@ export default function ReleaseDetail() {
                   href={release.apple_music_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fc3c44]/15 hover:bg-[#fc3c44]/25 border border-[#fc3c44]/30 text-[#fc3c44] text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fc3c44]/10 hover:bg-[#fc3c44]/20 border border-[#fc3c44]/30 text-[#fc3c44] text-xs font-semibold transition-colors"
                 >
                   <span>Apple Music</span>
                   <ExternalLink size={11} />
@@ -394,7 +394,7 @@ export default function ReleaseDetail() {
                   href={release.deezer_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#a238ff]/15 hover:bg-[#a238ff]/25 border border-[#a238ff]/30 text-[#a238ff] text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#a238ff]/10 hover:bg-[#a238ff]/20 border border-[#a238ff]/30 text-[#a238ff] text-xs font-semibold transition-colors"
                 >
                   <span>Deezer</span>
                   <ExternalLink size={11} />
@@ -405,7 +405,7 @@ export default function ReleaseDetail() {
                   href={release.youtube_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff0000]/15 hover:bg-[#ff0000]/25 border border-[#ff0000]/30 text-[#ff0000] text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff0000]/10 hover:bg-[#ff0000]/20 border border-[#ff0000]/30 text-[#ff0000] text-xs font-semibold transition-colors"
                 >
                   <span>YouTube</span>
                   <ExternalLink size={11} />
@@ -417,10 +417,10 @@ export default function ReleaseDetail() {
 
         {/* Clip officiel synchronisé */}
         {linkedVideo && (
-          <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="rounded-2xl bg-card border border-border p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
               {linkedVideo.thumbnail_url ? (
-                <div className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border border-white/10 group">
+                <div className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0 border border-border group">
                   <img
                     src={linkedVideo.thumbnail_url}
                     alt={linkedVideo.title}
@@ -431,18 +431,18 @@ export default function ReleaseDetail() {
                   </div>
                 </div>
               ) : (
-                <div className="w-14 h-14 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0">
+                <div className="w-14 h-14 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
                   <VideoIcon size={24} />
                 </div>
               )}
               <div className="min-w-0">
-                <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-red-400 flex items-center gap-1">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-red-500 flex items-center gap-1">
                   <VideoIcon size={12} /> Clip officiel synchronisé
                 </span>
-                <h3 className="font-bold text-sm sm:text-base text-white truncate mt-0.5">
+                <h3 className="font-bold text-sm sm:text-base text-foreground truncate mt-0.5">
                   {linkedVideo.title}
                 </h3>
-                <p className="text-xs text-zinc-400 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {linkedVideo.artist_name || release.artist_name}
                 </p>
               </div>
@@ -450,7 +450,7 @@ export default function ReleaseDetail() {
 
             <Link
               to={`/videos/${buildEntitySlug(linkedVideo.title, linkedVideo.id)}`}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs sm:text-sm transition-colors shrink-0 shadow-md"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs sm:text-sm transition-colors shrink-0 shadow-sm"
             >
               <Play size={14} className="fill-white" />
               <span>Regarder le clip</span>
@@ -459,12 +459,12 @@ export default function ReleaseDetail() {
           </div>
         )}
 
-        {/* Tracklist Table style Spotify */}
+        {/* Tracklist Table */}
         {playable && (
-          <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-4 md:p-6 shadow-xl">
+          <div className="rounded-2xl bg-card border border-border p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-lg text-white">Pistes audio</h2>
-              <span className="text-xs font-mono uppercase text-zinc-400">
+              <h2 className="font-display font-bold text-lg text-foreground">Pistes audio</h2>
+              <span className="text-xs font-mono uppercase text-muted-foreground">
                 {release.tracks && release.tracks.length ? `${release.tracks.length} titre(s)` : isAudioPreviewOnly ? 'Extrait audio (30s)' : 'Master audio'}
               </span>
             </div>
@@ -474,17 +474,17 @@ export default function ReleaseDetail() {
 
         {/* Aucun audio disponible */}
         {!effectivelyPaid && !playable && !hasExternal && (
-          <div className="bg-[#141821] border border-dashed border-white/[0.1] rounded-2xl p-8 text-center">
-            <p className="text-sm text-zinc-400">
+          <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center">
+            <p className="text-sm text-muted-foreground">
               Aucun audio n'a encore été ajouté à cette sortie. Le fichier audio master sera disponible dès qu'il sera téléversé.
             </p>
           </div>
         )}
 
-        {/* Liens de streaming officiels (Spotify, Apple, YouTube, Audiomack...) */}
+        {/* Liens de streaming officiels */}
         {hasExternal && (
-          <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-5">
-            <p className="text-xs font-mono uppercase tracking-widest text-zinc-400 mb-3">
+          <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+            <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-3">
               Disponible également sur les plateformes de streaming
             </p>
             <StreamingLinks
@@ -497,65 +497,65 @@ export default function ReleaseDetail() {
           </div>
         )}
 
-        {/* Description & Paroles (Audiomack / SoundCloud) */}
+        {/* Description & Paroles */}
         <div className="grid md:grid-cols-2 gap-6">
           {release.description && (
-            <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-5">
-              <h3 className="font-display font-bold text-sm uppercase text-zinc-300 tracking-wider mb-2.5">
+            <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+              <h3 className="font-display font-bold text-sm uppercase text-foreground tracking-wider mb-2.5">
                 À propos de cette œuvre
               </h3>
-              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                 {release.description}
               </p>
             </div>
           )}
 
           {release.lyrics && (
-            <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-5">
-              <h3 className="font-display font-bold text-sm uppercase text-zinc-300 tracking-wider mb-2.5">
+            <div className="rounded-2xl bg-card border border-border p-5 shadow-sm">
+              <h3 className="font-display font-bold text-sm uppercase text-foreground tracking-wider mb-2.5">
                 Paroles du titre
               </h3>
-              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line max-h-80 overflow-y-auto pr-2">
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line max-h-80 overflow-y-auto pr-2">
                 {release.lyrics}
               </p>
             </div>
           )}
         </div>
 
-        {/* Carte Artiste (Style Spotify) */}
+        {/* Carte Artiste */}
         {artist && (
-          <div className="rounded-2xl bg-[#141821] border border-white/[0.08] p-6 hover:border-white/[0.15] transition-all">
+          <div className="rounded-2xl bg-card border border-border p-6 hover:border-primary/40 transition-all shadow-sm">
             <div className="flex items-center gap-5">
               {artist.photo_url ? (
                 <img
                   src={artist.photo_url}
                   alt={artist.name}
-                  className="w-20 h-20 rounded-full object-cover ring-2 ring-primary/40 shrink-0 shadow-lg"
+                  className="w-20 h-20 rounded-full object-cover ring-2 ring-primary/40 shrink-0 shadow-sm"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                  <User size={28} className="text-zinc-500" />
+                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-border">
+                  <User size={28} className="text-muted-foreground" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-primary font-bold">
                   Artiste Vérifié KKD
                 </span>
-                <h3 className="font-display font-bold text-xl text-white truncate mt-0.5">
+                <h3 className="font-display font-bold text-xl text-foreground truncate mt-0.5">
                   {artist.name}
                 </h3>
                 {artist.genre && (
-                  <p className="text-xs text-zinc-400 mt-0.5">{artist.genre}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{artist.genre}</p>
                 )}
                 {artist.biography && (
-                  <p className="text-xs text-zinc-400 line-clamp-2 mt-1.5 leading-relaxed">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 leading-relaxed">
                     {artist.biography}
                   </p>
                 )}
               </div>
               <Link
                 to={`/artistes/${buildEntitySlug(artist.name, artist.id)}`}
-                className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/[0.2] hover:border-primary text-white text-xs font-bold uppercase tracking-wider hover:bg-primary/10 transition-all shrink-0"
+                className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border hover:border-primary text-foreground text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shrink-0"
               >
                 Voir le profil
               </Link>
@@ -567,7 +567,7 @@ export default function ReleaseDetail() {
         {otherReleases.length > 0 && (
           <div className="pt-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-xl text-white">
+              <h2 className="font-display font-bold text-xl text-foreground">
                 Plus de titres par {release.artist_name}
               </h2>
               {artist && (
@@ -584,9 +584,9 @@ export default function ReleaseDetail() {
                 <Link
                   key={r.id}
                   to={`/musique/${r.slug || slugify(r.title)}`}
-                  className="group block p-3 rounded-2xl bg-[#141821] hover:bg-[#1c222f] border border-white/[0.06] hover:border-white/[0.14] transition-all"
+                  className="group block p-3 rounded-2xl bg-card hover:bg-slate-50 border border-border hover:border-primary/40 transition-all shadow-sm"
                 >
-                  <div className="aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-2.5">
+                  <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-2.5 border border-border/50">
                     {r.cover_url ? (
                       <img
                         src={r.cover_url}
@@ -595,14 +595,14 @@ export default function ReleaseDetail() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Music size={24} className="text-zinc-600" />
+                        <Music size={24} className="text-muted-foreground" />
                       </div>
                     )}
                   </div>
-                  <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                  <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                     {r.title}
                   </p>
-                  <p className="text-xs text-zinc-400 capitalize mt-0.5">
+                  <p className="text-xs text-muted-foreground capitalize mt-0.5">
                     {r.release_type?.replace('_', ' ') || 'Single'}
                   </p>
                 </Link>
@@ -612,7 +612,7 @@ export default function ReleaseDetail() {
         )}
 
         {/* Commentaires fans */}
-        <div className="pt-4 border-t border-white/[0.06]">
+        <div className="pt-4 border-t border-border">
           <CommentsSection entityType="release" entity={release} onUpdate={refresh} />
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 function EqualizerIcon() {
   return (
@@ -70,20 +71,10 @@ export default function PublicSidebar() {
 
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-card border-r border-border z-40 select-none shadow-sm">
-      {/* ── Brand Logo Header (Spotify Style) ── */}
-      <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-border/50">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-rose-500 flex items-center justify-center shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-            <EqualizerIcon />
-          </div>
-          <div>
-            <span className="font-display text-lg font-black tracking-tight text-foreground flex items-center gap-1">
-              KKD<span className="text-primary">MUSIC</span>
-            </span>
-            <span className="block text-[9px] text-muted-foreground uppercase font-bold tracking-widest -mt-1">
-              D2C Streaming & Store
-            </span>
-          </div>
+      {/* ── Brand Logo Header Officiel Base44 ── */}
+      <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-border/60">
+        <Link to="/" className="flex items-center gap-3 group">
+          <BrandLogo className="h-10 w-auto" showSubtext={true} />
         </Link>
       </div>
 

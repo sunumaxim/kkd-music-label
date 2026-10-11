@@ -11,6 +11,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 const QUICK_FILTERS = [
   { label: 'Tout', path: '/musique' },
@@ -57,9 +58,9 @@ export default function PublicTopbar() {
     >
       {/* ── Gauche : Historique Spotify (< et >) + Mobile Logo ── */}
       <div className="flex items-center gap-2">
-        {/* Mobile Brand Logo */}
-        <Link to="/" className="md:hidden font-display font-extrabold text-base leading-none shrink-0 text-foreground mr-1">
-          KKD<span className="text-primary">MUSIC</span>
+        {/* Mobile Brand Logo Officiel */}
+        <Link to="/" className="md:hidden flex items-center shrink-0 mr-1">
+          <BrandLogo className="h-8 w-auto" showSubtext={false} />
         </Link>
 
         {/* History Nav Arrows (Spotify Desktop Style) */}

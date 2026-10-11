@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/components/shared/NotificationBell';
-import VideoLogo from '@/components/shared/VideoLogo';
+import BrandLogo from '@/components/brand/BrandLogo';
 
 const navLinks = [
   { label: 'Accueil', path: '/' },
@@ -42,7 +42,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20 py-2">
           <Link to="/" className="flex items-center gap-2">
-            <VideoLogo className="h-12 md:h-14 w-auto rounded-lg" />
+            <BrandLogo className="h-10 md:h-12 w-auto" showSubtext={true} />
           </Link>
 
           {/* Desktop Nav */}

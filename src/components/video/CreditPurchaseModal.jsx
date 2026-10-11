@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { WAVE_PAY_LINK, WAVE_MERCHANT } from '@/lib/wave';
 import { VIDEO_PACKS } from '@/lib/videoPacks';
-import { Loader2, Upload, Check, X, Sparkles, Wallet } from 'lucide-react';
+import { Loader2, Upload, Check, X, Sparkles } from 'lucide-react';
 
 function WaveIcon() {
   return (

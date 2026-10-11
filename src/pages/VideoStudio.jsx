@@ -1,20 +1,16 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { VIDEO_DURATIONS, VIDEO_ASPECTS } from '@/lib/videoPacks';
-import { extractPlayableSongs } from '@/lib/playableSongs';
-import SongExcerptPicker from '@/components/studio/SongExcerptPicker';
-import VideoWithAudio from '@/components/studio/VideoWithAudio';
+import { VIDEO_DURATIONS, VIDEO_ASPECTS, creditsForDuration } from '@/lib/videoPacks';
+import CreditPurchaseModal from '@/components/video/CreditPurchaseModal';
 import {
-  Sparkles, Loader2, Wand2, Film, LogIn, ImageIcon,
-  AlertTriangle, History, Clock, Music, Upload,
+  Sparkles, Loader2, Wand2, Film, LogIn, Coins, ImageIcon,
+  AlertTriangle, Download, History, Clapperboard,
 } from 'lucide-react';
-
-import { LOGO_MAIN as KKD_LOGO } from '@/lib/logos';
-const DAILY_LIMIT = 2;
 
 export default function VideoStudio() {
   const { toast } = useToast();
@@ -22,30 +18,21 @@ export default function VideoStudio() {
   const [imageUri, setImageUri] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [action, setAction] = useState('');
-  const [duration, setDuration] = useState(30);
+  const [duration, setDuration] = useState(6);
   const [aspect, setAspect] = useState('16:9');
   const [consent, setConsent] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [genStatus, setGenStatus] = useState(null);
+  const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
-  const [pendingId, setPendingId] = useState(null);
-  const [selectedSong, setSelectedSong] = useState(null);
-  const [excerptStart, setExcerptStart] = useState(0);
-  const [excerptDuration, setExcerptDuration] = useState(30);
-  const pollRef = useRef(null);
-
-  const todayUTC = new Date().toISOString().slice(0, 10);
-  const resetMs = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1, 0, 0, 0);
-  const resetLabel = new Date(resetMs).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const [showPurchase, setShowPurchase] = useState(false);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
 
-  const { data: todayGens = [] } = useQuery({
-    queryKey: ['video-gens-today', user?.email, todayUTC],
-    queryFn: () => base44.entities.VideoGeneration.filter({ user_email: user.email, quota_date: todayUTC }),
+  const { data: credit } = useQuery({
+    queryKey: ['video-credit', user?.email],
+    queryFn: async () => (await base44.entities.VideoCredit.filter({ user_email: user.email }))[0] || null,
     enabled: !!user?.email,
   });
-  const remaining = Math.max(0, DAILY_LIMIT - todayGens.filter(g => g.status !== 'echoue').length);
 
   const { data: generations = [], isLoading: gensLoading } = useQuery({
     queryKey: ['video-generations', user?.email],
@@ -53,73 +40,9 @@ export default function VideoStudio() {
     enabled: !!user?.email,
   });
 
-  const { data: releases = [] } = useQuery({
-    queryKey: ['studio-releases'],
-    queryFn: () => base44.entities.Release.list('-created_date', 50),
-    enabled: !!user?.email,
-    staleTime: 60_000,
-  });
-  const songs = extractPlayableSongs(releases);
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  }, []);
-
-  const startPolling = useCallback((id) => {
-    stopPolling();
-    pollRef.current = setInterval(async () => {
-      try {
-        const rec = await base44.entities.VideoGeneration.get(id);
-        if (rec.status === 'genere') {
-          stopPolling();
-          setResult(rec);
-          setGenStatus('termine');
-          setPendingId(null);
-          qc.invalidateQueries({ queryKey: ['video-gens-today'] });
-          qc.invalidateQueries({ queryKey: ['video-generations'] });
-        } else if (rec.status === 'echoue') {
-          stopPolling();
-          setGenStatus('echec');
-          setPendingId(null);
-          qc.invalidateQueries({ queryKey: ['video-gens-today'] });
-          qc.invalidateQueries({ queryKey: ['video-generations'] });
-        }
-      } catch (e) { /* retry au prochain interval */ }
-    }, 5000);
-  }, [stopPolling, qc]);
-
-  // Au chargement : reprend une génération en attente
-  useEffect(() => {
-    if (!user?.email) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const latest = (await base44.entities.VideoGeneration.filter({ user_email: user.email }, '-created_date', 1))[0];
-        if (!cancelled && latest?.status === 'en_attente') {
-          setPendingId(latest.id);
-          setGenStatus('generation');
-          startPolling(latest.id);
-        }
-      } catch (e) {}
-    })();
-    return () => { cancelled = true; stopPolling(); };
-  }, [user?.email, startPolling, stopPolling]);
-
-  // La durée de l'extrait suit la durée vidéo
-  useEffect(() => { setExcerptDuration(duration); }, [duration]);
-
-  const isGenerating = genStatus === 'preparation' || genStatus === 'generation';
-  const canGenerate = !!imageUri && consent && remaining > 0 && !isGenerating;
-  const clipCount = Math.ceil(duration / 8);
-
-  // Sélection d'une chanson → utilise automatiquement sa pochette comme image
-  const handleSelectSong = (song) => {
-    setSelectedSong(song);
-    if (song?.cover_url) {
-      setImagePreview(song.cover_url);
-      setImageUri(song.cover_url);
-    }
-  };
+  const balance = credit?.balance || 0;
+  const cost = creditsForDuration(duration);
+  const canGenerate = !!imageUri && consent && balance >= cost && !generating;
 
   const handleImage = async (e) => {
     const file = e.target.files[0];
@@ -137,7 +60,7 @@ export default function VideoStudio() {
 
   const generate = async () => {
     if (!canGenerate) return;
-    setGenStatus('preparation');
+    setGenerating(true);
     setResult(null);
     try {
       const res = await base44.functions.invoke('generateVideo', {
@@ -145,41 +68,26 @@ export default function VideoStudio() {
         action_prompt: action,
         duration,
         aspect_ratio: aspect,
-        release_id: selectedSong?.release_id || '',
-        release_title: selectedSong?.title || '',
-        artist_name: selectedSong?.artist_name || '',
-        audio_file_url: selectedSong?.audio_url || '',
-        excerpt_start: excerptStart,
-        excerpt_duration: excerptDuration,
       });
       const data = res.data || res;
-      if (data?.error) throw data;
-      if (data?.generation_id) {
-        setPendingId(data.generation_id);
-        setGenStatus('generation');
-        startPolling(data.generation_id);
-        qc.invalidateQueries({ queryKey: ['video-gens-today'] });
-      }
+      if (data?.error) throw new Error(data.error);
+      setResult(data);
+      qc.invalidateQueries({ queryKey: ['video-credit', user.email] });
+      qc.invalidateQueries({ queryKey: ['video-generations', user.email] });
+      toast({ title: 'Vidéo générée !', description: `${data.credits_used} crédit(s) utilisé(s).` });
     } catch (err) {
-      const e = err.response?.data || err;
-      if (e.error === 'quota_epuise') {
-        setGenStatus(null);
-        toast({ title: 'Quota quotidien atteint', description: `Réinitialisation à ${resetLabel}.`, variant: 'destructive' });
-        qc.invalidateQueries({ queryKey: ['video-gens-today'] });
-      } else {
-        setGenStatus('echec');
-        toast({ title: 'Génération échouée', description: e.error || err.message, variant: 'destructive' });
-      }
-    }
+      const msg = err.response?.data?.error || err.message;
+      toast({ title: 'Génération échouée', description: msg, variant: 'destructive' });
+    } finally { setGenerating(false); }
   };
 
   if (!user) {
     return (
       <div className="max-w-md mx-auto py-20 text-center px-4">
-        <img src={KKD_LOGO} alt="KKD Music" className="w-14 h-14 mx-auto mb-4 rounded-xl object-cover" />
-        <h1 className="font-heading text-2xl font-extrabold mb-2">Studio Vidéo IA</h1>
+        <Clapperboard size={48} className="mx-auto mb-4 text-muted-foreground/40" />
+        <h1 className="font-display text-2xl font-extrabold mb-2">Studio Vidéo IA</h1>
         <p className="text-sm text-muted-foreground mb-6">Connectez-vous pour générer des vidéos animées à partir de vos images.</p>
-        <Link to="/login" className="kkd-btn-primary">
+        <Link to="/login" className="inline-flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-primary-foreground font-bold">
           <LogIn size={16} /> Se connecter
         </Link>
       </div>
@@ -187,37 +95,40 @@ export default function VideoStudio() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-12">
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 pb-28 md:pb-12">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl overflow-hidden bg-primary/10 border border-border flex items-center justify-center shrink-0">
-            <img src={KKD_LOGO} alt="KKD" className="w-full h-full object-cover" />
+          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
+            <Sparkles size={22} className="text-primary" />
           </div>
           <div>
-            <h1 className="font-heading text-xl md:text-2xl font-extrabold leading-none">Studio Vidéo IA</h1>
-            <p className="text-xs text-muted-foreground mt-1">Vidéo animée de 30 à 60 secondes</p>
+            <h1 className="font-display text-xl md:text-2xl font-extrabold">Studio Vidéo IA</h1>
+            <p className="text-xs text-muted-foreground">Transformez une image en vidéo animée</p>
           </div>
         </div>
-        <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${remaining > 0 ? 'bg-secondary/40 border-border' : 'bg-amber-500/10 border-amber-500/30'}`}>
-          <Clock size={16} className={remaining > 0 ? 'text-accent' : 'text-amber-500'} />
-          <div className="leading-tight">
-            <p className="text-[10px] text-muted-foreground uppercase">Aujourd'hui</p>
-            <p className="font-heading font-extrabold text-sm">
-              {remaining > 0 ? `${remaining} génér. restante${remaining > 1 ? 's' : ''}` : 'Quota atteint'}
-            </p>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/60 border border-border">
+            <Coins size={16} className="text-accent" />
+            <div className="leading-tight">
+              <p className="text-[10px] text-muted-foreground uppercase">Solde</p>
+              <p className="font-display font-extrabold text-sm">{balance} crédit{balance > 1 ? 's' : ''}</p>
+            </div>
           </div>
+          <Button onClick={() => setShowPurchase(true)} size="sm" className="bg-primary gap-2">
+            <Coins size={14} /> Acheter
+          </Button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 items-start">
-        {/* Formulaire */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Form */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-5">
-          {/* Image source */}
+          {/* Image upload */}
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Image source</label>
             <label className="block cursor-pointer">
-              <div className={`relative rounded-xl border-2 border-dashed ${imagePreview ? 'border-primary/40' : 'border-border'} bg-secondary/20 aspect-video flex items-center justify-center overflow-hidden`}>
+              <div className={`relative rounded-xl border-2 border-dashed ${imagePreview ? 'border-primary/40' : 'border-border'} bg-secondary/30 aspect-video flex items-center justify-center overflow-hidden`}>
                 {imagePreview ? (
                   <img src={imagePreview} alt="source" className="w-full h-full object-cover" />
                 ) : (
@@ -234,38 +145,22 @@ export default function VideoStudio() {
               </div>
               <input type="file" className="hidden" onChange={handleImage} accept="image/*" disabled={uploading} />
             </label>
-            {selectedSong?.cover_url && (
-              <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                <Upload size={10} /> Pochette de « {selectedSong.title} » utilisée. Vous pouvez téléverser une autre image pour remplacer.
-              </p>
-            )}
           </div>
 
-          {/* Action souhaitée */}
+          {/* Action prompt */}
           <div>
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-              Action souhaitée <span className="text-muted-foreground/60 normal-case font-normal">(optionnel)</span>
-            </label>
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Action souhaitée (optionnel)</label>
             <Textarea
               value={action}
               onChange={(e) => setAction(e.target.value)}
-              placeholder="Ex : la personne marche souriante vers la caméra, ambiance cinématique"
+              placeholder="Ex : La personne marche souriante vers la caméra, regard confiant, ambiance cinématique"
               rows={3}
               maxLength={500}
             />
+            <p className="text-[10px] text-muted-foreground mt-1">L'IA décrit votre image puis anime la scène selon cette action.</p>
           </div>
 
-          {/* Chanson + extrait */}
-          <SongExcerptPicker
-            songs={songs}
-            selectedSong={selectedSong}
-            onSelect={handleSelectSong}
-            excerptStart={excerptStart}
-            setExcerptStart={setExcerptStart}
-            excerptDuration={excerptDuration}
-          />
-
-          {/* Durée + format */}
+          {/* Duration + aspect */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Durée</label>
@@ -279,6 +174,7 @@ export default function VideoStudio() {
                     }`}
                   >
                     {d.value}s
+                    <span className="block text-[9px] font-normal opacity-80">{d.credits} cr</span>
                   </button>
                 ))}
               </div>
@@ -301,64 +197,61 @@ export default function VideoStudio() {
             </div>
           </div>
 
-          {/* Consentement */}
+          {/* Consent */}
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 accent-[var(--brand-primary)]" />
             <span className="text-[11px] text-muted-foreground leading-relaxed">
-              Je confirme disposer des droits sur cette image et m'engage à ne pas porter atteinte à l'image, à la vie privée ou à l'identité d'autrui.
+              Je confirme disposer des droits sur cette image et m'engage à ne pas porter atteinte à l'image, à la vie privée ou à l'identité d'autrui (usurpation, diffamation).
             </span>
           </label>
 
-          {/* Générer */}
-          <button onClick={generate} disabled={!canGenerate} className="kkd-btn-primary w-full !justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-            {isGenerating ? (
+          {/* Generate */}
+          <Button onClick={generate} disabled={!canGenerate} className="w-full bg-primary gap-2 h-11">
+            {generating ? (
               <><Loader2 size={18} className="animate-spin" /> Génération en cours…</>
             ) : (
-              <><Wand2 size={18} /> Générer la vidéo</>
+              <><Wand2 size={18} /> Générer · {cost} crédit{cost > 1 ? 's' : ''}</>
             )}
-          </button>
+          </Button>
 
-          {remaining === 0 && !isGenerating && (
+          {balance < cost && (
             <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
               <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
               <p className="text-xs text-amber-200">
-                Vous avez utilisé vos {DAILY_LIMIT} générations d'aujourd'hui. Nouveau quota à {resetLabel}.
+                Crédits insuffisants ({balance}/{cost}). <button onClick={() => setShowPurchase(true)} className="underline font-bold">Acheter un pack</button> pour générer.
               </p>
             </div>
           )}
         </div>
 
-        {/* Résultat + historique */}
+        {/* Result */}
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Film size={16} className="text-primary" />
               <p className="font-heading font-bold text-sm">Résultat</p>
             </div>
-            {isGenerating ? (
-              <GenerationProgress status={genStatus} duration={duration} clipCount={clipCount} />
-            ) : result?.video_clips?.length > 0 || result?.video_url ? (
-              <VideoWithAudio
-                clips={result.video_clips?.length > 0 ? result.video_clips : (result.video_url ? [result.video_url] : [])}
-                audioUrl={result.audio_file_url}
-                excerptStart={result.excerpt_start}
-                excerptDuration={result.excerpt_duration}
-              />
-            ) : genStatus === 'echec' ? (
-              <div className="aspect-video rounded-xl bg-destructive/10 border border-destructive/30 flex flex-col items-center justify-center gap-2 text-center p-6">
-                <AlertTriangle size={28} className="text-destructive" />
-                <p className="text-xs text-muted-foreground">La génération a échoué. Vous pouvez réessayer, le quota n'est pas consommé en cas d'échec.</p>
-                <button onClick={() => setGenStatus(null)} className="kkd-btn-outline !text-xs !py-2">Réessayer</button>
+            {generating ? (
+              <div className="aspect-video rounded-xl bg-secondary/40 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={28} className="animate-spin text-primary" />
+                <p className="text-xs text-muted-foreground text-center px-4">Création de votre vidéo animée…<br />Cela peut prendre 30 à 60 secondes.</p>
+              </div>
+            ) : result?.video_url ? (
+              <div className="space-y-3">
+                <video src={result.video_url} controls autoPlay loop className="w-full rounded-xl bg-black" />
+                <a href={result.video_url} download className="inline-flex items-center gap-2 text-xs text-primary hover:underline">
+                  <Download size={14} /> Télécharger la vidéo
+                </a>
               </div>
             ) : (
-              <div className="aspect-video rounded-xl bg-secondary/20 flex flex-col items-center justify-center gap-2 text-center p-6">
+              <div className="aspect-video rounded-xl bg-secondary/30 flex flex-col items-center justify-center gap-2 text-center p-6">
                 <Sparkles size={28} className="text-muted-foreground/40" />
                 <p className="text-xs text-muted-foreground">Votre vidéo générée apparaîtra ici.</p>
               </div>
             )}
           </div>
 
-          {/* Historique */}
+          {/* History */}
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <History size={16} className="text-primary" />
@@ -369,67 +262,36 @@ export default function VideoStudio() {
             ) : generations.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">Aucune génération pour le moment.</p>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto no-scrollbar">
+              <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
                 {generations.map((g) => (
-                  <GenerationHistoryItem key={g.id} gen={g} onPlay={setResult} />
+                  <div key={g.id} className="flex items-center gap-3 rounded-lg bg-secondary/30 p-2">
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                      {g.status === 'genere' && g.video_url ? (
+                        <video src={g.video_url} className="w-full h-full object-cover" muted />
+                      ) : g.status === 'echoue' ? (
+                        <AlertTriangle size={16} className="text-destructive" />
+                      ) : (
+                        <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{g.prompt || 'Sans action précisée'}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {g.duration}s · {g.credits_used} cr · {new Date(g.created_date).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    {g.status === 'genere' && g.video_url && (
+                      <a href={g.video_url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-[10px]">Voir</a>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function GenerationProgress({ status, duration, clipCount }) {
-  return (
-    <div className="aspect-video rounded-xl bg-secondary/40 flex flex-col items-center justify-center gap-4 p-6">
-      <Loader2 size={32} className="animate-spin text-primary" />
-      <div className="text-center space-y-1">
-        <p className="text-sm font-heading font-bold">
-          {status === 'preparation' ? 'Préparation…' : `Génération de ${clipCount} clips en cours…`}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Vidéo de {duration} secondes : {clipCount} clips de 8s générés en parallèle.<br />
-          Cela peut prendre 2 à 5 minutes. Vous pouvez quitter la page,<br />la vidéo apparaîtra dans votre historique.
-        </p>
-      </div>
-      <div className="flex gap-1.5">
-        {[...Array(Math.min(clipCount, 8))].map((_, i) => (
-          <div key={i} className="h-1.5 w-6 rounded-full bg-primary animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GenerationHistoryItem({ gen, onPlay }) {
-  const clips = gen.video_clips?.length > 0 ? gen.video_clips : (gen.video_url ? [gen.video_url] : []);
-  return (
-    <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-2">
-      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-        {gen.status === 'genere' && clips.length > 0 ? (
-          <video src={clips[0]} className="w-full h-full object-cover" muted />
-        ) : gen.status === 'echoue' ? (
-          <AlertTriangle size={16} className="text-destructive" />
-        ) : (
-          <Loader2 size={16} className="animate-spin text-muted-foreground" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">
-          {gen.release_title ? (
-            <span className="flex items-center gap-1"><Music size={10} className="text-primary shrink-0" /> {gen.release_title}</span>
-          ) : (gen.prompt || 'Sans action précisée')}
-        </p>
-        <p className="text-[10px] text-muted-foreground">
-          {gen.duration}s · {new Date(gen.created_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-        </p>
-      </div>
-      {gen.status === 'genere' && clips.length > 0 && (
-        <button onClick={() => onPlay(gen)} className="text-primary hover:underline text-[10px] font-bold">Voir</button>
-      )}
+      {showPurchase && <CreditPurchaseModal user={user} onClose={() => setShowPurchase(false)} />}
     </div>
   );
 }

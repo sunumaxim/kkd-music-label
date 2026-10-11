@@ -464,7 +464,7 @@ export default function ArtistDetail() {
             {albums.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-display font-bold text-xl text-white">Discographie Albums & EPs</h2>
+                  <h2 className="font-display font-bold text-xl text-foreground">Discographie Albums & EPs</h2>
                   <button
                     onClick={() => setTab('albums')}
                     className="text-xs font-bold text-primary hover:underline"
@@ -477,9 +477,9 @@ export default function ArtistDetail() {
                     <Link
                       key={r.id}
                       to={`/musique/${buildEntitySlug(r.title, r.id)}`}
-                      className="group block p-3 rounded-2xl bg-[#141821] hover:bg-[#1c222f] border border-white/[0.06] hover:border-white/[0.14] transition-all"
+                      className="group block p-3 rounded-2xl bg-card hover:bg-slate-50 border border-border hover:border-primary/40 transition-all shadow-sm"
                     >
-                      <div className="aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-2.5 shadow-md">
+                      <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-2.5 shadow-xs border border-border/50">
                         {r.cover_url ? (
                           <img
                             src={r.cover_url}
@@ -487,15 +487,15 @@ export default function ArtistDetail() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Disc3 size={28} className="text-zinc-600" />
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <Disc3 size={28} />
                           </div>
                         )}
                       </div>
-                      <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                      <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                         {r.title}
                       </p>
-                      <p className="text-xs text-zinc-400 capitalize mt-0.5">
+                      <p className="text-xs text-muted-foreground capitalize mt-0.5">
                         {r.release_type === 'ep' ? 'EP' : 'Album'} • {r.release_date ? new Date(r.release_date).getFullYear() : ''}
                       </p>
                     </Link>
@@ -509,10 +509,10 @@ export default function ArtistDetail() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <h2 className="font-display font-bold text-xl text-white">
+                    <h2 className="font-display font-bold text-xl text-foreground">
                       Collaborations & Featurings Récentes
                     </h2>
-                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                       {featuringReleases.length} titre(s)
                     </span>
                   </div>
@@ -528,9 +528,9 @@ export default function ArtistDetail() {
                     <Link
                       key={r.id}
                       to={`/musique/${buildEntitySlug(r.title, r.id)}`}
-                      className="flex items-center gap-3 p-3 rounded-2xl bg-[#141821] hover:bg-[#1c222f] border border-white/[0.06] hover:border-white/[0.14] transition-all group"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-card hover:bg-slate-50 border border-border hover:border-primary/40 transition-all group shadow-sm"
                     >
-                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-zinc-900 shrink-0 relative">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 relative border border-border/50">
                         {r.cover_url ? (
                           <img
                             src={r.cover_url}
@@ -538,16 +538,16 @@ export default function ArtistDetail() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                             <Disc3 size={20} />
                           </div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                        <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                           {r.title}
                         </p>
-                        <p className="text-xs text-zinc-400 truncate mt-0.5">
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {r.artist_name} <span className="text-primary font-semibold">feat. {artist.name}</span>
                         </p>
                       </div>
@@ -558,7 +558,7 @@ export default function ArtistDetail() {
             )}
 
             {/* Artistes similaires */}
-            <section className="pt-6 border-t border-white/[0.08]">
+            <section className="pt-6 border-t border-border">
               <SimilarArtists genre={artist.genre} artistId={artist.id} />
             </section>
           </div>
@@ -569,10 +569,10 @@ export default function ArtistDetail() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display font-bold text-2xl text-white">
+                <h2 className="font-display font-bold text-2xl text-foreground">
                   Collaborations & Featurings ({featuringReleases.length})
                 </h2>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Tous les morceaux où {artist.name} intervient en featuring ou collaboration officielle
                 </p>
               </div>
@@ -582,10 +582,10 @@ export default function ArtistDetail() {
               {featuringReleases.map((r) => (
                 <div
                   key={r.id}
-                  className="p-3.5 rounded-2xl bg-[#141821] border border-white/[0.06] hover:border-white/[0.14] transition-all flex flex-col justify-between group"
+                  className="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/40 transition-all flex flex-col justify-between group shadow-sm"
                 >
                   <Link to={`/musique/${buildEntitySlug(r.title, r.id)}`} className="block">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-zinc-900 mb-3 relative">
+                    <div className="aspect-square rounded-xl overflow-hidden bg-slate-100 mb-3 relative border border-border/50">
                       {r.cover_url ? (
                         <img
                           src={r.cover_url}
@@ -593,22 +593,22 @@ export default function ArtistDetail() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           <Disc3 size={32} />
                         </div>
                       )}
-                      <span className="absolute top-2 left-2 text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-primary/80 backdrop-blur-md text-white">
+                      <span className="absolute top-2 left-2 text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-primary/90 text-white">
                         Feat
                       </span>
                     </div>
-                    <p className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                    <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                       {r.title}
                     </p>
-                    <p className="text-xs text-zinc-400 truncate mt-0.5">
-                      Artiste principal : <span className="text-zinc-200 font-semibold">{r.artist_name}</span>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      Artiste principal : <span className="text-foreground font-semibold">{r.artist_name}</span>
                     </p>
                   </Link>
-                  <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                     <Link
                       to={`/musique/${buildEntitySlug(r.title, r.id)}`}
                       className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
