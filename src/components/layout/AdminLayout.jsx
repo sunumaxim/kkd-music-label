@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import BrandLogo from '@/components/brand/BrandLogo';
+import { LOGO_MAIN as LOGO_URL } from '@/lib/logos';
 
 const navGroups = [
   {

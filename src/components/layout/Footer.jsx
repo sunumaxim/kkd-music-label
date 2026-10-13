@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import BrandLogo from '@/components/brand/BrandLogo';
+import { LOGO_MAIN as LOGO_URL } from '@/lib/logos';
 
 export default function Footer() {
   return (
