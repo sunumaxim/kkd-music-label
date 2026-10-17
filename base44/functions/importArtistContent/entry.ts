@@ -240,6 +240,12 @@ Deno.serve(async (req) => {
     if (user.role !== 'admin') return Response.json({ error: 'Accès réservé aux administrateurs' }, { status: 403 });
 
     const { action, spotify_url, deezer_url, audiomack_url, youtube_url, artist_id, artist_name } = await req.json();
+    const db = base44.asServiceRole;
+    let linkedArtist = null;
+    if (artist_id) {
+      linkedArtist = await db.entities.Artist.get(artist_id);
+      if (!linkedArtist) return Response.json({ error: "Artiste associé introuvable; importation annulée." }, { status: 400 });
+    }
 
     // ── IMPORT SPOTIFY ──
     if (action === 'import_spotify') {
@@ -251,19 +257,21 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Spotify.' }, { status: 404 });
       }
 
-      const finalName = artist_name || artistName;
+      const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
-        await base44.asServiceRole.entities.Artist.update(artist_id, { spotify_url });
+        await db.entities.Artist.update(linkedArtist.id, { spotify_url });
       }
 
-      const existing = await base44.asServiceRole.entities.Release.filter({ artist_name: finalName });
+      const existing = linkedArtist
+        ? await db.entities.Release.filter({ artist_id: linkedArtist.id })
+        : await db.entities.Release.filter({ artist_name: finalName });
       const existingTitles = new Set(existing.map(r => r.title?.toLowerCase()).filter(Boolean));
       const toCreate = releases.filter(r => !existingTitles.has(r.title?.toLowerCase()));
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
+        await db.entities.Release.create({ ...release, artist_name: finalName, artist_id: linkedArtist?.id || '', is_featured: false });
         created++;
       }
 
@@ -283,19 +291,21 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Deezer.' }, { status: 404 });
       }
 
-      const finalName = artist_name || artistName;
+      const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
-        await base44.asServiceRole.entities.Artist.update(artist_id, { deezer_url });
+        await db.entities.Artist.update(linkedArtist.id, { deezer_url });
       }
 
-      const existing = await base44.asServiceRole.entities.Release.filter({ artist_name: finalName });
+      const existing = linkedArtist
+        ? await db.entities.Release.filter({ artist_id: linkedArtist.id })
+        : await db.entities.Release.filter({ artist_name: finalName });
       const existingTitles = new Set(existing.map(r => r.title?.toLowerCase()).filter(Boolean));
       const toCreate = releases.filter(r => !existingTitles.has(r.title?.toLowerCase()));
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
+        await db.entities.Release.create({ ...release, artist_name: finalName, artist_id: linkedArtist?.id || '', is_featured: false });
         created++;
       }
 
@@ -312,19 +322,21 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Audiomack.' }, { status: 404 });
       }
 
-      const finalName = artist_name || artistName;
+      const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
-        await base44.asServiceRole.entities.Artist.update(artist_id, { audiomack_url });
+        await db.entities.Artist.update(linkedArtist.id, { audiomack_url });
       }
 
-      const existing = await base44.asServiceRole.entities.Release.filter({ artist_name: finalName });
+      const existing = linkedArtist
+        ? await db.entities.Release.filter({ artist_id: linkedArtist.id })
+        : await db.entities.Release.filter({ artist_name: finalName });
       const existingTitles = new Set(existing.map(r => r.title?.toLowerCase()).filter(Boolean));
       const toCreate = releases.filter(r => !existingTitles.has(r.title?.toLowerCase()));
 
       let created = 0;
       for (const release of toCreate) {
-        await base44.asServiceRole.entities.Release.create({ ...release, artist_name: finalName, artist_id: artist_id || '', is_featured: false });
+        await db.entities.Release.create({ ...release, artist_name: finalName, artist_id: linkedArtist?.id || '', is_featured: false });
         created++;
       }
 
@@ -341,20 +353,22 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune vidéo trouvée sur cette chaîne.' }, { status: 404 });
       }
 
-      const nameToUse = artist_name || channelName;
+      const nameToUse = linkedArtist?.name || artist_name || channelName;
 
-      const existing = await base44.asServiceRole.entities.Video.filter({ artist_name: nameToUse });
+      const existing = linkedArtist
+        ? await db.entities.Video.filter({ artist_id: linkedArtist.id })
+        : await db.entities.Video.filter({ artist_name: nameToUse });
       const existingUrls = new Set(existing.map(v => v.youtube_url).filter(Boolean));
       const toCreate = videos.filter(v => !existingUrls.has(v.youtube_url));
 
       let created = 0;
       for (const video of toCreate) {
-        await base44.asServiceRole.entities.Video.create({ ...video, artist_name: nameToUse, is_featured: false });
+        await db.entities.Video.create({ ...video, artist_id: linkedArtist?.id || '', artist_name: nameToUse, is_featured: false });
         created++;
       }
 
       if (artist_id) {
-        await base44.asServiceRole.entities.Artist.update(artist_id, { youtube_url: `https://www.youtube.com/channel/${channelId}` });
+        await db.entities.Artist.update(linkedArtist.id, { youtube_url: `https://www.youtube.com/channel/${channelId}` });
       }
 
       return Response.json({ success: true, total: videos.length, created, skipped: videos.length - created, channel_name: channelName, videos });
