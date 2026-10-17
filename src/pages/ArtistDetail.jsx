@@ -199,7 +199,6 @@ export default function ArtistDetail() {
     select: (data) =>
       data
         .filter((n) =>
-          (n.artist_id && n.artist_id === artist.id) ||
           (n.tags || []).some((t) => t?.trim().toLocaleLowerCase() === artist.name?.trim().toLocaleLowerCase())
         )
         .slice(0, 6),
