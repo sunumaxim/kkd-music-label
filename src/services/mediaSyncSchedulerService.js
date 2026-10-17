@@ -65,26 +65,27 @@ class MediaSyncSchedulerService {
   isMatch(song, video) {
     if (!song || !video) return false;
 
-    // 1. Déjà explicitement liés
-    if (song.linked_video_id && song.linked_video_id === video.id) return true;
-    if (video.linked_release_id && video.linked_release_id === song.id) return true;
-
-    // 2. URL YouTube identique
-    const songYt = (song.youtube_url || '').toLowerCase().trim();
-    const vidYt = (video.youtube_url || '').toLowerCase().trim();
-    if (songYt && vidYt && songYt === vidYt) {
-      return true;
-    }
-
-    // 3. Même artiste + correspondance de titre
+    // Une relation explicite ne doit jamais relier les médias de deux artistes différents.
+    const songArtistId = String(song.artist_id || '').trim();
+    const videoArtistId = String(video.artist_id || '').trim();
     const songArtist = sanitizeArtistName(song.artist_name);
     const vidArtist = sanitizeArtistName(video.artist_name);
 
-    const artistMatches =
-      (songArtist && vidArtist && (songArtist === vidArtist || songArtist.includes(vidArtist) || vidArtist.includes(songArtist))) ||
-      !songArtist || !vidArtist;
+    if (songArtistId && videoArtistId && songArtistId !== videoArtistId) return false;
+    if (songArtist && vidArtist && songArtist !== vidArtist) return false;
 
-    if (!artistMatches) return false;
+    // 1. Déjà explicitement liés, après validation de l'identité de l'artiste
+    if (song.linked_video_id && song.linked_video_id === video.id) return true;
+    if (video.linked_release_id && video.linked_release_id === song.id) return true;
+
+    // 2. URL YouTube identique, uniquement si les artistes ne sont pas contradictoires
+    const songYt = (song.youtube_url || '').toLowerCase().trim();
+    const vidYt = (video.youtube_url || '').toLowerCase().trim();
+    if (songYt && vidYt && songYt === vidYt) return true;
+
+    // 3. Correspondance du titre, uniquement après validation stricte de l'artiste
+    // Si un nom manque des deux côtés, on ne peut pas attribuer automatiquement le média.
+    if (!songArtist || !vidArtist) return false;
 
     const cleanSongTitle = sanitizeMediaTitle(song.title);
     const cleanVidTitle = sanitizeMediaTitle(video.title);
