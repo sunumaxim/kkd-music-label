@@ -115,6 +115,10 @@
         }
       },
       "description": "Commentaires des fans"
+    },
+    "artist_id": {
+      "type": "string",
+      "description": "Identifiant unique de l'artiste propri\u00e9taire de cette vid\u00e9o; r\u00e9f\u00e9rence principale pour l'association au profil"
     }
   },
   "required": [
