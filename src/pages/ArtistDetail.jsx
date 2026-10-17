@@ -184,11 +184,9 @@ export default function ArtistDetail() {
     enabled: !!artist?.name,
     select: (data) =>
       data
-        .filter(
-          (e) =>
-            (e.artist_name && e.artist_name.toLowerCase() === artist?.name?.toLowerCase()) ||
-            (!e.artist_name && (e.title?.toLowerCase().includes(artist?.name?.toLowerCase()) ||
-              e.description?.toLowerCase().includes(artist?.name?.toLowerCase())))
+        .filter((e) => e.artist_id
+          ? e.artist_id === artist?.id
+          : Boolean(e.artist_name && e.artist_name.trim().toLocaleLowerCase() === artist?.name?.trim().toLocaleLowerCase())
         )
         .filter((e) => !e.published_status || e.published_status === 'approuve')
         .slice(0, 6),
@@ -200,10 +198,9 @@ export default function ArtistDetail() {
     enabled: !!artist?.name,
     select: (data) =>
       data
-        .filter(
-          (n) =>
-            (n.tags || []).some((t) => t.toLowerCase().includes(artist.name.toLowerCase())) ||
-            `${n.title} ${n.excerpt || ''} ${n.content || ''}`.toLowerCase().includes(artist.name.toLowerCase())
+        .filter((n) =>
+          (n.artist_id && n.artist_id === artist.id) ||
+          (n.tags || []).some((t) => t?.trim().toLocaleLowerCase() === artist.name?.trim().toLocaleLowerCase())
         )
         .slice(0, 6),
   });
