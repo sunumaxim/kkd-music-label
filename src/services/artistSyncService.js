@@ -424,20 +424,33 @@ export const artistSyncService = {
       const relFeatId = (rel.featuring_artist_id || '').trim();
       const relTitle = (rel.title || '').toLowerCase();
 
-      const isMain = (aId && relArtistId === aId) || (aName && relArtistName === aName);
+      // L'identifiant prime sur le nom : si une sortie est explicitement liée à un autre artiste,
+      // un nom identique ne doit jamais la faire apparaître sur cette fiche.
+      const isMain = aId
+        ? (relArtistId ? relArtistId === aId : Boolean(aName && relArtistName === aName))
+        : Boolean(aName && relArtistName === aName);
 
       if (isMain) {
         mainReleases.push(rel);
       } else {
         // Vérifier si l'artiste est en featuring
-        const isFeatById = aId && (relFeatId === aId || rel.featuring_artists_ids?.includes(aId));
-        const isFeatByName = aName && (
-          relFeatName.includes(aName) ||
-          relTitle.includes(`feat. ${aName}`) ||
-          relTitle.includes(`ft. ${aName}`) ||
-          relTitle.includes(`featuring ${aName}`) ||
-          relTitle.includes(`(feat ${aName}`)
-        );
+        const isFeatById = Boolean(aId && (relFeatId === aId || rel.featuring_artists_ids?.includes(aId)));
+        const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const hasExactName = (value, name) => {
+          if (!value || !name) return false;
+          const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(name)}([^\\p{L}\\p{N}]|$)`, 'iu');
+          return pattern.test(value);
+        };
+        // Les IDs de featuring sont prioritaires. Le nom n'est utilisé qu'en compatibilité
+        // avec les anciens enregistrements qui n'ont pas encore de relation par ID.
+        const hasFeaturingIds = Boolean(relFeatId || rel.featuring_artists_ids?.length);
+        const isFeatByName = Boolean(aName && !hasFeaturingIds && (
+          hasExactName(relFeatName, aName) ||
+          hasExactName(relTitle, `feat. ${aName}`) ||
+          hasExactName(relTitle, `ft. ${aName}`) ||
+          hasExactName(relTitle, `featuring ${aName}`) ||
+          hasExactName(relTitle, `(feat ${aName}`)
+        ));
 
         if (isFeatById || isFeatByName) {
           featuringReleases.push({
