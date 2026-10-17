@@ -16,6 +16,10 @@ function extractAudiomackArtist(url) {
   return m ? m[1] : null;
 }
 
+function normalizeArtistName(value = '') {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
 function extractYouTubeChannel(url) {
   if (!url) return null;
   const ch = url.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]+)/);
@@ -257,6 +261,9 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Spotify.' }, { status: 404 });
       }
 
+      if (linkedArtist && normalizeArtistName(artistName) !== normalizeArtistName(linkedArtist.name)) {
+        return Response.json({ error: `Le profil récupéré (${artistName}) ne correspond pas à l'artiste sélectionné (${linkedArtist.name}). Vérifiez le lien avant de poursuivre.` }, { status: 409 });
+      }
       const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
@@ -291,6 +298,9 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Deezer.' }, { status: 404 });
       }
 
+      if (linkedArtist && normalizeArtistName(artistName) !== normalizeArtistName(linkedArtist.name)) {
+        return Response.json({ error: `Le profil récupéré (${artistName}) ne correspond pas à l'artiste sélectionné (${linkedArtist.name}). Vérifiez le lien avant de poursuivre.` }, { status: 409 });
+      }
       const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
@@ -322,6 +332,9 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Aucune sortie trouvée sur ce profil Audiomack.' }, { status: 404 });
       }
 
+      if (linkedArtist && normalizeArtistName(artistName) !== normalizeArtistName(linkedArtist.name)) {
+        return Response.json({ error: `Le profil récupéré (${artistName}) ne correspond pas à l'artiste sélectionné (${linkedArtist.name}). Vérifiez le lien avant de poursuivre.` }, { status: 409 });
+      }
       const finalName = linkedArtist?.name || artist_name || artistName;
 
       if (artist_id) {
