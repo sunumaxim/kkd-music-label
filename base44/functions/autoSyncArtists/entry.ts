@@ -130,9 +130,11 @@ async function syncProfile(db, artist, ctx) {
     const res = await fetch(`https://api.spotify.com/v1/artists/${sid}`, { headers: { Authorization: `Bearer ${ctx.token}` } });
     if (res.ok) {
       const d = await res.json();
+      const spotifyNameMatches = d.name && cleanName(d.name) === cleanName(artist.name);
       const img = d.images?.[0]?.url;
-      if (img && fromCdn(artist.photo_url) && img !== artist.photo_url) patch.photo_url = img;
-      if (!artist.genre && d.genres?.length) patch.genre = d.genres[0];
+      // Ne jamais appliquer une photo Spotify si le profil lié ne correspond pas au nom attendu.
+      if (spotifyNameMatches && img && fromCdn(artist.photo_url) && img !== artist.photo_url) patch.photo_url = img;
+      if (spotifyNameMatches && !artist.genre && d.genres?.length) patch.genre = d.genres[0];
     }
   }
   const did = deezerId(artist.deezer_url);
@@ -170,6 +172,7 @@ async function syncYoutube(db, artist, ctx) {
     await db.entities.Video.create({
       title,
       slug: uniqueSlug(slugify(title), ctx.slugs),
+      artist_id: artist.id,
       artist_name: artist.name,
       youtube_url: link,
       thumbnail_url: `https://img.youtube.com/vi/${vid}/hqdefault.jpg`,
