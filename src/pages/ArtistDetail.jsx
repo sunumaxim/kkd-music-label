@@ -158,9 +158,24 @@ export default function ArtistDetail() {
   const releases = mainReleases;
 
   const { data: videos = [] } = useQuery({
-    queryKey: ['artist-videos', artist?.name],
-    queryFn: () => base44.entities.Video.filter({ artist_name: artist?.name }),
-    enabled: !!artist?.name,
+    queryKey: ['artist-videos', artist?.id, artist?.name],
+    queryFn: async () => {
+      if (!artist?.id || !artist?.name) return [];
+      const rows = await base44.entities.Video.filter({ artist_id: artist.id });
+      // Compatibilité temporaire avec les anciennes vidéos non migrées : nom strictement égal,
+      // et seulement si aucun artist_id n'est présent sur l'enregistrement historique.
+      const legacy = await base44.entities.Video.filter({ artist_name: artist.name });
+      const merged = [...rows, ...legacy.filter(v => !v.artist_id)];
+      const seen = new Set();
+      return merged.filter(v => {
+        if (v.artist_id && v.artist_id !== artist.id) return false;
+        const key = v.id || v.youtube_url || v.title;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    },
+    enabled: !!artist?.id && !!artist?.name,
   });
 
   const { data: events = [] } = useQuery({
