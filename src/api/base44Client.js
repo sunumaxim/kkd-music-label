@@ -28,6 +28,28 @@ if (typeof window !== 'undefined' && console && console.error) {
 
 const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
+// Les collections catalogue sont autoritaires : une panne distante ne doit jamais
+// fabriquer une réussite locale qui ferait croire qu'une donnée est synchronisée.
+const authoritativeCollections = new Set(['artists', 'releases', 'videos', 'events']);
+
+function matchesCachedQuery(item, query = {}) {
+  if (!query || typeof query !== 'object' || Array.isArray(query)) return true;
+  return Object.entries(query).every(([key, expected]) => {
+    const actual = key.split('.').reduce((value, part) => value?.[part], item);
+    if (expected && typeof expected === 'object' && !Array.isArray(expected)) {
+      if ('$eq' in expected) return actual === expected.$eq;
+      if ('$ne' in expected) return actual !== expected.$ne;
+      if ('$in' in expected && Array.isArray(expected.$in)) return expected.$in.includes(actual);
+      if ('$nin' in expected && Array.isArray(expected.$nin)) return !expected.$nin.includes(actual);
+      return false;
+    }
+    if (typeof actual === 'string' && typeof expected === 'string') {
+      return actual.trim().toLocaleLowerCase() === expected.trim().toLocaleLowerCase();
+    }
+    return actual === expected;
+  });
+}
+
 export const base44 = createClient({
   appId,
   token,
@@ -172,11 +194,11 @@ if (base44?.entities) {
                 if (typeof handlerTarget.list === 'function') {
                   const res = await handlerTarget.list(...args);
                   if (Array.isArray(res)) {
-                    if (res.length > 0) localDb.setCollection(collectionName, res);
+                    localDb.setCollection(collectionName, res);
                     return res;
                   }
                   if (Array.isArray(res?.data)) {
-                    if (res.data.length > 0) localDb.setCollection(collectionName, res.data);
+                    localDb.setCollection(collectionName, res.data);
                     return res.data;
                   }
                 }
@@ -198,6 +220,7 @@ if (base44?.entities) {
 
           if (prop === 'filter') {
             return async (...args) => {
+              const query = args[0] || {};
               try {
                 if (typeof handlerTarget.filter === 'function') {
                   const res = await handlerTarget.filter(...args);
@@ -205,11 +228,11 @@ if (base44?.entities) {
                   if (Array.isArray(res?.data)) return res.data;
                 }
                 const cached = localDb.getCollection(collectionName);
-                return Array.isArray(cached) ? cached : [];
+                return Array.isArray(cached) ? cached.filter(item => matchesCachedQuery(item, query)) : [];
               } catch (err) {
                 console.warn(`[Base44 entities.${entityName}.filter fallback]:`, err?.message || err);
                 const cached = localDb.getCollection(collectionName);
-                return Array.isArray(cached) ? cached : [];
+                return Array.isArray(cached) ? cached.filter(item => matchesCachedQuery(item, query)) : [];
               }
             };
           }
@@ -240,8 +263,11 @@ if (base44?.entities) {
                   try {
                     res = await handlerTarget.create(data);
                   } catch (e) {
+                    if (authoritativeCollections.has(collectionName)) throw e;
                     console.warn(`[Base44 create remote fail, syncing to Firestore]:`, e?.message);
                   }
+                } else if (authoritativeCollections.has(collectionName)) {
+                  throw new Error(`Création distante indisponible pour ${entityName}; aucune donnée locale fictive n'a été créée.`);
                 }
                 const item = res || { ...data, id: data.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 6)}` };
                 localDb.insertItem(collectionName, item);
@@ -250,6 +276,7 @@ if (base44?.entities) {
                 });
                 return item;
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.create fallback to localDb]:`, err?.message || err);
                 const fallbackItem = { ...data, id: data.id || `doc_${Date.now()}` };
                 localDb.insertItem(collectionName, fallbackItem);
@@ -266,8 +293,11 @@ if (base44?.entities) {
                   try {
                     res = await handlerTarget.update(id, data);
                   } catch (e) {
+                    if (authoritativeCollections.has(collectionName)) throw e;
                     console.warn(`[Base44 update remote fail, syncing to Firestore]:`, e?.message);
                   }
+                } else if (authoritativeCollections.has(collectionName)) {
+                  throw new Error(`Mise à jour distante indisponible pour ${entityName}; aucune mise à jour locale fictive n'a été appliquée.`);
                 }
                 const updated = res || { id, ...data };
                 localDb.updateItem(collectionName, id, data);
@@ -276,6 +306,7 @@ if (base44?.entities) {
                 });
                 return updated;
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.update fallback to localDb]:`, err?.message || err);
                 return localDb.updateItem(collectionName, id, data);
               }
@@ -289,13 +320,17 @@ if (base44?.entities) {
                   try {
                     await handlerTarget.delete(id);
                   } catch (e) {
+                    if (authoritativeCollections.has(collectionName)) throw e;
                     console.warn(`[Base44 delete remote warning]:`, e?.message);
                   }
+                } else if (authoritativeCollections.has(collectionName)) {
+                  throw new Error(`Suppression distante indisponible pour ${entityName}; la suppression locale a été annulée.`);
                 }
                 localDb.deleteItem(collectionName, id);
                 firestoreService.deleteDocument(collectionName, id).catch(() => {});
                 return true;
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.delete fallback to localDb]:`, err?.message || err);
                 return localDb.deleteItem(collectionName, id);
               }
