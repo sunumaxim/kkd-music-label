@@ -31,7 +31,6 @@ export default function BuyCard({ item, itemType }) {
   const [proof, setProof] = useState('');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [instantBuying, setInstantBuying] = useState(false);
   const [showLicenseDialog, setShowLicenseDialog] = useState(false);
   const [selectedLicenseType, setSelectedLicenseType] = useState('creator');
   const [generatingLicense, setGeneratingLicense] = useState(false);
@@ -90,50 +89,13 @@ export default function BuyCard({ item, itemType }) {
     );
   }
 
-  // Instant one-click purchase simulation (Wave / OM / CB)
-  const handleInstantBuy = async (paymentMethod = 'wave') => {
+  // Ouvrir le parcours de preuve Wave : un clic ne doit jamais créer un achat payé.
+  const handleInstantBuy = () => {
     if (!email) {
-      toast({ title: 'Connexion requise', description: 'Veuillez vous connecter pour acquérir ce titre.' });
+      toast({ title: 'Connexion requise', description: 'Veuillez vous connecter pour acheter ce titre.' });
       return;
     }
-    setInstantBuying(true);
-    try {
-      // 1. Enregistrer l'achat complet
-      await base44.entities.Purchase.create({
-        user_email: email,
-        item_type: itemType,
-        item_id: item.id,
-        item_title: item.title,
-        artist_name: item.artist_name || '',
-        amount: Number(item.price),
-        currency: 'XOF',
-        status: 'paid',
-        payment_method: paymentMethod,
-        description: `Achat direct via ${paymentMethod.toUpperCase()} — Titre débloqué instantanément`,
-      });
-
-      // 2. Mettre à jour les ventes de l'œuvre et de l'artiste
-      const newSales = (item.sales_count || 0) + 1;
-      if (itemType === 'release') {
-        await base44.entities.Release.update(item.id, { sales_count: newSales });
-      }
-
-      // 3. Rafraîchir les données
-      qc.invalidateQueries({ queryKey: ['my-access', email, item.id] });
-      qc.invalidateQueries({ queryKey: ['my-purchases', email] });
-      qc.invalidateQueries({ queryKey: ['release', item.id] });
-      qc.invalidateQueries({ queryKey: ['partner-artist-releases'] });
-      qc.invalidateQueries({ queryKey: ['artist-earnings'] });
-
-      toast({
-        title: '🎉 Achat confirmé avec succès !',
-        description: `Accès immédiat débloqué pour "${item.title}". L'artiste a reçu 90% des revenus sur son compte.`,
-      });
-    } catch (err) {
-      toast({ title: 'Erreur', description: 'Une erreur est survenue lors de l\'achat.', variant: 'destructive' });
-    } finally {
-      setInstantBuying(false);
-    }
+    setStep('confirm');
   };
 
   const handleGenerateLicense = async () => {
@@ -273,15 +235,14 @@ export default function BuyCard({ item, itemType }) {
 
         {me ? (
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Bouton d'achat direct instantané (Simulation fluide Wave / OM / Carte) */}
+            {/* Le paiement Wave est soumis à validation : aucun achat payé côté navigateur. */}
             <Button
               onClick={() => handleInstantBuy('wave')}
-              disabled={instantBuying}
               className="inline-flex items-center gap-2 px-5 h-11 rounded-full text-white font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
               style={{ background: 'linear-gradient(135deg,#00A6E8,#0066B3)' }}
             >
-              {instantBuying ? <Loader2 size={16} className="animate-spin" /> : <WaveIcon />}
-              <span>Acheter avec Wave ({priceStr})</span>
+              <WaveIcon />
+              <span>Continuer avec Wave ({priceStr})</span>
             </Button>
 
             {/* Bouton Licence Pro / Synchronisation */}
@@ -306,7 +267,7 @@ export default function BuyCard({ item, itemType }) {
         <form onSubmit={submitProof} className="bg-card border border-border/60 rounded-xl p-4 space-y-3">
           <p className="text-sm font-medium">J'ai effectué le paiement Wave externe</p>
           <p className="text-[11px] text-muted-foreground">
-            Saisissez la référence de transaction Wave (sur votre reçu SMS). L'accès est validé instantanément.
+            Saisissez la référence de transaction Wave (sur votre reçu SMS). L'accès sera débloqué uniquement après vérification du paiement par KKD.
           </p>
           <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Référence transaction Wave (ex: SN-189201)" required />
           <div className="flex gap-2">
@@ -320,7 +281,7 @@ export default function BuyCard({ item, itemType }) {
 
       {/* Message rassurant */}
       <div className="text-[11px] text-muted-foreground flex items-center justify-between border-t border-border/40 pt-3">
-        <span>⚡ Déblocage instantané de l'écoute</span>
+        <span>🔒 Déblocage après confirmation du paiement</span>
         <Link to="/mes-achats" className="text-primary hover:underline font-medium">
           Accéder à mes achats
         </Link>
