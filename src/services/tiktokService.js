@@ -148,7 +148,8 @@ export const tiktokService = {
    * Récupère l'historique des publications directes TikTok.
    */
   getPublishedPosts() {
-    return localDb.getCollection('tiktok_posts');
+    // N'afficher que les publications confirmées par TikTok, jamais des faux résultats locaux.
+    return (localDb.getCollection('tiktok_posts') || []).filter(post => post?.provider_confirmed === true);
   },
 
   /**
