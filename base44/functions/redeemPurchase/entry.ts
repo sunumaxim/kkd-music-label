@@ -4,11 +4,18 @@ import Stripe from 'npm:stripe@16.5.0';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me().catch(() => null);
+    if (!user?.email) return Response.json({ error: 'Authentification requise' }, { status: 401 });
+
     const body = await req.json();
     const { session_id } = body;
-    if (!session_id) return Response.json({ error: 'session_id requis' }, { status: 400 });
+    if (typeof session_id !== 'string' || !session_id.trim()) {
+      return Response.json({ error: 'session_id requis' }, { status: 400 });
+    }
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecret) return Response.json({ error: 'Paiement momentanément indisponible' }, { status: 503 });
+    const stripe = new Stripe(stripeSecret);
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status !== 'paid') {
@@ -22,8 +29,11 @@ Deno.serve(async (req) => {
     const artist_name = md.artist_name || '';
     const email = session.customer_details?.email || session.customer_email || '';
 
-    if (!email || !item_type || !item_id) {
-      return Response.json({ error: 'Données de session incomplètes' }, { status: 400 });
+    if (!email || !item_type || !item_id || !['release', 'video'].includes(item_type)) {
+      return Response.json({ error: 'Données de session incomplètes ou invalides' }, { status: 400 });
+    }
+    if (email.trim().toLowerCase() !== user.email.trim().toLowerCase() && user.role !== 'admin') {
+      return Response.json({ error: 'Cette session de paiement ne correspond pas à votre compte' }, { status: 403 });
     }
 
     // Crée l'achat s'il n'existe pas déjà
