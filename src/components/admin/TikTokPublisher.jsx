@@ -81,6 +81,7 @@ export default function TikTokPublisher() {
   // Écouteur OAuth callback pour TikTok
   useEffect(() => {
     const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
       if (event.data?.type === 'TIKTOK_AUTH_SUCCESS') {
         const updated = tiktokService.getOfficialAccount();
         setOfficialAccount(updated);
