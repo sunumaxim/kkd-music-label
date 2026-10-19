@@ -291,7 +291,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                       >
                         <Smartphone size={18} className={paymentMethod === 'wave' ? 'text-[#1ba8e0]' : ''} />
                         <span className="text-xs font-bold font-sans">Wave</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">0% frais</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Via fiche d’achat</span>
                       </button>
 
                       <button
@@ -305,7 +305,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                       >
                         <Smartphone size={18} className={paymentMethod === 'orange_money' ? 'text-orange-500' : ''} />
                         <span className="text-xs font-bold font-sans">Orange Money</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">Mobile</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Non activé ici</span>
                       </button>
 
                       <button
@@ -319,7 +319,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                       >
                         <CreditCard size={18} className={paymentMethod === 'card' ? 'text-emerald-400' : ''} />
                         <span className="text-xs font-bold font-sans">Carte</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">Visa / MC</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Non activé ici</span>
                       </button>
                     </div>
                   </div>
@@ -353,7 +353,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                     ) : (
                       <>
                         <Lock size={16} />
-                        <span>Débloquer et Écouter ({price.toLocaleString()} F CFA)</span>
+                        <span>Afficher les options de paiement sécurisées</span>
                         <ChevronRight size={16} />
                       </>
                     )}
@@ -363,7 +363,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                 {/* Footer security badge */}
                 <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-400 pt-1">
                   <span className="flex items-center gap-1">
-                    <ShieldCheck size={12} className="text-emerald-400" /> Paiement chiffré 256-bit
+                    <ShieldCheck size={12} className="text-amber-400" /> Aucun paiement lancé depuis cette fenêtre
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
