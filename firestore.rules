@@ -112,7 +112,8 @@ service cloud.firestore {
     // 9. Achats & Transactions
     match /purchases/{purchaseId} {
       allow read: if isAdmin() || isResourceOwner();
-      // Seul le backend / un administrateur peut créer un achat payé.
+      // Seul un administrateur peut créer un achat dans Firestore ; les paiements sont confirmés côté serveur.
+      allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
@@ -178,6 +179,7 @@ service cloud.firestore {
     match /creditTransactions/{txId} {
       allow read: if isAdmin() || isResourceOwner();
       // Les mouvements de crédits doivent être créés par le backend / un administrateur.
+      allow create: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
