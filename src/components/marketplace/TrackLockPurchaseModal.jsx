@@ -342,8 +342,8 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                   {/* CTA Submit Button */}
                   <button
                     type="submit"
-                    disabled={isProcessing}
-                    className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-sm transition-all shadow-lg hover:shadow-amber-500/20 active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50"
+                    disabled
+                    className="w-full py-3.5 px-5 rounded-2xl bg-zinc-700 text-zinc-300 font-extrabold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
                   >
                     {isProcessing ? (
                       <>
@@ -353,7 +353,7 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
                     ) : (
                       <>
                         <Lock size={16} />
-                        <span>Afficher les options de paiement sécurisées</span>
+                        <span>Paiement à configurer — utilisez la fiche d’achat</span>
                         <ChevronRight size={16} />
                       </>
                     )}
