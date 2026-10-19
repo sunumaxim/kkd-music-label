@@ -22,7 +22,7 @@ export default function TikTokOAuthCallback() {
         window.opener.postMessage({
           type: 'TIKTOK_AUTH_ERROR',
           error: errorDescription || error,
-        }, '*');
+        }, window.location.origin);
       }
       return;
     }
@@ -50,8 +50,7 @@ export default function TikTokOAuthCallback() {
         window.opener.postMessage({
           type: 'TIKTOK_AUTH_SUCCESS',
           account: result.account,
-          code,
-        }, '*');
+        }, window.location.origin);
 
         // Fermer automatiquement le popup après 1.5 seconde
         setTimeout(() => {
