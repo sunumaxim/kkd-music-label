@@ -119,22 +119,26 @@ export default function TikTokPublisher() {
 
   // Déclencher le flux OAuth officiel dans un popup centré
   const handleLaunchOAuth = () => {
-    const authUrl = tiktokService.getOAuthUrl();
-    const width = 600;
-    const height = 750;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+    try {
+      const authUrl = tiktokService.getOAuthUrl();
+      const width = 600;
+      const height = 750;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
 
-    const popup = window.open(
-      authUrl,
-      'tiktok_oauth_window',
-      `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
-    );
+      const popup = window.open(
+        authUrl,
+        'tiktok_oauth_window',
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+      );
 
-    if (!popup) {
-      toast.error('Popup bloqué par le navigateur', {
-        description: 'Veuillez autoriser les fenêtres pop-up pour vous connecter à TikTok.',
-      });
+      if (!popup) {
+        toast.error('Popup bloqué par le navigateur', {
+          description: 'Veuillez autoriser les fenêtres pop-up pour vous connecter à TikTok.',
+        });
+      }
+    } catch (err) {
+      toast.error('Connexion TikTok non disponible', { description: err?.message || 'Le backend OAuth sécurisé doit être configuré.' });
     }
   };
 
@@ -166,20 +170,9 @@ export default function TikTokPublisher() {
   // Connexion manuelle de notre vrai compte officiel
   const handleConnectManual = (e) => {
     e.preventDefault();
-    if (!manualUsername.trim()) return;
-
-    const account = tiktokService.connectOfficialAccount({
-      username: manualUsername.trim(),
-      display_name: manualDisplayName.trim() || manualUsername.trim(),
-      auth_method: 'direct_official_bind',
+    toast.error('Liaison manuelle non sécurisée', {
+      description: 'Un pseudo ne prouve pas l’autorisation de publier. La connexion doit passer par OAuth réel côté serveur.',
     });
-
-    setOfficialAccount(account);
-    setManualModalOpen(false);
-    toast.success('Notre compte TikTok officiel a été lié !', {
-      description: `@${account.username} est configuré pour toutes les diffusions.`,
-    });
-    setRefreshTrigger(prev => prev + 1);
   };
 
   // Ouvrir modal de publication directe
@@ -393,7 +386,7 @@ export default function TikTokPublisher() {
             <div className="min-w-0">
               <p className="font-semibold text-white truncate">Identifiants API Sécurisés</p>
               <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                <Lock size={10} className="text-emerald-400" /> Chiffrement actif côté serveur
+                <Lock size={10} className="text-amber-400" /> Secret serveur requis avant activation
               </p>
             </div>
           </div>
@@ -406,7 +399,7 @@ export default function TikTokPublisher() {
             <div className="min-w-0">
               <p className="font-semibold text-white truncate">Accès & Scopes Officiels</p>
               <p className="text-[11px] text-gray-400 truncate">
-                Publication vidéo • TikTok Sounds • Profil
+                Autorisations en attente de configuration réelle
               </p>
             </div>
           </div>
