@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import {
-  Sparkles, Calendar, MapPin, QrCode, Music, Video, Users,
+  Sparkles, Calendar, MapPin, QrCode, Video, Users,
   TrendingUp, Ticket, ShieldCheck, Play, Heart, Eye,
 } from 'lucide-react';
 import PageMeta from '@/components/shared/PageMeta';
