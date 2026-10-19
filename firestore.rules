@@ -36,7 +36,8 @@ service cloud.firestore {
 
     // 1. Profils Utilisateurs (Lecture publique pour fiches/profils, modification sécurisée sans élévation de privilège)
     match /users/{userId} {
-      allow read: if true;
+      // Les documents utilisateurs peuvent contenir des emails et des rôles : pas de lecture publique.
+      allow read: if isAdmin() || isUserSelf(userId);
       allow create: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // Empêcher l'élévation arbitraire de rôle vers 'admin' par un non-admin
       allow update: if isAdmin() || (
@@ -79,7 +80,11 @@ service cloud.firestore {
         resource.data.buyer_uid == request.auth.uid ||
         (request.auth.token.email != null && resource.data.buyer_email == request.auth.token.email)
       ));
-      allow create: if true; // Généré lors de l'achat/réservation
+      // Les acheteurs ne peuvent créer que leurs propres billets en attente, jamais des billets validés.
+      allow create: if isSignedIn() &&
+        request.resource.data.buyer_email == request.auth.token.email &&
+        request.resource.data.status == 'en_attente' &&
+        !request.resource.data.keys().hasAny(['ticket_number', 'security_hash', 'validated_date']);
       allow update, delete: if isAdmin();
     }
 
@@ -107,7 +112,7 @@ service cloud.firestore {
     // 9. Achats & Transactions
     match /purchases/{purchaseId} {
       allow read: if isAdmin() || isResourceOwner();
-      allow create: if true;
+      // Seul le backend / un administrateur peut créer un achat payé.
       allow update, delete: if isAdmin();
     }
 
@@ -121,7 +126,11 @@ service cloud.firestore {
     // 11. Notifications (Inscription, Validation, Modification, Alertes système)
     match /notifications/{notificationId} {
       allow read: if isAdmin() || isResourceOwner() || (resource.data.user_email == 'all');
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && (
+        request.resource.data.user_id == request.auth.uid ||
+        request.resource.data.user_email == request.auth.token.email ||
+        (isAdmin() && request.resource.data.user_email == 'all')
+      );
       allow update: if isAdmin() || isResourceOwner();
       allow delete: if isAdmin();
     }
@@ -156,22 +165,26 @@ service cloud.firestore {
 
     // 16. Projets Vidéos (TikTok / Reels / YouTube)
     match /videoProjects/{projectId} {
-      allow read: if true;
-      allow create: if isSignedIn();
+      // Les projets générés peuvent contenir des données privées de l'utilisateur.
+      allow read: if isAdmin() || isResourceOwner();
+      allow create: if isSignedIn() && (
+        request.resource.data.user_id == request.auth.uid ||
+        request.resource.data.user_email == request.auth.token.email
+      );
       allow update, delete: if isAdmin() || isResourceOwner();
     }
 
     // 17. Transactions de Crédits & Abonnements
     match /creditTransactions/{txId} {
       allow read: if isAdmin() || isResourceOwner();
-      allow create: if isSignedIn();
+      // Les mouvements de crédits doivent être créés par le backend / un administrateur.
       allow update, delete: if isAdmin();
     }
 
     // 18. Audit & Sécurité
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isSignedIn();
+      allow create: if isAdmin();
       allow update, delete: if false;
     }
 
