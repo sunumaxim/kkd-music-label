@@ -30,7 +30,20 @@ const { appId, token, functionsVersion, appBaseUrl } = appParams;
 
 // Les collections catalogue sont autoritaires : une panne distante ne doit jamais
 // fabriquer une réussite locale qui ferait croire qu'une donnée est synchronisée.
-const authoritativeCollections = new Set(['artists', 'releases', 'videos', 'events']);
+const authoritativeCollections = new Set([
+  'artists', 'releases', 'videos', 'events',
+  // Les écritures financières et les droits d'accès ne doivent jamais être simulés localement.
+  'purchases', 'tickets', 'wavepayments', 'credittransactions',
+  'videocredits', 'videocreditpurchases', 'musiclicenses',
+]);
+
+const authoritativeFunctions = new Set([
+  'createCheckoutSession', 'createSquareCheckout', 'verifySquarePayment',
+  'validateTicketPayment', 'redeemPurchase', 'getMyPurchases',
+  'getEventTickets', 'createManualTicket', 'getTicketByNumber',
+  'activateTicket', 'checkInTicket', 'generateTicketFile', 'getLicenseDocument',
+  'generateMusicLicense', 'approveVideoCredits', 'generateVideo',
+]);
 
 function matchesCachedQuery(item, query = {}) {
   if (!query || typeof query !== 'object' || Array.isArray(query)) return true;
@@ -133,11 +146,6 @@ if (base44?.functions) {
       return { success: true, sent_to: params.recipient_email };
     }
 
-    if (fnName === 'getMyPurchases') {
-      const cachedPurchases = localDb.getCollection('purchases');
-      return { purchases: cachedPurchases };
-    }
-
     if (fnName === 'checkArtistDuplicate') {
       const existingArtists = localDb.getCollection('artists');
       const targetName = (params?.artist_name || '').toLowerCase().trim();
@@ -156,6 +164,10 @@ if (base44?.functions) {
 
     if (fnName === 'extractLinkMetadata') {
       return { success: true, title: 'Titre extrait', artist: 'Artiste', platform: 'Web' };
+    }
+
+    if (authoritativeFunctions.has(fnName)) {
+      throw new Error(`Opération sécurisée « ${fnName} » indisponible : le serveur n'a pas confirmé son exécution. Aucune réussite locale n'a été simulée.`);
     }
 
     return { success: true, executed: true };
