@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { accessControlService } from '@/services/accessControlService';
 import { useToast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,9 +9,8 @@ import {
   Headphones, ChevronRight
 } from 'lucide-react';
 
-export default function TrackLockPurchaseModal({ isOpen, onClose, track, onUnlocked }) {
+export default function TrackLockPurchaseModal({ isOpen, onClose, track }) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const previewAudioRef = useRef(null);
 
   const [paymentMethod, setPaymentMethod] = useState('wave');
@@ -89,43 +87,22 @@ export default function TrackLockPurchaseModal({ isOpen, onClose, track, onUnloc
 
   const handlePurchase = async (e) => {
     e.preventDefault();
-    setIsProcessing(true);
-
-    try {
-      // 1. Simuler ou valider la transaction via le service de contrôle d'accès
-      const userEmail = emailInput.trim() || me?.email || 'auditeur@kkdmusic.com';
-
-      // Petite pause pour feedback visuel réaliste
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      const unlockedTrack = await accessControlService.unlockTrack(track, {
-        paymentMethod,
-        userEmail,
-        queryClient,
-      });
-
-      setIsSuccess(true);
+    if (!me?.email) {
       toast({
-        title: '🎉 Titre débloqué avec succès !',
-        description: `L'accès complet à "${track.title}" est maintenant actif dans le lecteur KKD.`,
-      });
-
-      // Lancer immédiatement la lecture après 1.2s
-      setTimeout(() => {
-        if (onUnlocked) {
-          onUnlocked(unlockedTrack);
-        }
-        onClose();
-      }, 1200);
-    } catch (err) {
-      console.error('Erreur lors du déverrouillage de la piste:', err);
-      toast({
-        title: 'Échec de la transaction',
-        description: 'Une erreur est survenue lors de la tentative de déblocage.',
+        title: 'Connexion requise',
+        description: 'Connectez-vous avant de procéder à un achat.',
         variant: 'destructive',
       });
-      setIsProcessing(false);
+      return;
     }
+
+    // Cette fenêtre ne possède pas encore de flux de paiement relié à un prestataire.
+    // Bloquer ici plutôt que créer un achat payé fictif ou déverrouiller le master.
+    toast({
+      title: 'Paiement sécurisé requis',
+      description: 'Aucun paiement n’a été lancé et aucun titre n’a été débloqué. Utilisez le parcours d’achat du titre ; le paiement Wave doit être vérifié par KKD avant l’accès.',
+      variant: 'destructive',
+    });
   };
 
   return (
