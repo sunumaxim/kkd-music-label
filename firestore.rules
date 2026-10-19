@@ -53,8 +53,11 @@ service cloud.firestore {
       allow read: if true;
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (
-        // Permettre l'incrément de lecture sécurisé
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays_count', 'updated_at'])
+        // Autoriser uniquement une incrémentation unitaire du compteur, jamais une valeur arbitraire.
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plays_count', 'updated_at']) &&
+        request.resource.data.plays_count is number &&
+        resource.data.plays_count is number &&
+        request.resource.data.plays_count == resource.data.plays_count + 1
       );
     }
 
@@ -172,9 +175,9 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Document de test de connectivité
+    // Les documents de test ne doivent jamais être accessibles publiquement en production.
     match /test/{docId} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
 
     // Sécurité par défaut (Refus strict de tout accès non spécifié)
