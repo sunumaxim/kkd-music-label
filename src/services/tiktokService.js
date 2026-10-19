@@ -100,7 +100,7 @@ export const tiktokService = {
    */
   connectOfficialAccount() {
     throw new Error('Un nom de compte ne suffit pas à autoriser l’API TikTok. Utilisez une connexion OAuth réelle après activation du backend sécurisé.');
-  }
+  },
 
   /**
    * Déconnecte notre compte officiel.
@@ -123,7 +123,7 @@ export const tiktokService = {
    */
   handleOAuthSuccess() {
     throw new Error('Le code OAuth TikTok n’a pas été échangé côté serveur. Aucune connexion n’a été enregistrée.');
-  }
+  },
 
   /**
    * Teste la validité de la connexion et des autorisations avec TikTok API.
@@ -142,7 +142,7 @@ export const tiktokService = {
    */
   async publishDirectVideo() {
     throw new Error('Publication TikTok désactivée : aucune requête réelle à l’API n’est encore configurée.');
-  }
+  },
 
   /**
    * Récupère l'historique des publications directes TikTok.
@@ -156,7 +156,7 @@ export const tiktokService = {
    */
   async distributeTrackToTikTokSounds() {
     throw new Error('Distribution TikTok Sounds désactivée : aucune soumission réelle n’est encore connectée au distributeur.');
-  }
+  },
 
   /**
    * Récupère la liste de tous les morceaux transmis au répertoire musical TikTok.
@@ -164,7 +164,7 @@ export const tiktokService = {
   getSoundDistributions() {
     // Ne montrer que les soumissions confirmées par le service réel, jamais des exemples présentés comme approuvés.
     return (localDb.getCollection('tiktok_submissions') || []).filter(item => item?.provider_confirmed === true);
-  }
+  },
 
   /**
    * Pour compatibilité avec les composants existants
@@ -179,7 +179,7 @@ export const tiktokService = {
   getConnectedAccounts() {
     const official = this.getOfficialAccount();
     return official?.connected === true && official?.auth_verified === true ? [official] : [];
-  }
+  },
 };
 
 export default tiktokService;
