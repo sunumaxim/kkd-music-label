@@ -3,7 +3,7 @@
  * (approuve / publie / refuse) — in-app + email.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange, escapeHtml, requireAdmin } from "../../shared/emailKit.js";
 
 const STATUS_CONFIG = {
   approuve: {
@@ -43,6 +43,12 @@ const TYPE_LABELS = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Réservé aux admins : le workflow appelle la fonction en tant qu'admin,
+    // tout appelant anonyme ou non-admin est refusé.
+    const auth = await requireAdmin(base44);
+    if (auth.error) return auth.error;
+
     const body = await req.json();
     const { data, old_data, changed_fields } = body;
 
@@ -61,11 +67,17 @@ Deno.serve(async (req) => {
     if (!userEmail) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
+    // Champs contrôlés par l'utilisateur : échappés avant toute interpolation HTML
+    const safe = {
+      title: escapeHtml(rec.title),
+      artist_name: escapeHtml(rec.artist_name),
+      admin_notes: escapeHtml(rec.admin_notes),
+    };
     const contentType = TYPE_LABELS[rec.content_type] || rec.content_type || "Contenu";
     const infoRows = [
-      ["Titre", rec.title],
-      ["Type", contentType],
-      ["Artiste", rec.artist_name],
+      ["Titre", safe.title],
+      ["Type", escapeHtml(contentType)],
+      ["Artiste", safe.artist_name],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -74,9 +86,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(rec),
+      body: cfg.bodyFn(safe),
       infoRows,
-      notes: rec.admin_notes,
+      notes: safe.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Voir mes publications", url: `${SITE_URL}/mon-espace?tab=publications` },
     });

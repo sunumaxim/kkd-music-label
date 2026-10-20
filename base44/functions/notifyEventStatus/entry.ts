@@ -3,7 +3,7 @@
  * de son événement change (approuve / refuse / clarification) — in-app + email.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange, escapeHtml, requireAdmin } from "../../shared/emailKit.js";
 
 const STATUS_CONFIG = {
   approuve: {
@@ -41,6 +41,12 @@ const STATUS_CONFIG = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Réservé aux admins : le workflow appelle la fonction en tant qu'admin,
+    // tout appelant anonyme ou non-admin est refusé.
+    const auth = await requireAdmin(base44);
+    if (auth.error) return auth.error;
+
     const body = await req.json();
     const { data, old_data, changed_fields } = body;
 
@@ -59,11 +65,18 @@ Deno.serve(async (req) => {
     if (!userEmail) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIG[newStatus];
+    // Champs contrôlés par l'utilisateur : échappés avant toute interpolation HTML
+    const safe = {
+      title: escapeHtml(rec.title),
+      location: escapeHtml(rec.location),
+      city: escapeHtml(rec.city),
+      admin_notes: escapeHtml(rec.admin_notes),
+    };
     const infoRows = [
-      ["Événement", rec.title],
+      ["Événement", safe.title],
       ["Date", rec.event_date ? new Date(rec.event_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null],
-      ["Lieu", rec.location],
-      ["Ville", rec.city],
+      ["Lieu", safe.location],
+      ["Ville", safe.city],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -72,9 +85,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(rec),
+      body: cfg.bodyFn(safe),
       infoRows,
-      notes: rec.admin_notes,
+      notes: safe.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Gérer mon événement", url: `${SITE_URL}/mon-espace?tab=evenements` },
     });

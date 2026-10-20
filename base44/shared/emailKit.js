@@ -244,6 +244,19 @@ export function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Exige un appelant authentifié avec le rôle admin. Les workflows appellent les
+ * fonctions de notification en tant qu'admin ; tout appel anonyme ou non-admin
+ * est refusé. Retourne { user } ou { error: Response }.
+ */
+export async function requireAdmin(base44) {
+  let user = null;
+  try { user = await base44.auth.me(); } catch (_) { user = null; }
+  if (!user) return { error: Response.json({ error: "Non autorisé" }, { status: 401 }) };
+  if (user.role !== "admin") return { error: Response.json({ error: "Réservé admin" }, { status: 403 }) };
+  return { user };
+}
+
 export async function verifyStatusChange({ base44, entityName, id, field, expected }) {
   if (!id || !field || !expected) return null;
   try {

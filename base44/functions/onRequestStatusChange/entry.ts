@@ -3,7 +3,7 @@
  * (en_cours / accepte / refuse) — in-app + email.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, verifyStatusChange, escapeHtml, requireAdmin } from "../../shared/emailKit.js";
 
 const TYPE_LABELS = {
   distribution: "Distribution musicale",
@@ -47,6 +47,12 @@ const STATUS_CONFIGS = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Réservé aux admins : le workflow appelle la fonction en tant qu'admin,
+    // tout appelant anonyme ou non-admin est refusé.
+    const auth = await requireAdmin(base44);
+    if (auth.error) return auth.error;
+
     const body = await req.json();
     const { data, old_data, changed_fields } = body;
 
@@ -63,11 +69,17 @@ Deno.serve(async (req) => {
     if (!userEmail) return Response.json({ skipped: true });
 
     const cfg = STATUS_CONFIGS[newStatus];
-    const requestType = TYPE_LABELS[verified.request_type] || verified.request_type;
+    // Champs contrôlés par l'utilisateur : échappés avant toute interpolation HTML
+    // (request_type contient ici le libellé déjà résolu, échappé lui aussi)
+    const safe = {
+      full_name: escapeHtml(verified.full_name),
+      request_type: escapeHtml(TYPE_LABELS[verified.request_type] || verified.request_type),
+      admin_notes: escapeHtml(verified.admin_notes),
+    };
     const infoRows = [
-      ["Type de demande", requestType],
-      ["Artiste", verified.artist_name],
-      ["Organisation", verified.organization],
+      ["Type de demande", safe.request_type],
+      ["Artiste", escapeHtml(verified.artist_name)],
+      ["Organisation", escapeHtml(verified.organization)],
     ];
 
     const htmlBody = buildEmailHtml({
@@ -76,9 +88,9 @@ Deno.serve(async (req) => {
       action: cfg.action,
       actionLabel: cfg.actionLabel,
       headline: cfg.headline,
-      body: cfg.bodyFn(verified),
+      body: cfg.bodyFn(safe),
       infoRows,
-      notes: verified.admin_notes,
+      notes: safe.admin_notes,
       notesLabel: "Message de l'équipe KKD",
       cta: { label: "Voir mes demandes", url: `${SITE_URL}/mon-espace?tab=demandes` },
     });
