@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { collectLinksForArtist } from '../../shared/collectLinks.ts';
+import { isUserLinkedToArtist } from '../../shared/artistAccess.ts';
 
 export default async function (req) {
   try {
@@ -22,6 +23,12 @@ export default async function (req) {
       artist = results[0];
     }
     if (!artist) return Response.json({ error: 'Artiste introuvable' }, { status: 404 });
+
+    // Autorisation : admin, ou utilisateur lié à cet artiste (contrat / accès approuvé)
+    if (user.role !== 'admin') {
+      const linked = await isUserLinkedToArtist(base44, artist.id, user.email);
+      if (!linked) return Response.json({ error: 'Non autorisé' }, { status: 403 });
+    }
 
     const result = await collectLinksForArtist(db, artist);
 

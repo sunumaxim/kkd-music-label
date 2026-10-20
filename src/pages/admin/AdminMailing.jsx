@@ -481,32 +481,16 @@ export default function AdminMailing() {
     if (!form.headline) return;
     setAiLoading(true);
 
-    const tonePrompts = {
-      institutionnel: "Ton solennel, prestigieux, diplomatique, rédigé avec l'autorité bienveillante d'Abdoulaye Sylla, Gestionnaire Principal de KKD Music.",
-      chaleureux: "Ton dynamique, chaleureux, passionné par la musique africaine, célébrant la créativité des artistes et fédérant la communauté KKD.",
-      commercial: "Ton convaincant, axé sur les opportunités business de distribution (90% de royalties), la visibilité internationale et l'accompagnement d'excellence.",
-      vip: "Ton luxueux, exclusif, invitant à une expérience VIP privilégiée avec une formulation soignée."
-    };
-
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `Tu es Abdoulaye Sylla, Gestionnaire Principal de KKD Music Label Group (Dakar et international).
-Rédige le corps d'un email officiel et stylé pour la communauté KKD.
-Titre du message : "${form.headline}"
-Sujet actuel : "${form.subject}"
-${selectedContent ? `Élément promu : ${JSON.stringify({ type: contentType, title: selectedContent.title || selectedContent.name, artist: selectedContent.artist_name || '' })}` : ''}
-Consigne de ton : ${tonePrompts[aiTone] || tonePrompts.institutionnel}
-Règles :
-- Longueur : 3 à 4 paragraphes percutants et fluides
-- En français impeccable, élégant et soigné
-- Pas de code HTML, pas de balises, texte brut avec sauts de lignes naturels
-- Termine par une formule de salutation professionnelle adaptée à Abdoulaye Sylla`,
-        response_json_schema: {
-          type: 'object',
-          properties: { body: { type: 'string' } }
-        }
+      const res = await base44.functions.invoke('generateMailingBody', {
+        headline: form.headline,
+        subject: form.subject,
+        tone: aiTone,
+        promoted: selectedContent
+          ? { type: contentType, title: selectedContent.title || selectedContent.name, artist: selectedContent.artist_name || '' }
+          : null,
       });
-      if (res?.body) update('body', res.body);
+      if (res?.data?.body) update('body', res.data.body);
     } catch (err) {
       console.error("Erreur génération IA mailing:", err);
     } finally {

@@ -5,7 +5,7 @@
  * jamais du corps de la requête.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, escapeHtml } from "../../shared/emailKit.js";
 
 const TYPE_LABELS = {
   sortie_musicale: "Single", video_clip: "Clip vidéo", playlist: "Playlist",
@@ -21,6 +21,14 @@ const PLATFORM_LABELS = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Réservé aux admins : le workflow appelle la fonction en tant qu'admin créateur,
+    // tout autre appelant (anonyme ou non-admin) est refusé.
+    let user = null;
+    try { user = await base44.auth.me(); } catch (_) { user = null; }
+    if (!user) return Response.json({ error: "Non autorisé" }, { status: 401 });
+    if (user.role !== "admin") return Response.json({ error: "Réservé admin" }, { status: 403 });
+
     const body = await req.json();
     const { data } = body;
 
@@ -31,23 +39,29 @@ Deno.serve(async (req) => {
     if (!rec) return Response.json({ skipped: true });
     if (!rec.partner_email) return Response.json({ skipped: true });
 
+    // Champs contrôlés par le partenaire : échappés avant toute interpolation HTML
     const contentType = TYPE_LABELS[rec.content_type] || rec.content_type;
     const platform = PLATFORM_LABELS[rec.streaming_platform] || "Streaming";
+    const safeTitle = escapeHtml(rec.title);
+    const safePartner = escapeHtml(rec.partner_name || rec.partner_email);
+    const safeType = escapeHtml(contentType);
+    const safePlatform = escapeHtml(platform);
+    const safeLink = escapeHtml(rec.streaming_link);
     const infoRows = [
-      ["Titre", rec.title],
-      ["Type", contentType],
-      ["Plateforme", platform],
-      ["Artiste", rec.artist_name],
+      ["Titre", safeTitle],
+      ["Type", safeType],
+      ["Plateforme", safePlatform],
+      ["Artiste", escapeHtml(rec.artist_name)],
     ];
 
     // === Confirmation au partenaire ===
     const partnerHtml = buildEmailHtml({
       subject: "Publication reçue",
-      preheader: `Votre ${contentType} "${rec.title}" a bien été soumis.`,
+      preheader: `Votre ${safeType} "${safeTitle}" a bien été soumis.`,
       action: "info",
       actionLabel: "REÇU",
       headline: "Publication bien reçue !",
-      body: `Bonjour <strong>${rec.partner_name || rec.partner_email}</strong>,<br><br>Votre publication <strong>"${rec.title}"</strong> (${contentType}) a bien été soumise à l'équipe KKD Music.<br><br>Notre équipe va examiner votre contenu et vous informera de la suite donnée.`,
+      body: `Bonjour <strong>${safePartner}</strong>,<br><br>Votre publication <strong>"${safeTitle}"</strong> (${safeType}) a bien été soumise à l'équipe KKD Music.<br><br>Notre équipe va examiner votre contenu et vous informera de la suite donnée.`,
       infoRows,
       cta: { label: "Voir mes publications", url: `${SITE_URL}/mon-espace?tab=publications` },
     });
@@ -68,14 +82,14 @@ Deno.serve(async (req) => {
     const admins = allUsers.filter((u) => u.role === "admin" && u.email);
 
     const adminHtml = buildEmailHtml({
-      subject: `Nouvelle publication — ${rec.title}`,
-      preheader: `Nouveau ${contentType} à valider : "${rec.title}".`,
+      subject: `Nouvelle publication — ${safeTitle}`,
+      preheader: `Nouveau ${safeType} à valider : "${safeTitle}".`,
       action: "nouveau",
       actionLabel: "NOUVELLE PUBLICATION",
       headline: "Nouvelle publication à valider",
-      body: `<strong>${rec.partner_name || rec.partner_email}</strong> vient de soumettre un nouveau contenu : <strong>"${rec.title}"</strong> (${contentType} sur ${platform}).`,
+      body: `<strong>${safePartner}</strong> vient de soumettre un nouveau contenu : <strong>"${safeTitle}"</strong> (${safeType} sur ${safePlatform}).`,
       infoRows,
-      notes: rec.streaming_link,
+      notes: safeLink,
       notesLabel: "Lien streaming",
       cta: { label: "Examiner la publication", url: `${SITE_URL}/admin/publications` },
     });
@@ -84,7 +98,7 @@ Deno.serve(async (req) => {
       admins.map((admin) =>
         base44.asServiceRole.integrations.Core.SendEmail({
           to: admin.email,
-          subject: `KKD Admin — Nouvelle publication : ${rec.title}`,
+          subject: `KKD Admin — Nouvelle publication : ${safeTitle}`,
           body: adminHtml,
           from_name: "KKD Music",
         }).catch((e) => console.error("admin email skipped:", e?.message || e))

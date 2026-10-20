@@ -33,6 +33,17 @@ function esc(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Sérialisation sûre pour un bloc <script> : neutralise </script> (XSS) et les
+// caractères de séparation de ligne JS, quel que soit le contenu sérialisé.
+function safeJson(value) {
+  return JSON.stringify(value === undefined ? null : value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function slugify(text) {
   if (!text) return '';
   return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
@@ -309,9 +320,9 @@ Deno.serve(async (req) => {
     const jsonLdScripts = [];
     if (entity) {
       const mainLd = buildJsonLd(type, entity, redirect, image);
-      if (mainLd) jsonLdScripts.push(JSON.stringify(mainLd));
+      if (mainLd) jsonLdScripts.push(safeJson(mainLd));
       const breadcrumbLd = buildBreadcrumbLd(type, entity, redirect);
-      jsonLdScripts.push(JSON.stringify(breadcrumbLd));
+      jsonLdScripts.push(safeJson(breadcrumbLd));
     }
 
     const ogType = type === 'video' ? 'video.other' : type === 'artist' ? 'profile' : type === 'event' ? 'article' : 'website';
@@ -344,7 +355,7 @@ ${jsonLdScripts.map(ld => `<script type="application/ld+json">${ld}</script>`).j
 <meta http-equiv="refresh" content="0;url=${esc(redirect)}">
 </head>
 <body>
-<script>window.location.replace(${JSON.stringify(redirect)});</script>
+<script>window.location.replace(${safeJson(redirect)});</script>
 <p>Redirection vers <a href="${esc(redirect)}">KKD Music</a></p>
 </body></html>`;
 

@@ -82,7 +82,7 @@ async function processGeneration(base44, genId, imageUri, prompt, songTitle, son
     if (imageUri.startsWith('http')) {
       imageUrlForLLM = imageUri;
     } else {
-      const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: imageUri, expires_in: 600 });
+      const signed = await db.integrations.Core.CreateFileSignedUrl({ file_uri: imageUri, expires_in: 600 });
       imageUrlForLLM = signed.signed_url;
     }
 
@@ -91,7 +91,7 @@ async function processGeneration(base44, genId, imageUri, prompt, songTitle, son
         `L'ambiance visuelle doit évoquer le rythme et l'émotion d'un clip musical. `
       : '';
 
-    const descRes = await base44.integrations.Core.InvokeLLM({
+    const descRes = await db.integrations.Core.InvokeLLM({
       prompt: `Décris cette image de façon cinématographique et détaillée pour générer une courte vidéo animée. ` +
         `Identifie le sujet (personne, objet, décor), l'arrière-plan, les couleurs, l'éclairage et l'ambiance. ` +
         songContext +
@@ -106,7 +106,7 @@ async function processGeneration(base44, genId, imageUri, prompt, songTitle, son
 
     // Génère N clips de 8s en parallèle pour atteindre la durée totale
     const clipPromises = Array.from({ length: clipCount }, () =>
-      base44.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: CLIP_DURATION, aspect_ratio: ar, generate_audio: false })
+      db.integrations.Core.GenerateVideo({ prompt: videoPrompt, duration: CLIP_DURATION, aspect_ratio: ar, generate_audio: false })
         .then((res) => res?.url || null)
         .catch(() => null)
     );

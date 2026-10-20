@@ -5,7 +5,7 @@
  * jamais du corps de la requête.
  */
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { SITE_URL, buildEmailHtml, stripHtml, pushNotification } from "../../shared/emailKit.js";
+import { SITE_URL, buildEmailHtml, stripHtml, pushNotification, escapeHtml } from "../../shared/emailKit.js";
 
 const TYPE_LABELS = {
   distribution: "Distribution musicale",
@@ -19,6 +19,14 @@ const TYPE_LABELS = {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Réservé aux admins : le workflow appelle la fonction en tant qu'admin créateur,
+    // tout autre appelant (anonyme ou non-admin) est refusé.
+    let user = null;
+    try { user = await base44.auth.me(); } catch (_) { user = null; }
+    if (!user) return Response.json({ error: "Non autorisé" }, { status: 401 });
+    if (user.role !== "admin") return Response.json({ error: "Réservé admin" }, { status: 403 });
+
     const body = await req.json();
     const { data } = body;
 
@@ -29,24 +37,28 @@ Deno.serve(async (req) => {
     if (!rec) return Response.json({ skipped: true });
     if (!rec.email) return Response.json({ skipped: true });
 
+    // Champs contrôlés par l'utilisateur : échappés avant toute interpolation HTML
     const requestType = TYPE_LABELS[rec.request_type] || rec.request_type;
+    const safeType = escapeHtml(requestType);
+    const safeName = escapeHtml(rec.full_name);
+    const safeMessage = escapeHtml(rec.description);
     const infoRows = [
-      ["Type de demande", requestType],
-      ["Artiste", rec.artist_name],
-      ["Organisation", rec.organization],
-      ["Genre musical", rec.genre],
+      ["Type de demande", safeType],
+      ["Artiste", escapeHtml(rec.artist_name)],
+      ["Organisation", escapeHtml(rec.organization)],
+      ["Genre musical", escapeHtml(rec.genre)],
     ];
 
     // === Email de confirmation au demandeur ===
     const confirmHtml = buildEmailHtml({
       subject: "Demande bien reçue",
-      preheader: `Votre demande de ${requestType} a été enregistrée.`,
+      preheader: `Votre demande de ${safeType} a été enregistrée.`,
       action: "info",
       actionLabel: "REÇU",
       headline: "Votre demande a été reçue !",
-      body: `Bonjour <strong>${rec.full_name}</strong>,<br><br>Nous avons bien reçu votre demande de <strong>${requestType}</strong>. Notre équipe l'examine et vous contactera dans les meilleurs délais.<br><br>Voici le récapitulatif de votre demande :`,
+      body: `Bonjour <strong>${safeName}</strong>,<br><br>Nous avons bien reçu votre demande de <strong>${safeType}</strong>. Notre équipe l'examine et vous contactera dans les meilleurs délais.<br><br>Voici le récapitulatif de votre demande :`,
       infoRows,
-      notes: rec.description,
+      notes: safeMessage,
       notesLabel: "Votre message",
       cta: { label: "Suivre ma demande", url: `${SITE_URL}/mon-espace?tab=demandes` },
     });
@@ -67,14 +79,14 @@ Deno.serve(async (req) => {
     const admins = allUsers.filter((u) => u.role === "admin" && u.email);
 
     const adminHtml = buildEmailHtml({
-      subject: `Nouvelle demande — ${rec.full_name}`,
-      preheader: `Nouvelle demande de ${requestType} reçue.`,
+      subject: `Nouvelle demande — ${safeName}`,
+      preheader: `Nouvelle demande de ${safeType} reçue.`,
       action: "nouveau",
       actionLabel: "NOUVELLE DEMANDE",
-      headline: `Nouvelle demande : ${requestType}`,
-      body: `<strong>${rec.full_name}</strong> (${rec.email}) vient de soumettre une nouvelle demande de <strong>${requestType}</strong>.`,
+      headline: `Nouvelle demande : ${safeType}`,
+      body: `<strong>${safeName}</strong> (${escapeHtml(rec.email)}) vient de soumettre une nouvelle demande de <strong>${safeType}</strong>.`,
       infoRows,
-      notes: rec.description,
+      notes: safeMessage,
       notesLabel: "Message du demandeur",
       cta: { label: "Examiner la demande", url: `${SITE_URL}/admin/demandes` },
     });
@@ -83,7 +95,7 @@ Deno.serve(async (req) => {
       admins.map((admin) =>
         base44.asServiceRole.integrations.Core.SendEmail({
           to: admin.email,
-          subject: `KKD Admin — Nouvelle demande de ${rec.full_name}`,
+          subject: `KKD Admin — Nouvelle demande de ${safeName}`,
           body: adminHtml,
           from_name: "KKD Music",
         }).catch((e) => console.error("admin email skipped:", e?.message || e))

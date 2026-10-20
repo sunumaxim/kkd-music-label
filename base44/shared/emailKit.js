@@ -231,6 +231,19 @@ export function stripHtml(s) {
   return (s || "").replace(/<[^>]+>/g, "").substring(0, 200);
 }
 
+/**
+ * Échappe une valeur d'origine utilisateur avant interpolation dans le HTML
+ * d'un email (anti-injection HTML dans les notifications admin).
+ */
+export function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function verifyStatusChange({ base44, entityName, id, field, expected }) {
   if (!id || !field || !expected) return null;
   try {

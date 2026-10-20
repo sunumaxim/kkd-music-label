@@ -270,11 +270,16 @@ export default function AdminNews() {
   const generateWithAI = async (type) => {
     setGenerating(type);
     const artistInfo = artists.find(a => form.title?.toLowerCase().includes(a.name?.toLowerCase()));
-    const prompt = type === 'excerpt'
-      ? `Tu es un rédacteur pour KKD Music. Rédige un résumé accrocheur (2-3 phrases max) pour "${form.title}" catégorie "${form.category}". ${artistInfo ? `Artiste: ${artistInfo.name}.` : ''} ${aiContext || ''} Réponds uniquement avec le résumé.`
-      : `Tu es rédacteur professionnel KKD Music. Rédige un article complet sur "${form.title}" (${form.category}). ${artistInfo ? `Artiste: ${artistInfo.name}, genre: ${artistInfo.genre || ''}.` : ''} ${form.excerpt || ''} ${aiContext || ''} En français, ton dynamique. Structure avec paragraphes. Pas de titre principal.`;
-    const result = await base44.integrations.Core.InvokeLLM({ prompt });
-    setForm(f => ({ ...f, [type === 'excerpt' ? 'excerpt' : 'content']: result }));
+    const res = await base44.functions.invoke('generateNewsArticle', {
+      title: form.title,
+      category: form.category,
+      type,
+      artist_name: artistInfo?.name || '',
+      artist_genre: artistInfo?.genre || '',
+      excerpt: form.excerpt || '',
+      context: aiContext || '',
+    });
+    setForm(f => ({ ...f, [type === 'excerpt' ? 'excerpt' : 'content']: res?.data?.text || '' }));
     setGenerating(null);
   };
 
