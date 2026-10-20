@@ -9,6 +9,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { WAVE_PAY_LINK } from '@/lib/wave';
 import { Loader2, Upload, Calendar, Ticket, Plus } from 'lucide-react';
 import TicketThemePicker from '@/components/events/TicketThemePicker';
+import LocationPicker from '@/components/events/LocationPicker';
+import SponsorsEditor from '@/components/events/SponsorsEditor';
 
 const TYPES = [
   { value: 'concert', label: 'Concert' },
@@ -24,6 +26,7 @@ export default function PublishEventForm({ user, onClose }) {
     description: '', image_url: '', stream_url: '', ticket_url: '',
     is_ticketed: false, ticket_price: 0, ticket_capacity: 0, managersText: '',
     artist_id: '', artist_name: '', ticket_theme: 'classic',
+    location_lat: null, location_lng: null, location_address: '', sponsors: [],
   });
 
   const { data: artists = [] } = useQuery({
@@ -61,6 +64,10 @@ export default function PublishEventForm({ user, onClose }) {
         event_date: new Date(form.event_date).toISOString(),
         location: form.location,
         city: form.city,
+        location_lat: form.location_lat ?? undefined,
+        location_lng: form.location_lng ?? undefined,
+        location_address: form.location_address || undefined,
+        sponsors: (form.sponsors || []).filter((x) => x.name || x.logo_url),
         description: form.description,
         image_url: form.image_url,
         stream_url: form.stream_url,
@@ -183,6 +190,10 @@ export default function PublishEventForm({ user, onClose }) {
               <p className="text-[11px] text-muted-foreground">Ces personnes pourront scanner / rechercher les billets le jour J.</p>
             </div>
             <div className="sm:col-span-2">
+          <div>
+            <Label>Sponsors & partenaires (optionnel)</Label>
+            <div className="mt-1.5"><SponsorsEditor value={form.sponsors} onChange={(v) => set('sponsors', v)} /></div>
+          </div>
               <TicketThemePicker value={form.ticket_theme} onChange={(v) => set('ticket_theme', v)} imageUrl={form.image_url} eventTitle={form.title} eventDate={form.event_date ? new Date(form.event_date).toLocaleDateString('fr-FR') : ''} eventLocation={[form.location, form.city].filter(Boolean).join(' · ')} />
             </div>
             <p className="text-[11px] text-muted-foreground sm:col-span-2">
