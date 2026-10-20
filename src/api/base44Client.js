@@ -216,6 +216,8 @@ if (base44?.entities) {
                     return res.data;
                   }
                 }
+                // Collections catalogue : jamais de données de secours périmées (Firestore / cache local)
+                if (authoritativeCollections.has(collectionName)) return [];
                 // Tentative via Firestore en priorité de fallback
                 const firestoreItems = await firestoreService.getCollection(collectionName);
                 if (Array.isArray(firestoreItems) && firestoreItems.length > 0) {
@@ -225,6 +227,7 @@ if (base44?.entities) {
                 const cached = localDb.getCollection(collectionName);
                 return Array.isArray(cached) ? cached : [];
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.list fallback]:`, err?.message || err);
                 const cached = localDb.getCollection(collectionName);
                 return Array.isArray(cached) ? cached : [];
@@ -244,6 +247,7 @@ if (base44?.entities) {
                 const cached = localDb.getCollection(collectionName);
                 return Array.isArray(cached) ? cached.filter(item => matchesCachedQuery(item, query)) : [];
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.filter fallback]:`, err?.message || err);
                 const cached = localDb.getCollection(collectionName);
                 return Array.isArray(cached) ? cached.filter(item => matchesCachedQuery(item, query)) : [];
@@ -257,11 +261,13 @@ if (base44?.entities) {
                 if (typeof handlerTarget.get === 'function') {
                   return await handlerTarget.get(id);
                 }
+                if (authoritativeCollections.has(collectionName)) return null;
                 const doc = await firestoreService.getDocument(collectionName, id);
                 if (doc) return doc;
                 const list = localDb.getCollection(collectionName);
                 return list.find(i => i.id === id) || null;
               } catch (err) {
+                if (authoritativeCollections.has(collectionName)) throw err;
                 console.warn(`[Base44 entities.${entityName}.get fallback]:`, err?.message || err);
                 const list = localDb.getCollection(collectionName);
                 return list.find(i => i.id === id) || null;

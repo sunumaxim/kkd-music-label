@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
+import SafeImage from '@/components/shared/SafeImage';
 
 export default function EventCard({ event: e }) {
   const slug = `${slugify(e.title)}--${e.id}`;
@@ -12,7 +13,11 @@ export default function EventCard({ event: e }) {
     <Link to={`/evenements/${slug}`} className="block h-full">
       <article className="kkd-card-event">
         <div className="kkd-card-event-media">
-          {e.image_url && <img src={e.image_url} alt={e.title} loading="lazy" />}
+          <SafeImage
+            src={e.image_url}
+            alt={e.title}
+            fallback={<span className="font-display font-black text-2xl text-primary/30">KKD</span>}
+          />
           <span className="kkd-card-event-live">Bientôt</span>
           {dateTag && <span className="kkd-card-event-date">{dateTag}</span>}
         </div>

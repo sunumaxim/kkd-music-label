@@ -9,12 +9,14 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EmbeddedPlayer } from '@/components/shared/UniversalPlayer';
 import { slugify } from '@/lib/slugify';
+import SafeImage from '@/components/shared/SafeImage';
 
 export default function Events() {
-  const { data: events, isLoading } = useQuery({
+  const { data: events = [], isLoading, isError } = useQuery({
     queryKey: ['events'],
     queryFn: () => base44.entities.Event.list('event_date', 100),
-    initialData: [],
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const now = new Date();
@@ -66,7 +68,11 @@ export default function Events() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <p className="text-muted-foreground text-center py-20">
+            Impossible de charger les événements pour le moment. Rechargez la page pour réessayer.
+          </p>
+        ) : isLoading ? (
           <div className="space-y-4">
             {Array(3).fill(0).map((_, i) => (
               <div key={i} className="h-24 rounded-xl bg-card animate-pulse" />
@@ -137,10 +143,11 @@ function EventCard({ event, index }) {
         {/* Thumbnail Image (if exists) */}
         {event.image_url && (
           <Link to={eventLink} className="relative w-full sm:w-32 h-28 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-secondary block">
-            <img
+            <SafeImage
               src={event.image_url}
               alt={event.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fallback={<div className="w-full h-full flex items-center justify-center text-primary/40"><Calendar size={22} /></div>}
             />
           </Link>
         )}
