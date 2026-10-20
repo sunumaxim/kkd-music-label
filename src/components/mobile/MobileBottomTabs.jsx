@@ -23,10 +23,10 @@ export default function MobileBottomTabs() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-2xl border-t border-border select-none shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden min-w-0 bg-card/95 backdrop-blur-2xl border-t border-border select-none shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2px)' }}
     >
-      <div className="flex items-center justify-around h-14">
+      <div className="flex items-center justify-around h-14 max-w-full">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive =
