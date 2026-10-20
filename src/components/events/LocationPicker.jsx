@@ -48,11 +48,16 @@ export default function LocationPicker({ value = {}, onChange, placeholder = 'Re
   };
 
   const onType = (text) => {
-    setQ(text);
     const c = parseCoords(text);
-    // Saisie manuelle : on garde le texte, et on retire un ancien pin devenu faux
-    onChange({ location: text, ...(value.location_lat != null && !c ? { location_lat: null, location_lng: null, location_address: '' } : {}) });
-    if (c) { onChange({ location: value.location || '', location_lat: c.lat, location_lng: c.lng }); setResults([]); setOpen(false); return; }
+    if (c) {
+      // Coordonnées / lien Google Maps collés : on enregistre le pin et on garde le nom du lieu
+      setQ(value.location || '');
+      onChange({ location_lat: c.lat, location_lng: c.lng });
+      setResults([]); setOpen(false);
+      return;
+    }
+    setQ(text);
+    onChange({ location: text, ...(value.location_lat != null ? { location_lat: null, location_lng: null, location_address: '' } : {}) });
     search(text);
   };
 
