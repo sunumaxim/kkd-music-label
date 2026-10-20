@@ -52,11 +52,11 @@ export default function PublicTopbar() {
 
   return (
     <header
-      className="fixed top-0 left-0 md:left-64 right-0 z-40 h-16 bg-card/90 backdrop-blur-xl border-b border-border flex items-center justify-between gap-3 px-3 sm:px-6 select-none shadow-sm"
+      className="fixed top-0 left-0 md:left-64 right-0 z-40 h-16 min-w-0 bg-card/90 backdrop-blur-xl border-b border-border flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-6 select-none shadow-sm"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* ── Gauche : Historique Spotify (< et >) + Mobile Logo ── */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Mobile Brand Logo Officiel */}
         <Link to="/" className="md:hidden flex items-center shrink-0 mr-1">
           <BrandLogo className="h-8 w-auto" showSubtext={false} />
@@ -82,8 +82,8 @@ export default function PublicTopbar() {
       </div>
 
       {/* ── Centre : Search Pill Bar (Spotify / Audiomack style) ── */}
-      <div className="flex-1 max-w-xl mx-auto flex items-center gap-2">
-        <form onSubmit={submit} className="relative flex-1">
+      <div className="flex-1 min-w-0 max-w-xl mx-auto flex items-center gap-2">
+        <form onSubmit={submit} className="relative flex-1 min-w-0 hidden sm:block">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
@@ -101,6 +101,10 @@ export default function PublicTopbar() {
             </button>
           )}
         </form>
+
+        <button type="button" onClick={() => navigate("/recherche")} aria-label="Ouvrir la recherche" className="sm:hidden w-9 h-9 shrink-0 rounded-full bg-secondary border border-border flex items-center justify-center text-foreground">
+          <Search size={17} />
+        </button>
 
         {/* Quick Category Chips (Desktop) */}
         <div className="hidden xl:flex items-center gap-1">
@@ -125,11 +129,10 @@ export default function PublicTopbar() {
         {/* Action Button Publier / Soumettre ma musique */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish'))}
-          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary text-white text-xs sm:text-sm font-bold hover:brightness-110 shadow-md shadow-primary/20 transition-all active:scale-95 shrink-0"
+          className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 rounded-full bg-primary text-white text-xs sm:text-sm font-bold hover:brightness-110 shadow-md shadow-primary/20 transition-all active:scale-95 shrink-0" aria-label="Soumettre ou publier une musique" title="Soumettre ma musique"
         >
           <Upload size={14} />
           <span className="hidden sm:inline">Soumettre ma musique</span>
-          <span className="sm:hidden">Soumettre</span>
         </button>
 
         {user ? (
@@ -184,7 +187,7 @@ export default function PublicTopbar() {
         ) : (
           <Link
             to="/login"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs sm:text-sm font-semibold transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-1.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs sm:text-sm font-semibold transition-colors shrink-0"
           >
             Connexion
           </Link>
