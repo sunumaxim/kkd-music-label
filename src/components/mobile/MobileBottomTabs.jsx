@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Music2, Users, Video, User } from 'lucide-react';
+import { Home, Music2, Users, Video, User, CalendarDays } from 'lucide-react';
 
 const TABS = [
   { label: 'Accueil', path: '/', icon: Home },
   { label: 'Musique', path: '/musique', icon: Music2 },
   { label: 'Artistes', path: '/artistes', icon: Users },
   { label: 'Clips', path: '/videos', icon: Video },
+  { label: 'Événements', path: '/evenements', icon: CalendarDays },
   { label: 'Mon espace', path: '/mon-espace', icon: User },
 ];
 
