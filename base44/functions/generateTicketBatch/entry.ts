@@ -51,6 +51,9 @@ Deno.serve(async (req) => {
     const events = await base44.asServiceRole.entities.Event.filter({ id: event_id });
     const ev = events[0];
     if (!ev) return Response.json({ error: 'Événement introuvable' }, { status: 404 });
+    if (ev.published_status && ev.published_status !== 'approuve') {
+      return Response.json({ error: 'La génération des billets est disponible après approbation de l’événement' }, { status: 403 });
+    }
 
     const authorized = await isUserAuthorizedForEvent(base44, ev, user);
     if (!authorized) return Response.json({ error: 'Non autorisé' }, { status: 403 });

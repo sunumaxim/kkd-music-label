@@ -23,6 +23,17 @@ function extractTicketNumber(scanned) {
   return scanned.trim().split(/[?#]/)[0];
 }
 
+function extractTicketSecurityHash(scanned) {
+  if (!scanned) return '';
+  try {
+    const url = new URL(scanned);
+    return url.searchParams.get('h') || '';
+  } catch (_) {
+    const match = String(scanned).match(/[?&]h=([^&#]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+}
+
 const FILTERS = [
   { id: 'all', label: 'Tous' },
   { id: 'inside', label: 'Présents' },
@@ -154,10 +165,11 @@ export default function ControleAcces() {
 
   const handleScan = async (scannedText) => {
     const ticketNumber = extractTicketNumber(scannedText);
+    const securityHash = extractTicketSecurityHash(scannedText);
     if (!ticketNumber) return;
     setScanResult({ type: 'loading', message: scanMode === 'entry' ? 'Validation entrée…' : 'Validation sortie…' });
     try {
-      const res = await base44.functions.invoke('checkInTicket', { ticket_number: ticketNumber, action: scanMode });
+      const res = await base44.functions.invoke('checkInTicket', { ticket_number: ticketNumber, security_hash: securityHash, action: scanMode });
       const name = res.data?.ticket?.buyer_name;
       if (scanMode === 'entry') {
         if (res.data?.already) setScanResult({ type: 'already', name, message: "Déjà à l'intérieur" });

@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { ticket_id, ticket_number, action = 'entry' } = await req.json();
+    const { ticket_id, ticket_number, security_hash, action = 'entry' } = await req.json();
     if (!['entry', 'exit'].includes(action)) return Response.json({ error: 'Action de contrôle invalide' }, { status: 400 });
 
     let ticket;
@@ -19,6 +19,9 @@ Deno.serve(async (req) => {
       ticket = t[0];
     }
     if (!ticket) return Response.json({ error: 'Ticket introuvable' }, { status: 404 });
+    if (!ticket_id && (!security_hash || !ticket.security_hash || security_hash !== ticket.security_hash)) {
+      return Response.json({ error: 'QR code invalide ou incomplet : vérifiez le billet original' }, { status: 403 });
+    }
     if (ticket.status === 'en_attente') return Response.json({ error: 'Billet non activé — l\'acheteur doit scanner le QR code pour l\'activer d\'abord' }, { status: 400 });
     if (ticket.status !== 'valide') return Response.json({ error: 'Ticket non validé' }, { status: 400 });
 

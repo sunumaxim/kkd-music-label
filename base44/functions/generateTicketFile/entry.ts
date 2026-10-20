@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
       fetchImage(qrUrl),
     ]);
 
-    const bgImage = artistPhoto || eventPoster;
+    const bgImage = eventPoster || artistPhoto;
     const dp = fmtDateParts(ev?.event_date || ticket.event_date);
     const barcodeValue = generateBarcodeValue(ticket);
 

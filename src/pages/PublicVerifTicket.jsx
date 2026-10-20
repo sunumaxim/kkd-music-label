@@ -41,7 +41,7 @@ export default function PublicVerifTicket() {
   const checkIn = async () => {
     setChecking(true);
     try {
-      const res = await base44.functions.invoke('checkInTicket', { ticket_number: number });
+      const res = await base44.functions.invoke('checkInTicket', { ticket_number: number, security_hash: securityHash });
       if (res.data?.already) toast({ title: 'Déjà enregistré', description: res.data.ticket.buyer_name });
       else toast({ title: 'Entrée validée ✅', description: res.data.ticket.buyer_name });
       qc.invalidateQueries({ queryKey: ['ticket-by-number', number] });
