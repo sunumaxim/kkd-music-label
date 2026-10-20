@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { jsPDF } from 'npm:jspdf@4.2.1';
+import qrcode from 'npm:qrcode-generator@1.4.4';
 import { getTheme } from '../../shared/ticketThemes.ts';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
@@ -190,13 +191,11 @@ Deno.serve(async (req) => {
     // QR sécurisé : inclut le hash de sécurité pour empêcher la falsification
     const hashParam = ticket.security_hash ? `?h=${ticket.security_hash}` : '';
     const qrData = `${base}/billet/${encodeURIComponent(ticket_number)}${hashParam}`;
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&margin=0&data=${encodeURIComponent(qrData)}`;
 
-    const [logo, artistPhoto, eventPoster, qr] = await Promise.all([
+    const [logo, artistPhoto, eventPoster] = await Promise.all([
       fetchImage(LOGO_URL),
       fetchImage(artistPhotoUrl),
       fetchImage(ev?.image_url || ticket.event_image_url),
-      fetchImage(qrUrl),
     ]);
 
     const bgImage = eventPoster || artistPhoto;
@@ -414,7 +413,20 @@ Deno.serve(async (req) => {
     const qrX = MAIN_W + (SIDE_W - qrSize) / 2;
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(qrX - 4, sy - 4, qrSize + 8, qrSize + 8, 4, 4, 'F');
-    if (qr) { try { doc.addImage(qr.data, qr.fmt, qrX, sy, qrSize, qrSize); } catch (_) {} }
+    // QR généré localement en vectoriel : le sceau de sécurité ne quitte jamais le serveur
+    try {
+      const qrObj = qrcode(0, 'H');
+      qrObj.addData(qrData);
+      qrObj.make();
+      const n = qrObj.getModuleCount();
+      const cell = qrSize / n;
+      doc.setFillColor(0, 0, 0);
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          if (qrObj.isDark(r, c)) doc.rect(qrX + c * cell, sy + r * cell, cell + 0.25, cell + 0.25, 'F');
+        }
+      }
+    } catch (_) {}
     if (logo) {
       const c = 16;
       doc.setFillColor(255, 255, 255);
