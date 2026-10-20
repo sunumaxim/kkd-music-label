@@ -44,6 +44,30 @@ export const TICKET_THEMES = {
     accentText: '#0EA5E9',
     swatch: 'linear-gradient(135deg, #0EA5E9 0%, #0B4A7A 100%)',
   },
+  midnight: {
+    label: 'Midnight',
+    primary: [156, 163, 175],
+    bg: [12, 12, 14],
+    sidebar: [244, 244, 245],
+    accentText: '#9CA3AF',
+    swatch: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
+  },
+  poster: {
+    label: 'Affiche',
+    primary: [232, 184, 74],
+    bg: [8, 8, 8],
+    sidebar: [248, 244, 232],
+    accentText: '#E8B84A',
+    swatch: 'linear-gradient(135deg, #E8B84A 0%, #111 100%)',
+  },
+  minimal: {
+    label: 'Minimal',
+    primary: [30, 30, 30],
+    bg: [18, 18, 18],
+    sidebar: [255, 255, 255],
+    accentText: '#1E1E1E',
+    swatch: 'linear-gradient(135deg, #FFFFFF 0%, #D4D4D4 100%)',
+  },
 } as const;
 
 export type TicketThemeKey = keyof typeof TICKET_THEMES;

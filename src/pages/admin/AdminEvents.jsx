@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle, CalendarDays, ShieldCheck, MapPin, TrendingUp } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
+import LocationPicker from '@/components/events/LocationPicker';
+import SponsorsEditor from '@/components/events/SponsorsEditor';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
 import BatchTicketGenerator from '@/components/events/BatchTicketGenerator';
 import { useUnsavedGuard } from '@/hooks/useUnsavedGuard';
@@ -28,8 +30,9 @@ const FIELDS = [
   ]},
   { key: 'event_date', label: 'Date et heure', type: 'datetime' },
   { key: 'artist_id', label: 'Artiste lié (catalogue) *', type: 'artist', required: true },
-  { key: 'location', label: 'Lieu', type: 'text', placeholder: 'Ex: Salle Pleyel' },
-  { key: 'city', label: 'Ville', type: 'text', placeholder: 'Ex: Paris' },
+  { key: 'location', label: 'Lieu (recherche automatique, cliquable pour les visiteurs)', type: 'custom',
+    render: ({ data, patch }) => <LocationPicker value={data} onChange={patch} /> },
+  { key: 'city', label: 'Ville', type: 'text', placeholder: 'Ex: Tambacounda' },
   { key: 'description', label: 'Description', type: 'textarea' },
   { key: 'ticket_url', label: 'Lien billetterie', type: 'url', placeholder: 'https://...' },
   { key: 'stream_url', label: 'Lien Live Stream', type: 'url', placeholder: 'https://youtube.com/watch?v=...' },
@@ -44,7 +47,11 @@ const FIELDS = [
     { value: 'royal', label: 'Royal (Violet/Noir)' },
     { value: 'ocean', label: 'Ocean (Bleu/Noir)' },
     { value: 'midnight', label: 'Midnight (Graphite/Noir)' },
+    { value: 'poster', label: 'Affiche (couleurs de l\'image du concert)' },
+    { value: 'minimal', label: 'Minimal (blanc épuré)' },
   ]},
+  { key: 'sponsors', label: 'Sponsors (logos, liens)', type: 'custom',
+    render: ({ data, patch }) => <SponsorsEditor value={data.sponsors} onChange={(v) => patch({ sponsors: v })} /> },
   { key: 'is_featured', label: 'Mise en avant', type: 'boolean', placeholder: 'Afficher en page d\'accueil' },
 ];
 
