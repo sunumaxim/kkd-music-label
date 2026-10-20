@@ -16,10 +16,8 @@ import VerifiedBadge from '@/components/shared/VerifiedBadge';
 import PublishForm from '@/components/partner/PublishForm';
 import SongSubmissionModal from '@/components/partner/SongSubmissionModal';
 import PublishEventForm from '@/components/partner/PublishEventForm';
-import PartnerPromotions from '@/components/partner/PartnerPromotions';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import PartnerPromoVideo from '@/components/promo/PartnerPromoVideo';
 import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import ArtistEarnings from '@/components/partner/ArtistEarnings';
@@ -620,11 +618,7 @@ export default function PartnerDashboard() {
             )}
           </div>
         )}
-<PartnerPromotions user={user} />
-          </div>
-        )}
-
-        {/* ── DEMANDES TAB ── */}
+{/* ── DEMANDES TAB ── */}
         {activeTab === 'demandes' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
