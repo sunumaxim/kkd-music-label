@@ -114,7 +114,7 @@ export default function PublishEventForm({ user, onClose }) {
         </div>
         <div className="space-y-1.5">
           <Label>Lieu</Label>
-          <Input value={form.location} onChange={(e) => set('location', e.target.value)} placeholder="Ex: Théâtre National" />
+          <LocationPicker value={form} onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))} />
         </div>
         <div className="space-y-1.5">
           <Label>Ville</Label>

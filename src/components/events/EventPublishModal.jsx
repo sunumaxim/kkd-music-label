@@ -15,6 +15,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { slugify } from '@/lib/slugify';
 import TicketThemePicker from '@/components/events/TicketThemePicker';
+import LocationPicker from '@/components/events/LocationPicker';
+import SponsorsEditor from '@/components/events/SponsorsEditor';
 
 const EVENT_TYPES = [
   { id: 'concert', label: 'Concert Live', desc: 'Performance live en salle ou stade' },
@@ -49,6 +51,10 @@ export default function EventPublishModal({ isOpen, onClose, user }) {
     doors_open_time: '19:00',
     location: '',
     city: 'Dakar',
+    location_lat: null,
+    location_lng: null,
+    location_address: '',
+    sponsors: [],
     description: '',
     image_url: '',
     stream_url: '',
@@ -143,6 +149,10 @@ export default function EventPublishModal({ isOpen, onClose, user }) {
         event_date: new Date(formData.event_date).toISOString(),
         location: formData.location.trim(),
         city: formData.city.trim(),
+        location_lat: formData.location_lat ?? undefined,
+        location_lng: formData.location_lng ?? undefined,
+        location_address: formData.location_address || undefined,
+        sponsors: (formData.sponsors || []).filter((x) => x.name || x.logo_url),
         description: formData.description.trim() || undefined,
         image_url: formData.image_url.trim() || undefined,
         stream_url: formData.stream_url.trim() || undefined,
@@ -284,12 +294,13 @@ export default function EventPublishModal({ isOpen, onClose, user }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Lieu / Salle *</Label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => setField('location', e.target.value)}
-                    placeholder="ex : Esplanade du Grand Théâtre"
-                    className="mt-1.5 bg-background border-border"
-                  />
+                  <div className="mt-1.5">
+                    <LocationPicker
+                      value={formData}
+                      onChange={(patch) => setFormData(prev => ({ ...prev, ...patch }))}
+                      placeholder="Rechercher : Tamba, Dakar, Missirah…"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -311,6 +322,13 @@ export default function EventPublishModal({ isOpen, onClose, user }) {
                   placeholder="Présentation des têtes d'affiches, première partie, conditions d'accès, vestiaire..."
                   className="mt-1.5 bg-background border-border min-h-[90px] text-sm"
                 />
+              </div>
+
+              <div>
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Sponsors & partenaires (optionnel)</Label>
+                <div className="mt-1.5">
+                  <SponsorsEditor value={formData.sponsors} onChange={(v) => setField('sponsors', v)} />
+                </div>
               </div>
             </div>
           )}
