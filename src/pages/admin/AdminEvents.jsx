@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle, CalendarDays, ShieldCheck, MapPin, Users, TrendingUp } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
@@ -152,13 +152,45 @@ export default function AdminEvents() {
     );
   }
 
+  const pendingCount = events.filter((event) => ['en_attente', 'clarification_demandee'].includes(event.published_status)).length;
+  const upcomingCount = events.filter((event) => event.event_date && new Date(event.event_date) >= new Date()).length;
+  const ticketedCount = events.filter((event) => event.is_ticketed).length;
+  const capacityTotal = events.reduce((sum, event) => sum + Number(event.ticket_capacity || 0), 0);
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl font-extrabold">Événements</h1>
-        <Button onClick={() => setEditing('new')} className="bg-primary hover:bg-primary/80">
-          <Plus size={16} className="mr-1" /> Ajouter
+    <div className="max-w-[1280px] mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 rounded-2xl border border-border/60 bg-card p-5 sm:p-7">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary mb-3">
+            <ShieldCheck size={13} /> Gestion sécurisée des événements
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight">Événements & billetterie</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-xl">Validez les organisateurs, configurez les billets et suivez les événements depuis un seul espace.</p>
+        </div>
+        <Button onClick={() => setEditing('new')} className="bg-primary hover:bg-primary/90 h-11 px-5 shadow-sm shrink-0">
+          <Plus size={16} className="mr-2" /> Créer un événement
         </Button>
+      </div>
+
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          { label: 'Événements au total', value: events.length, icon: CalendarDays, note: 'Tous les statuts', color: 'text-primary', bg: 'bg-primary/10' },
+          { label: 'À examiner', value: pendingCount, icon: ShieldCheck, note: 'Validation KKD requise', color: 'text-amber-600', bg: 'bg-amber-500/10' },
+          { label: 'Dates à venir', value: upcomingCount, icon: TrendingUp, note: 'Événements futurs', color: 'text-sky-600', bg: 'bg-sky-500/10' },
+          { label: 'Avec billetterie', value: ticketedCount, icon: Ticket, note: capacityTotal ? `${capacityTotal.toLocaleString('fr-FR')} places configurées` : 'Capacité à configurer', color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+        ].map((stat) => {
+          const Icon = stat.icon;
+          return <div key={stat.label} className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-2"><span className="text-xs font-medium text-muted-foreground">{stat.label}</span><span className={`w-9 h-9 rounded-xl ${stat.bg} flex items-center justify-center ${stat.color}`}><Icon size={17} /></span></div>
+            <p className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-3">{stat.value}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{stat.note}</p>
+          </div>;
+        })}
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div><h2 className="font-bold text-base">Tous les événements</h2><p className="text-xs text-muted-foreground mt-0.5">Affiches, statuts, organisateurs et actions rapides</p></div>
+        <span className="text-xs font-semibold rounded-full border border-border bg-secondary/50 px-3 py-1.5">{events.length} événement{events.length !== 1 ? 's' : ''}</span>
       </div>
 
       {isLoading ? (
@@ -168,10 +200,11 @@ export default function AdminEvents() {
       ) : events.length === 0 ? (
         <p className="text-muted-foreground text-center py-12">Aucun événement. Cliquez sur "Ajouter".</p>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3">
           {events.map((event) => (
-            <div key={event.id} className="flex items-center gap-4 bg-card border border-border/50 rounded-lg p-4">
-              <div className="flex-shrink-0 w-14 text-center">
+            <div key={event.id} className="flex flex-col sm:flex-row sm:items-center gap-4 bg-card border border-border/60 rounded-2xl p-4 sm:p-5 hover:border-primary/30 hover:shadow-sm transition-all">
+              {event.image_url ? <img src={event.image_url} alt="" className="w-full sm:w-24 h-28 sm:h-20 rounded-xl object-cover border border-border/50 shrink-0" /> : <div className="w-full sm:w-24 h-28 sm:h-20 rounded-xl bg-primary/5 border border-border/50 flex items-center justify-center shrink-0"><CalendarDays size={24} className="text-primary/60" /></div>}
+              <div className="flex-shrink-0 w-14 text-center rounded-xl bg-secondary/60 py-2">
                 {event.event_date && (
                   <>
                     <p className="font-display text-lg font-extrabold text-primary leading-none">
@@ -191,12 +224,12 @@ export default function AdminEvents() {
                   {event.published_status === 'clarification_demandee' && <span className="text-[10px] bg-blue-500/15 text-blue-500 px-2 py-0.5 rounded-full">Clarification demandée</span>}
                   {event.is_ticketed && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1"><Ticket size={9} /> {Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {event.event_type} • {event.location} {event.city}{event.organizer_email ? ` • ${event.organizer_email}` : ''}
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                  <MapPin size={12} className="shrink-0" /> {[event.location, event.city].filter(Boolean).join(' · ') || 'Lieu à confirmer'}{event.organizer_email ? ` · ${event.organizer_email}` : ''}
                   {!event.artist_id && <span className="ml-2 text-[10px] bg-amber-500/15 text-amber-500 px-1.5 py-0.5 rounded-full">Artiste non lié</span>}
                 </p>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap sm:justify-end border-t sm:border-t-0 border-border/50 pt-3 sm:pt-0">
                 {event.published_status === 'en_attente' && (
                   <>
                     <Button variant="ghost" size="sm" onClick={() => approveMutation.mutate(event.id)} className="text-emerald-600 hover:text-emerald-700 text-xs gap-1"><Check size={13} /> Approuver</Button>

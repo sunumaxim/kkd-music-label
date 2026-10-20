@@ -49,15 +49,17 @@ export default function AdminTickets() {
   const list = filter === 'all' ? tickets : tickets.filter((t) => t.status === filter);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Ticket size={20} className="text-primary" />
+    <div className="max-w-[1280px] mx-auto space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card p-5 sm:p-7">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><Ticket size={22} className="text-primary" /></div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Contrôle financier</p>
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl">Billetterie & validations</h1>
+            <p className="text-sm text-muted-foreground mt-1">Contrôlez les justificatifs avant d'activer les billets.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-display font-extrabold text-2xl">Billetterie</h1>
-          <p className="text-sm text-muted-foreground">Validez les achats de billets (Wave).</p>
-        </div>
+        <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700"><ShieldCheck size={15} /> Validation manuelle des paiements</div>
       </div>
 
       {/* Revenus */}
