@@ -210,6 +210,14 @@ export default function EntityForm({ fields, initialData, onSave, onCancel, titl
               </select>
             )}
 
+            {field.type === 'custom' && field.render?.({
+              data,
+              patch: (obj) => {
+                setData((prev) => ({ ...prev, ...obj }));
+                if (!isDirty) { setIsDirty(true); onDirtyChange?.(true); }
+              },
+            })}
+
             {field.type === 'url' && (
               <Input
                 type="url"

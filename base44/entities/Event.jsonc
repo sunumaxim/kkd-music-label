@@ -160,7 +160,10 @@
         "gold",
         "emerald",
         "royal",
-        "ocean"
+        "ocean",
+        "midnight",
+        "poster",
+        "minimal"
       ],
       "default": "classic",
       "description": "Thème de design des billets (classic=rouge/noir, gold=or/noir, emerald=vert/noir, royal=violet/noir, ocean=bleu/noir)"
@@ -204,6 +207,45 @@
       "type": "boolean",
       "default": false,
       "description": "Page concert dédiée disponible sur /concert/<slug>"
+    },
+    "location_lat": {
+      "type": "number",
+      "description": "Latitude GPS du lieu"
+    },
+    "location_lng": {
+      "type": "number",
+      "description": "Longitude GPS du lieu"
+    },
+    "location_address": {
+      "type": "string",
+      "description": "Adresse complète du lieu (issue de la recherche de lieu)"
+    },
+    "sponsors": {
+      "type": "array",
+      "default": [],
+      "description": "Sponsors de l'événement",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "logo_url": {
+            "type": "string"
+          },
+          "link_url": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "principal",
+              "sponsor",
+              "media"
+            ]
+          }
+        }
+      }
     }
   },
   "required": [
