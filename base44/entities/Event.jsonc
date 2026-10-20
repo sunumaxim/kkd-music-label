@@ -4,11 +4,11 @@
   "properties": {
     "title": {
       "type": "string",
-      "description": "Titre de l'\u00e9v\u00e9nement"
+      "description": "Titre de l'événement"
     },
     "slug": {
       "type": "string",
-      "description": "Slug URL propre (ex : /evenements/mon-evenement) \u2014 auto-g\u00e9n\u00e9r\u00e9 depuis le titre"
+      "description": "Slug URL propre (ex : /evenements/mon-evenement) — auto-généré depuis le titre"
     },
     "description": {
       "type": "string",
@@ -16,7 +16,7 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Affiche / image de l'\u00e9v\u00e9nement"
+      "description": "Affiche / image de l'événement"
     },
     "event_type": {
       "type": "string",
@@ -27,7 +27,7 @@
         "rencontre"
       ],
       "default": "concert",
-      "description": "Type d'\u00e9v\u00e9nement"
+      "description": "Type d'événement"
     },
     "event_date": {
       "type": "string",
@@ -87,15 +87,15 @@
         "type": "string"
       },
       "default": [],
-      "description": "IDs des sorties li\u00e9es \u00e0 afficher sur la page \u00e9v\u00e9nement"
+      "description": "IDs des sorties liées à afficher sur la page événement"
     },
     "artist_id": {
       "type": "string",
-      "description": "Artiste principal li\u00e9 (optionnel)"
+      "description": "Artiste principal lié (optionnel)"
     },
     "artist_name": {
       "type": "string",
-      "description": "Nom de l'artiste li\u00e9 (d\u00e9normalis\u00e9)"
+      "description": "Nom de l'artiste lié (dénormalisé)"
     },
     "organizer_email": {
       "type": "string",
@@ -114,11 +114,11 @@
         "clarification_demandee"
       ],
       "default": "approuve",
-      "description": "Statut de validation (en_attente = soumis par partenaire, approuve = visible, clarification_demandee = infos compl\u00e9mentaires requises)"
+      "description": "Statut de validation (en_attente = soumis par partenaire, approuve = visible, clarification_demandee = infos complémentaires requises)"
     },
     "admin_notes": {
       "type": "string",
-      "description": "Notes internes admin / message de clarification demand\u00e9 \u00e0 l'organisateur"
+      "description": "Notes internes admin / message de clarification demandé à l'organisateur"
     },
     "is_ticketed": {
       "type": "boolean",
@@ -133,12 +133,12 @@
     "ticket_capacity": {
       "type": "number",
       "default": 0,
-      "description": "Capacit\u00e9 (0 = illimit\u00e9e)"
+      "description": "Capacité (0 = illimitée)"
     },
     "tickets_sold": {
       "type": "number",
       "default": 0,
-      "description": "Billets vendus (valid\u00e9s)"
+      "description": "Billets vendus (validés)"
     },
     "managers": {
       "type": "array",
@@ -146,7 +146,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Emails autoris\u00e9s \u00e0 g\u00e9rer le contr\u00f4le d'acc\u00e8s"
+      "description": "Emails autorisés à gérer le contrôle d'accès"
     },
     "commission_pct": {
       "type": "number",
@@ -163,7 +163,47 @@
         "ocean"
       ],
       "default": "classic",
-      "description": "Th\u00e8me de design des billets (classic=rouge/noir, gold=or/noir, emerald=vert/noir, royal=violet/noir, ocean=bleu/noir)"
+      "description": "Thème de design des billets (classic=rouge/noir, gold=or/noir, emerald=vert/noir, royal=violet/noir, ocean=bleu/noir)"
+    },
+    "ticket_categories": {
+      "type": "array",
+      "default": [],
+      "description": "Catégories de billets (ex: Prévente en ligne, Porte). channel = online (vente sur la plateforme) ou door (guichet sur place)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "description": "Prix en FCFA"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "online",
+              "door"
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "online_sales_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fin de la vente en ligne (par défaut : début de l événement)"
+    },
+    "landing_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Page concert dédiée disponible sur /concert/<slug>"
     }
   },
   "required": [

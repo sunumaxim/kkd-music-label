@@ -4,28 +4,28 @@
   "properties": {
     "event_id": {
       "type": "string",
-      "description": "ID de l'\u00e9v\u00e9nement"
+      "description": "ID de l'événement"
     },
     "event_title": {
       "type": "string",
-      "description": "Titre de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
+      "description": "Titre de l'événement (dénormalisé)"
     },
     "event_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Date de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
+      "description": "Date de l'événement (dénormalisé)"
     },
     "event_image_url": {
       "type": "string",
-      "description": "Affiche de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
+      "description": "Affiche de l'événement (dénormalisé)"
     },
     "artist_name": {
       "type": "string",
-      "description": "Artiste li\u00e9 (d\u00e9normalis\u00e9)"
+      "description": "Artiste lié (dénormalisé)"
     },
     "organizer_email": {
       "type": "string",
-      "description": "Email de l'organisateur (d\u00e9normalis\u00e9)"
+      "description": "Email de l'organisateur (dénormalisé)"
     },
     "managers": {
       "type": "array",
@@ -33,11 +33,11 @@
         "type": "string"
       },
       "default": [],
-      "description": "Contr\u00f4leurs d'acc\u00e8s autoris\u00e9s (d\u00e9normalis\u00e9)"
+      "description": "Contrôleurs d'accès autorisés (dénormalisé)"
     },
     "buyer_email": {
       "type": "string",
-      "description": "Email de l'acheteur (optionnel \u2014 si fourni, le billet est visible dans 'Mes Billets' apr\u00e8s connexion)"
+      "description": "Email de l'acheteur (optionnel — si fourni, le billet est visible dans 'Mes Billets' après connexion)"
     },
     "buyer_name": {
       "type": "string",
@@ -45,7 +45,7 @@
     },
     "buyer_phone": {
       "type": "string",
-      "description": "T\u00e9l\u00e9phone de l'acheteur"
+      "description": "Téléphone de l'acheteur"
     },
     "buyer_location": {
       "type": "string",
@@ -53,25 +53,25 @@
     },
     "ticket_number": {
       "type": "string",
-      "description": "Num\u00e9ro unique g\u00e9n\u00e9r\u00e9 apr\u00e8s validation (format KKD...SM)"
+      "description": "Numéro unique généré après validation (format KKD...SM)"
     },
     "security_hash": {
       "type": "string",
-      "description": "Hash de s\u00e9curit\u00e9 cryptographique inclus dans le QR code pour emp\u00eacher la falsification"
+      "description": "Hash de sécurité cryptographique inclus dans le QR code pour empêcher la falsification"
     },
     "batch_id": {
       "type": "string",
-      "description": "Identifiant du lot de g\u00e9n\u00e9ration automatique (si billet cr\u00e9\u00e9 en lot)"
+      "description": "Identifiant du lot de génération automatique (si billet créé en lot)"
     },
     "amount": {
       "type": "number",
       "default": 0,
-      "description": "Montant pay\u00e9 en FCFA"
+      "description": "Montant payé en FCFA"
     },
     "commission_pct": {
       "type": "number",
       "default": 10,
-      "description": "Commission KKD (%) d\u00e9normalis\u00e9e"
+      "description": "Commission KKD (%) dénormalisée"
     },
     "payment_method": {
       "type": "string",
@@ -84,7 +84,7 @@
     },
     "wave_reference": {
       "type": "string",
-      "description": "R\u00e9f\u00e9rence de transaction Wave"
+      "description": "Référence de transaction Wave"
     },
     "square_order_ref": {
       "type": "string",
@@ -92,7 +92,7 @@
     },
     "proof_file_url": {
       "type": "string",
-      "description": "Capture du re\u00e7u (facultatif)"
+      "description": "Capture du reçu (facultatif)"
     },
     "status": {
       "type": "string",
@@ -113,35 +113,35 @@
     "checked_in": {
       "type": "boolean",
       "default": false,
-      "description": "Actuellement \u00e0 l'int\u00e9rieur de l'\u00e9v\u00e9nement"
+      "description": "Actuellement à l'intérieur de l'événement"
     },
     "checked_in_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Heure de la derni\u00e8re entr\u00e9e"
+      "description": "Heure de la dernière entrée"
     },
     "checked_in_by": {
       "type": "string",
-      "description": "Email du contr\u00f4leur ayant valid\u00e9 l'entr\u00e9e"
+      "description": "Email du contrôleur ayant validé l'entrée"
     },
     "checked_out": {
       "type": "boolean",
       "default": false,
-      "description": "A quitt\u00e9 l'\u00e9v\u00e9nement"
+      "description": "A quitté l'événement"
     },
     "checked_out_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Heure de la derni\u00e8re sortie"
+      "description": "Heure de la dernière sortie"
     },
     "checked_out_by": {
       "type": "string",
-      "description": "Email du contr\u00f4leur ayant valid\u00e9 la sortie"
+      "description": "Email du contrôleur ayant validé la sortie"
     },
     "entry_count": {
       "type": "number",
       "default": 0,
-      "description": "Nombre total d'entr\u00e9es (inclut les r\u00e9-entr\u00e9es)"
+      "description": "Nombre total d'entrées (inclut les ré-entrées)"
     },
     "exit_count": {
       "type": "number",
@@ -168,12 +168,12 @@
           },
           "by": {
             "type": "string",
-            "description": "Email du contr\u00f4leur"
+            "description": "Email du contrôleur"
           }
         }
       },
       "default": [],
-      "description": "Historique complet des entr\u00e9es/sorties"
+      "description": "Historique complet des entrées/sorties"
     },
     "description": {
       "type": "string",
@@ -183,6 +183,14 @@
     "admin_notes": {
       "type": "string",
       "description": "Notes admin"
+    },
+    "ticket_category": {
+      "type": "string",
+      "description": "Catégorie du billet (Prévente, Porte, VIP...)"
+    },
+    "ticket_theme": {
+      "type": "string",
+      "description": "Thème de design du billet (dénormalisé)"
     }
   },
   "required": [
