@@ -8,6 +8,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { ticket_id, ticket_number, action = 'entry' } = await req.json();
+    if (!['entry', 'exit'].includes(action)) return Response.json({ error: 'Action de contrôle invalide' }, { status: 400 });
 
     let ticket;
     if (ticket_id) {
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
 
     // Entrée (par défaut)
     if (ticket.checked_in) {
-      return Response.json({ ticket, already: true });
+      return Response.json({ already: true, ticket: { ticket_number: ticket.ticket_number, buyer_name: ticket.buyer_name, checked_in: true, checked_in_date: ticket.checked_in_date } });
     }
     const entryCount = (ticket.entry_count || 0) + 1;
     const isReEntry = entryCount > 1;

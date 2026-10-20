@@ -34,8 +34,13 @@ Deno.serve(async (req) => {
     const ticket = tickets[0];
     if (!ticket) return Response.json({ error: 'Ticket introuvable' }, { status: 404 });
     if (ticket.status === 'valide') return Response.json({ ticket_number: ticket.ticket_number, status: 'valide' });
+    if (ticket.status !== 'en_attente') return Response.json({ error: 'Seuls les billets en attente peuvent être validés' }, { status: 400 });
+    if (ticket.batch_id) return Response.json({ error: 'Ce billet appartient à un lot physique : utilisez le parcours d’activation dédié' }, { status: 400 });
+    if (!String(ticket.wave_reference || '').trim() && !String(ticket.proof_file_url || '').trim()) {
+      return Response.json({ error: 'Aucune référence Wave ni preuve de paiement n’est jointe. Le billet reste en attente.' }, { status: 400 });
+    }
 
-    let number = genTicketNumber(ticket.event_date);
+    let number = ticket.ticket_number || genTicketNumber(ticket.event_date);
     for (let i = 0; i < 6; i++) {
       const dup = await base44.asServiceRole.entities.Ticket.filter({ ticket_number: number });
       if (!dup.length) break;
@@ -45,7 +50,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Ticket.update(ticket_id, {
       status: 'valide',
       ticket_number: number,
-      security_hash: genSecurityHash(),
+      security_hash: ticket.security_hash || genSecurityHash(),
       validated_date: new Date().toISOString(),
     });
 

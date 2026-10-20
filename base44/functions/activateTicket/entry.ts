@@ -26,6 +26,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Hash de sécurité invalide' }, { status: 403 });
     }
 
+    // Seuls les billets physiques créés par lot peuvent être activés publiquement.
+    // Un billet de commande en ligne ne doit jamais devenir valide via ce formulaire.
+    if (!ticket.batch_id) {
+      return Response.json({ error: 'Ce billet ne relève pas du parcours d’activation physique' }, { status: 403 });
+    }
+
     // Le billet doit être en attente d'activation
     if (ticket.status !== 'en_attente') {
       return Response.json({ error: ticket.status === 'valide' ? 'Ce billet est déjà activé' : 'Ce billet ne peut pas être activé dans son état actuel', already_active: ticket.status === 'valide', ticket_number }, { status: 400 });

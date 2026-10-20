@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle, CalendarDays, ShieldCheck, MapPin, Users, TrendingUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Ticket, HelpCircle, CalendarDays, ShieldCheck, MapPin, TrendingUp } from 'lucide-react';
 import TikTokPublishButton from '../../components/admin/TikTokPublishButton';
 import EntityForm from '../../components/admin/EntityForm';
 import EventReleaseLinker from '../../components/admin/EventReleaseLinker';
