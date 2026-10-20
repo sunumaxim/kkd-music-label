@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { event_id, buyer_name, buyer_email, buyer_phone, buyer_location, amount, quantity } = await req.json();
+    const { event_id, buyer_name, buyer_email, buyer_phone, buyer_location, quantity, ticket_category } = await req.json();
 
     // Champs obligatoires : nom, téléphone, lieu (email optionnel)
     if (!event_id) return Response.json({ error: 'event_id requis' }, { status: 400 });
@@ -43,7 +43,18 @@ Deno.serve(async (req) => {
     if (!authorized) return Response.json({ error: 'Non autorisé' }, { status: 403 });
 
     const qty = Math.max(1, Math.min(50, Math.floor(Number(quantity) || 1)));
-    const ticketAmount = Number(amount) || ev.ticket_price || 0;
+    const basePrice = Math.max(0, Number(ev.ticket_price) || 0);
+    const categoryName = String(ticket_category || 'Pass Standard');
+    const configuredCategories = Array.isArray(ev.ticket_categories) ? ev.ticket_categories : [];
+    const configuredCategory = configuredCategories.find((category: any) => category && (category.name === categoryName || category.id === categoryName));
+    const categoryMultiplier = categoryName.toLowerCase().includes('vvip') ? 4
+      : categoryName.toLowerCase().includes('carré') || categoryName.toLowerCase().includes('carre') ? 3
+      : categoryName.toLowerCase().includes('vip') ? 2.5
+      : categoryName.toLowerCase().includes('festival') ? 3.5
+      : categoryName.toLowerCase().includes('early') || categoryName.toLowerCase().includes('prévente') ? 0.8
+      : 1;
+    const configuredPrice = Number(configuredCategory?.price);
+    const ticketAmount = Number.isFinite(configuredPrice) && configuredPrice >= 0 ? configuredPrice : Math.round(basePrice * categoryMultiplier);
     const now = new Date().toISOString();
 
     const tickets = [];
@@ -54,6 +65,8 @@ Deno.serve(async (req) => {
         event_title: ev.title,
         event_date: ev.event_date,
         event_image_url: ev.image_url,
+        ticket_theme: ev.ticket_theme || 'classic',
+        ticket_category: categoryName,
         artist_name: ev.artist_name,
         organizer_email: ev.organizer_email,
         managers: ev.managers || [],
