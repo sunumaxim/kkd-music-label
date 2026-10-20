@@ -41,11 +41,16 @@ Deno.serve(async (req) => {
     }
 
     let number = ticket.ticket_number || genTicketNumber(ticket.event_date);
+    let uniqueNumber = false;
     for (let i = 0; i < 6; i++) {
       const dup = await base44.asServiceRole.entities.Ticket.filter({ ticket_number: number });
-      if (!dup.length) break;
+      if (!dup.some((item) => item.id !== ticket.id)) {
+        uniqueNumber = true;
+        break;
+      }
       number = genTicketNumber(ticket.event_date);
     }
+    if (!uniqueNumber) return Response.json({ error: 'Impossible de générer un numéro de billet unique. Réessayez.' }, { status: 409 });
 
     await base44.asServiceRole.entities.Ticket.update(ticket_id, {
       status: 'valide',
