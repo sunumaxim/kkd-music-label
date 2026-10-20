@@ -118,7 +118,7 @@ export default function AdminLayout() {
       {drawerOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
-          <div className="relative ml-auto w-72 bg-background border-l border-border/20 flex flex-col h-full shadow-2xl">
+          <div className="relative ml-auto w-[min(18rem,calc(100vw-2rem))] max-w-full bg-background border-l border-border/20 flex flex-col h-[100dvh] max-h-[100dvh] min-w-0 shadow-2xl" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="flex items-center justify-between p-5 border-b border-border/20">
               <BrandLogo className="h-8 w-auto" showSubtext={false} />
               <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-xl hover:bg-secondary text-muted-foreground">
@@ -177,7 +177,7 @@ export default function AdminLayout() {
       {/* ── Main content ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile top header */}
-        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border/20 bg-background/90 backdrop-blur-md">
+        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-3 sm:px-4 py-3 border-b border-border/20 bg-background/90 backdrop-blur-md" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
           <img src={LOGO_URL} alt="KKD Music" className="h-7 w-auto" />
           <button
             onClick={() => setDrawerOpen(true)}
@@ -204,14 +204,14 @@ export default function AdminLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
-          <div className="mx-auto w-full max-w-[1440px]">
+        <main className="flex-1 min-w-0 max-w-full overflow-x-clip overflow-y-auto p-3 sm:p-4 md:p-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8">
+          <div className="mx-auto w-full min-w-0 max-w-[1440px]">
             <Outlet />
           </div>
         </main>
 
         {/* ── Mobile Bottom Navigation ── */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border/20 flex items-stretch safe-area-inset-bottom">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border/20 flex items-stretch" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const active = item.path ? isActive(item.path) : false;
