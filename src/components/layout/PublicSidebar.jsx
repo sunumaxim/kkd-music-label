@@ -157,6 +157,16 @@ export default function PublicSidebar() {
               <Video size={18} className={isActive('/videos') && !location.pathname.startsWith('/studio-video') ? 'text-primary' : ''} />
               <span>Clips & Live Sessions</span>
             </Link>
+
+            <Link
+              to="/evenements"
+              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                isActive('/evenements') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+              }`}
+            >
+              <CalendarDays size={18} className={isActive('/evenements') ? 'text-primary' : ''} />
+              <span>Concerts & Billetterie</span>
+            </Link>
           </div>
         </div>
 

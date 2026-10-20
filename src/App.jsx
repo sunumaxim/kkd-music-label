@@ -30,6 +30,8 @@ import ArtistDetail from './pages/ArtistDetail';
 import Music from './pages/Music';
 import ReleaseDetail from './pages/ReleaseDetail';
 import Videos from './pages/Videos';
+import Events from './pages/Events';
+import EventDetail from './pages/EventDetail';
 import VideoDetail from './pages/VideoDetail';
 import Actualites from './pages/Actualites';
 import ArticleDetail from './pages/ArticleDetail';
@@ -58,6 +60,17 @@ import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminEvents from './pages/admin/AdminEvents.jsx';
+import AdminPromotions from './pages/admin/AdminPromotions.jsx';
+import AdminPromoBanners from './pages/admin/AdminPromoBanners.jsx';
+import AdminMailing from './pages/admin/AdminMailing.jsx';
+import AdminSocial from './pages/admin/AdminSocial.jsx';
+import AdminPayments from './pages/admin/AdminPayments.jsx';
+import AdminTickets from './pages/admin/AdminTickets.jsx';
+import AdminStudios from './pages/admin/AdminStudios.jsx';
+import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
+import AdminVideoStudio from './pages/admin/AdminVideoStudio.jsx';
+import AdminLicenses from './pages/admin/AdminLicenses.jsx';
 import DevenirArtiste from './pages/DevenirArtiste.jsx';
 import AccountSettings from './pages/AccountSettings.jsx';
 import SplashScreen from './components/shared/SplashScreen';
@@ -124,8 +137,8 @@ const AuthenticatedApp = () => {
         <Route path="/studio-video" element={<Navigate to="/videos" replace />} />
         <Route path="/actualites" element={<Actualites />} />
         <Route path="/actualites/:id" element={<ArticleDetail />} />
-        <Route path="/evenements" element={<Navigate to="/actualites" replace />} />
-        <Route path="/evenements/:slug" element={<Navigate to="/actualites" replace />} />
+        <Route path="/evenements" element={<Events />} />
+        <Route path="/evenements/:slug" element={<EventDetail />} />
         <Route path="/partenaires" element={<Partnership />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
@@ -162,20 +175,20 @@ const AuthenticatedApp = () => {
           <Route path="/admin/sorties" element={<AdminReleases />} />
           <Route path="/admin/videos" element={<AdminVideos />} />
           <Route path="/admin/actualites" element={<AdminNews />} />
-          <Route path="/admin/evenements" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/evenements" element={<AdminEvents />} />
           <Route path="/admin/demandes" element={<AdminRequests />} />
           <Route path="/admin/invitations" element={<AdminInvites />} />
           <Route path="/admin/publications" element={<AdminPublications />} />
-          <Route path="/admin/promotions" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/promo-banners" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/mailing" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/social" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/paiements" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/tickets" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/studios" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/studio-medias" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/studio-video" element={<Navigate to="/admin" replace />} />
-          <Route path="/admin/documents" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/promotions" element={<AdminPromotions />} />
+          <Route path="/admin/promo-banners" element={<AdminPromoBanners />} />
+          <Route path="/admin/mailing" element={<AdminMailing />} />
+          <Route path="/admin/social" element={<AdminSocial />} />
+          <Route path="/admin/paiements" element={<AdminPayments />} />
+          <Route path="/admin/tickets" element={<AdminTickets />} />
+          <Route path="/admin/studios" element={<AdminStudios />} />
+          <Route path="/admin/studio-medias" element={<AdminMediaStudio />} />
+          <Route path="/admin/studio-video" element={<AdminVideoStudio />} />
+          <Route path="/admin/documents" element={<AdminLicenses />} />
         </Route>
       </Route>
 
