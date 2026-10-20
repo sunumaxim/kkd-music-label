@@ -66,30 +66,19 @@ export default function TicketPurchase({ event }) {
     if (!ref.trim() || !name.trim()) return;
     setSubmitting(true);
     try {
-      await base44.entities.Ticket.create({
+      await base44.functions.invoke('createTicketOrder', {
         event_id: event.id,
-        event_title: event.title,
-        event_date: event.event_date,
-        event_image_url: event.image_url || '',
-        ticket_theme: event.ticket_theme || 'classic',
-        artist_name: event.artist_name || '',
-        organizer_email: event.organizer_email || '',
-        managers: event.managers || [],
-        buyer_email: email,
         buyer_name: name.trim(),
         buyer_phone: phone.trim(),
-        amount: unitPrice,
-        ticket_category: onlineCat?.name || '',
-        commission_pct: event.commission_pct || 10,
+        payment_method: 'wave',
         wave_reference: ref.trim(),
         proof_file_url: proof || '',
-        status: 'en_attente',
       });
       qc.invalidateQueries({ queryKey: ['my-ticket', email, event.id] });
       setStep('pay'); setRef(''); setProof('');
       toast({ title: 'Achat envoyé', description: 'En attente de validation KKD.' });
     } catch (err) {
-      toast({ title: 'Erreur', description: err.message, variant: 'destructive' });
+      toast({ title: 'Erreur', description: err.response?.data?.error || err.message, variant: 'destructive' });
     } finally { setSubmitting(false); }
   };
 
@@ -98,28 +87,16 @@ export default function TicketPurchase({ event }) {
     if (!name.trim()) { toast({ title: 'Saisissez votre nom', variant: 'destructive' }); return; }
     setSquareLoading(true);
     try {
-      const t = await base44.entities.Ticket.create({
+      const order = await base44.functions.invoke('createTicketOrder', {
         event_id: event.id,
-        event_title: event.title,
-        event_date: event.event_date,
-        event_image_url: event.image_url || '',
-        ticket_theme: event.ticket_theme || 'classic',
-        artist_name: event.artist_name || '',
-        organizer_email: event.organizer_email || '',
-        managers: event.managers || [],
-        buyer_email: email,
         buyer_name: name.trim(),
         buyer_phone: phone.trim(),
-        amount: unitPrice,
-        ticket_category: onlineCat?.name || '',
-        commission_pct: event.commission_pct || 10,
         payment_method: 'square',
-        square_order_ref: '',
-        wave_reference: '',
-        proof_file_url: '',
-        status: 'en_attente',
       });
-      const res = await base44.functions.invoke('createSquareCheckout', { ticket_id: t.id, origin: window.location.origin });
+      const t = order?.data?.ticket || order?.ticket;
+      if (!t?.id) throw new Error(order?.data?.error || 'Commande impossible');
+      const resp = await base44.functions.invoke('createSquareCheckout', { ticket_id: t.id, origin: window.location.origin });
+      const res = resp?.data || resp;
       if (!res?.url) throw new Error(res?.error || 'URL Square introuvable');
       qc.invalidateQueries({ queryKey: ['my-ticket', email, event.id] });
       window.location.href = res.url;

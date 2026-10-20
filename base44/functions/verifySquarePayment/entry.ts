@@ -3,14 +3,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 const SQUARE_API = 'https://connect.squareup.com';
 const SQUARE_VERSION = '2024-12-18';
 
+const SAFE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
 function genTicketNumber(eventDate) {
   const ed = eventDate ? new Date(eventDate) : new Date();
   const p = (n, l = 2) => String(n).padStart(l, '0');
   const edPart = `${p(ed.getFullYear() % 100)}${p(ed.getMonth() + 1)}${p(ed.getDate())}`;
-  const now = new Date();
-  const tPart = `${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `KKD-${edPart}-${tPart}${rand}-SM`;
+  const randBytes = new Uint8Array(6);
+  crypto.getRandomValues(randBytes);
+  let rand = '';
+  for (let i = 0; i < 6; i++) rand += SAFE_CHARS[randBytes[i] % SAFE_CHARS.length];
+  return `KKD-${edPart}-${rand}-SM`;
+}
+
+function genSecurityHash() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 Deno.serve(async (req) => {
@@ -46,7 +55,9 @@ Deno.serve(async (req) => {
       try {
         const r = await fetch(`${SQUARE_API}/v2/orders/${order_id}`, { headers });
         const d = await r.json();
-        if (d?.order?.state === 'COMPLETED') confirmed = true;
+        // La commande doit appartenir à CE billet et couvrir son montant (sinon on pourrait valider avec la commande d'un autre)
+        const paid = Number(d?.order?.total_money?.amount) || 0;
+        if (d?.order?.state === 'COMPLETED' && d.order.reference_id === `ticket_${ticket_id}` && paid >= Math.round(Number(ticket.amount) || 0)) confirmed = true;
       } catch (_) {}
     }
 
@@ -84,6 +95,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Ticket.update(ticket_id, {
       status: 'valide',
       ticket_number: number,
+      security_hash: ticket.security_hash || genSecurityHash(),
       validated_date: new Date().toISOString(),
     });
 

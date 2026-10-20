@@ -42,7 +42,7 @@ const authoritativeFunctions = new Set([
   'validateTicketPayment', 'redeemPurchase', 'getMyPurchases',
   'getEventTickets', 'createManualTicket', 'getTicketByNumber',
   'activateTicket', 'checkInTicket', 'generateTicketFile', 'getLicenseDocument',
-  'generateMusicLicense', 'approveVideoCredits', 'generateVideo',
+  'generateMusicLicense', 'approveVideoCredits', 'generateVideo', 'createTicketOrder',
 ]);
 
 function matchesCachedQuery(item, query = {}) {
@@ -92,6 +92,8 @@ if (base44?.functions) {
       }
     } catch (err) {
       console.warn(`[Base44 Functions.${fnName} remote warning, applying local/Firestore logic]:`, err?.message || err);
+      // Fonctions sensibles (billets, paiements) : on remonte l'erreur réelle du serveur, jamais de faux succès local
+      if (authoritativeFunctions.has(fnName)) throw err;
     }
 
     // Traitement backend résilient avec Firestore
