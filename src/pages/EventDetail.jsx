@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -76,6 +76,23 @@ export default function EventDetail() {
   const [showPurchaseMore, setShowPurchaseMore] = useState(false);
   const [downloadingTicket, setDownloadingTicket] = useState(null);
   const [showBatchGen, setShowBatchGen] = useState(false);
+
+  // Lien de paiement direct (/evenements/<slug>?achat=1) : ouvre le formulaire
+  // d'achat et amène le visiteur directement à la billetterie.
+  useEffect(() => {
+    if (!event) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('achat') !== '1') return;
+    setShowPurchaseMore(true);
+  }, [event]);
+
+  useEffect(() => {
+    if (!event) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('achat') !== '1') return;
+    const el = document.getElementById('billets');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [event, showPurchaseMore]);
 
   const handleDownloadTicket = async (ticket_number) => {
     setDownloadingTicket(ticket_number);
@@ -342,6 +359,7 @@ export default function EventDetail() {
         )}
 
         {/* Billetterie KKD / Formulaire d'achat (si aucun billet ou si demande de rachat) */}
+        <div id="billets">
         {(userTickets.length === 0 || showPurchaseMore) && (
           <div className="mb-8 space-y-3">
             {event.is_ticketed ? (
@@ -358,6 +376,7 @@ export default function EventDetail() {
             ) : null}
           </div>
         )}
+        </div>
 
         {/* ── Espace Contrôle d'Accès & Gestion — Strictement réservé aux Organisateurs & Administration ── */}
         {isOrganizerOrAdmin && (
