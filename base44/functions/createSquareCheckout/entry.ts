@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     const location = (locData.locations || []).find((l) => l.status === 'ACTIVE');
     if (!location) return Response.json({ error: 'Aucune localisation Square active trouvée' }, { status: 400 });
 
-    const amount = Math.round(Number(event.ticket_price));
+    const amount = Math.round(Number.isFinite(onlinePrice) && onlinePrice > 0 ? onlinePrice : Number(event.ticket_price));
     const itemTitle = `Billet — ${event.title || 'Événement'}`.slice(0, 200);
     const idempotencyKey = `kkd-ticket-${ticket_id}`;
 
