@@ -57,7 +57,9 @@ export default function AdminLayout() {
     return null;
   }
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => path === '/admin' ? location.pathname === '/admin' : location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const currentLink = navGroups.flatMap((group) => group.links).filter((link) => isActive(link.path)).sort((a, b) => b.path.length - a.path.length)[0];
+  const currentTitle = currentLink?.label || 'Administration';
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -185,9 +187,27 @@ export default function AdminLayout() {
           </button>
         </header>
 
+        {/* Professional workspace header */}
+        <header className="hidden md:flex sticky top-0 z-20 items-center justify-between gap-4 px-8 py-4 border-b border-border/60 bg-background/90 backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">KKD Music · Espace de gestion</p>
+            <h1 className="text-lg font-bold tracking-tight mt-0.5">{currentTitle}</h1>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-xs font-medium text-emerald-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Session administrateur
+            </span>
+            <Link to="/admin/evenements" className="inline-flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
+              <CalendarDays size={14} /> Gérer les événements
+            </Link>
+          </div>
+        </header>
+
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
-          <Outlet />
+          <div className="mx-auto w-full max-w-[1440px]">
+            <Outlet />
+          </div>
         </main>
 
         {/* ── Mobile Bottom Navigation ── */}

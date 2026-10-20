@@ -56,7 +56,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-[1280px] mx-auto space-y-8">
 
       {/* ── Hero Header ── */}
       <div className="flex items-center justify-between pt-1">
@@ -134,14 +134,14 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-mono text-muted-foreground/50 uppercase tracking-widest">Vue d'ensemble</p>
         </div>
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {contentStats.map((s) => {
             const Icon = s.icon;
             return (
               <Link
                 key={s.label}
                 to={s.path}
-                className="bg-card border border-border/40 rounded-2xl p-3.5 active:scale-[0.97] transition-transform hover:border-border/70"
+                className="bg-card border border-border/60 rounded-2xl p-4 sm:p-5 active:scale-[0.99] transition-all hover:border-primary/30 hover:shadow-md"
               >
                 <div className={`w-8 h-8 rounded-xl ${s.bg} flex items-center justify-center mb-2.5`}>
                   <Icon size={16} className={s.color} />

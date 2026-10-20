@@ -183,7 +183,7 @@ export default function PublishEventForm({ user, onClose }) {
               <p className="text-[11px] text-muted-foreground">Ces personnes pourront scanner / rechercher les billets le jour J.</p>
             </div>
             <div className="sm:col-span-2">
-              <TicketThemePicker value={form.ticket_theme} onChange={(v) => set('ticket_theme', v)} />
+              <TicketThemePicker value={form.ticket_theme} onChange={(v) => set('ticket_theme', v)} imageUrl={form.image_url} eventTitle={form.title} eventDate={form.event_date ? new Date(form.event_date).toLocaleDateString('fr-FR') : ''} eventLocation={[form.location, form.city].filter(Boolean).join(' · ')} />
             </div>
             <p className="text-[11px] text-muted-foreground sm:col-span-2">
               Commission KKD : 10 % des ventes. Paiement via Wave ({WAVE_PAY_LINK}).

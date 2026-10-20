@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { ticket_number, security_hash } = await req.json();
     if (!ticket_number) return Response.json({ error: 'ticket_number requis' }, { status: 400 });
+    if (!security_hash) return Response.json({ error: 'QR code incomplet : hash de sécurité requis' }, { status: 403 });
 
     const tickets = await base44.asServiceRole.entities.Ticket.filter({ ticket_number });
     const ticket = tickets[0];
@@ -15,7 +16,7 @@ Deno.serve(async (req) => {
     }
 
     // Vérifier le hash de sécurité si fourni (anti-falsification QR)
-    if (security_hash && ticket.security_hash && security_hash !== ticket.security_hash) {
+    if (!ticket.security_hash || security_hash !== ticket.security_hash) {
       return Response.json({ error: 'Hash de sécurité invalide' }, { status: 403 });
     }
 
@@ -44,6 +45,8 @@ Deno.serve(async (req) => {
       city: ev?.city || null,
       buyer_name: ticket.buyer_name,
       amount: ticket.amount,
+      ticket_theme: ticket.ticket_theme || ev?.ticket_theme || 'classic',
+      ticket_category: ticket.ticket_category || null,
       status: ticket.status,
       checked_in: !!ticket.checked_in,
       checked_in_date: ticket.checked_in_date || null,

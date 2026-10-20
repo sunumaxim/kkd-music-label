@@ -27,11 +27,15 @@ Deno.serve(async (req) => {
     }
 
     // Le billet doit être en attente d'activation
-    if (ticket.status === 'valide') {
-      return Response.json({ error: 'Ce billet est déjà activé', already_active: true, ticket_number }, { status: 400 });
+    if (ticket.status !== 'en_attente') {
+      return Response.json({ error: ticket.status === 'valide' ? 'Ce billet est déjà activé' : 'Ce billet ne peut pas être activé dans son état actuel', already_active: ticket.status === 'valide', ticket_number }, { status: 400 });
     }
-    if (ticket.status === 'annule' || ticket.status === 'refuse') {
-      return Response.json({ error: 'Ce billet a été annulé ou refusé' }, { status: 400 });
+
+    const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
+    const ev = events[0];
+    if (!ev) return Response.json({ error: 'Événement introuvable' }, { status: 404 });
+    if (ev.published_status && ev.published_status !== 'approuve') {
+      return Response.json({ error: 'Cet événement n’est pas encore approuvé pour la billetterie' }, { status: 403 });
     }
 
     const now = new Date().toISOString();
@@ -43,10 +47,6 @@ Deno.serve(async (req) => {
       status: 'valide',
       validated_date: now,
     });
-
-    // Récupérer l'événement pour les infos complètes
-    const events = await base44.asServiceRole.entities.Event.filter({ id: ticket.event_id });
-    const ev = events[0];
 
     return Response.json({
       success: true,

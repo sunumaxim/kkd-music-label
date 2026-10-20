@@ -18,9 +18,9 @@ import { fr } from 'date-fns/locale';
 
 function extractTicketNumber(scanned) {
   if (!scanned) return '';
-  const match = scanned.match(/\/billet\/(.+)/);
-  if (match) return match[1];
-  return scanned.trim();
+  const match = scanned.match(/\/billet\/([^/?#]+)/);
+  if (match) return decodeURIComponent(match[1]);
+  return scanned.trim().split(/[?#]/)[0];
 }
 
 const FILTERS = [
