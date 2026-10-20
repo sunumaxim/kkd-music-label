@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { slugify } from '@/lib/slugify';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -71,7 +73,7 @@ export default function Home() {
           </div>
           <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.filter((event) => (!event.published_status || event.published_status === 'approuve') && new Date(event.event_date) >= new Date()).slice(0, 3).map((event) => (
-              <a key={event.id} href={`/evenements/${String(event.title || 'evenement').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}--${event.id}`} className="group overflow-hidden rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors">
+              <Link key={event.id} to={`/evenements/${slugify(event.title || 'evenement')}--${event.id}`} className="group overflow-hidden rounded-2xl border border-border bg-card hover:border-primary/40 transition-colors">
                 <div className="relative aspect-[16/9] bg-secondary overflow-hidden">
                   {event.image_url ? <img src={event.image_url} alt={event.title || 'Événement KKD Music'} loading="lazy" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center text-primary font-bold">KKD MUSIC LIVE</div>}
                   <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-bold">{event.event_date ? new Date(event.event_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : 'À venir'}</span>
@@ -84,7 +86,7 @@ export default function Home() {
                     <span className="text-sm text-primary font-bold">Billets →</span>
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
