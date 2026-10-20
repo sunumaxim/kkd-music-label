@@ -44,7 +44,12 @@ export default function TicketPurchase({ event }) {
   React.useEffect(() => { if (me?.full_name) setName(me.full_name); }, [me]);
 
   const capacityFull = event.ticket_capacity > 0 && (event.tickets_sold || 0) >= event.ticket_capacity;
-  const priceStr = `${Number(event.ticket_price || 0).toLocaleString('fr-FR')} FCFA`;
+  const onlineCat = (event.ticket_categories || []).find((c) => c.channel === 'online');
+  const doorCat = (event.ticket_categories || []).find((c) => c.channel === 'door');
+  const unitPrice = Number(onlineCat?.price ?? event.ticket_price) || 0;
+  const closeAt = event.online_sales_end || event.event_date;
+  const salesClosed = !!closeAt && new Date(closeAt).getTime() <= Date.now();
+  const priceStr = `${unitPrice.toLocaleString('fr-FR')} FCFA`;
 
   const handleProof = async (e) => {
     const file = e.target.files[0];
@@ -73,7 +78,8 @@ export default function TicketPurchase({ event }) {
         buyer_email: email,
         buyer_name: name.trim(),
         buyer_phone: phone.trim(),
-        amount: Number(event.ticket_price) || 0,
+        amount: unitPrice,
+        ticket_category: onlineCat?.name || '',
         commission_pct: event.commission_pct || 10,
         wave_reference: ref.trim(),
         proof_file_url: proof || '',
@@ -104,7 +110,8 @@ export default function TicketPurchase({ event }) {
         buyer_email: email,
         buyer_name: name.trim(),
         buyer_phone: phone.trim(),
-        amount: Number(event.ticket_price) || 0,
+        amount: unitPrice,
+        ticket_category: onlineCat?.name || '',
         commission_pct: event.commission_pct || 10,
         payment_method: 'square',
         square_order_ref: '',
@@ -149,6 +156,17 @@ export default function TicketPurchase({ event }) {
     );
   }
 
+  if (salesClosed) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-5 text-center">
+        <p className="font-heading font-bold">Vente en ligne terminée</p>
+        <p className="text-xs text-muted-foreground">
+          {doorCat ? `Il reste des billets à l'entrée : ${Number(doorCat.price).toLocaleString('fr-FR')} FCFA.` : "Rendez-vous à l'entrée de l'événement."}
+        </p>
+      </div>
+    );
+  }
+
   if (capacityFull) {
     return (
       <div className="bg-card border border-destructive/30 rounded-2xl p-5 text-center">
@@ -165,7 +183,7 @@ export default function TicketPurchase({ event }) {
         <span className="text-[11px] font-mono uppercase tracking-widest">Billetterie KKD</span>
       </div>
 
-      <div className="text-2xl font-display font-extrabold">{priceStr}</div>
+      <div className="text-2xl font-display font-extrabold">{onlineCat?.name ? `${onlineCat.name} · ` : ''}{priceStr}</div>
 
       {me ? (
         step === 'pay' ? (

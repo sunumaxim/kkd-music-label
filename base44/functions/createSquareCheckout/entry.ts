@@ -39,6 +39,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Cet événement n'est pas payant" }, { status: 400 });
     }
 
+    const closeAt = event.online_sales_end || event.event_date;
+    if (closeAt && new Date(closeAt).getTime() <= Date.now()) {
+      return Response.json({ error: 'La vente en ligne est terminée' }, { status: 400 });
+    }
+    const onlineCat = (Array.isArray(event.ticket_categories) ? event.ticket_categories : []).find((c) => c && c.channel === 'online');
+    const onlinePrice = Number(onlineCat?.price ?? event.ticket_price);
+
     const capacityFull = Number(event.ticket_capacity) > 0 && (Number(event.tickets_sold) || 0) >= Number(event.ticket_capacity);
     if (capacityFull) return Response.json({ error: 'Événement complet' }, { status: 400 });
 
