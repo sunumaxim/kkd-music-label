@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FileText, Music, Clock, CheckCircle, XCircle, LogOut, Trash2, Plus, ExternalLink, Pencil,
-  User, LayoutDashboard, UserCheck, Megaphone, CalendarDays, Ticket, Wallet, Loader2, Sparkles, ChevronRight
+  User, LayoutDashboard, UserCheck, CalendarDays, Ticket, Wallet, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/shared/NotificationBell';
