@@ -48,6 +48,7 @@ import Playlists from './pages/Playlists';
 import DocumentViewer from './pages/DocumentViewer';
 import ArtistLinktree from './pages/ArtistLinktree';
 import Showcase from './pages/Showcase';
+import ConcertLanding from './pages/ConcertLanding';
 
 // Admin layout & pages
 import AdminLayout from './components/layout/AdminLayout';
@@ -194,6 +195,7 @@ const AuthenticatedApp = () => {
 
       <Route path="/l/:slug" element={<ArtistLinktree />} />
       <Route path="/showcase" element={<Showcase />} />
+      <Route path="/concert/:slug" element={<ConcertLanding />} />
       <Route path="/document/:id" element={<DocumentViewer />} />
       <Route path="/auth/tiktok/callback" element={<Navigate to="/videos" replace />} />
       <Route path="/auth/callback" element={<Navigate to="/videos" replace />} />
