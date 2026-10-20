@@ -257,16 +257,18 @@ export default function BatchTicketGenerator({ event, user }) {
               />
             </div>
             <div>
-              <Label className="text-xs mb-1.5 block font-bold">Montant unitaire (FCFA)</Label>
+              <Label className="text-xs mb-1.5 block font-bold">Prix fixé pour cette catégorie (FCFA)</Label>
               <Input
                 type="number"
                 min="0"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="bg-background border-border font-bold"
+                readOnly
+                aria-label="Prix calculé à partir de la configuration de l'événement"
+                className="bg-secondary/50 border-border font-bold cursor-not-allowed"
               />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground">Le prix final est recalculé côté serveur à partir de la grille tarifaire de l’événement pour éviter toute modification frauduleuse.</p>
 
           {!blank && (
             <div className="grid sm:grid-cols-2 gap-3">

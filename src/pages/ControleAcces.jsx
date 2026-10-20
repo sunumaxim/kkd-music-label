@@ -221,7 +221,6 @@ export default function ControleAcces() {
         buyer_email: newTicket.buyer_email,
         buyer_phone: newTicket.buyer_phone,
         buyer_location: newTicket.buyer_location,
-        amount: Number(newTicket.amount) || selected.ticket_price || 0,
         quantity: Number(newTicket.quantity) || 1,
         ticket_category: newTicket.ticket_category || 'Pass Standard',
         ticket_theme: selected.ticket_theme || 'classic',
@@ -629,16 +628,16 @@ export default function ControleAcces() {
                   </div>
                   <div className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2">
                     <span className="text-xs text-muted-foreground">Prix du billet</span>
-                    <span className="font-bold text-sm">{Number(newTicket.amount || selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
+                    <span className="font-bold text-sm">{Number(selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
                   </div>
-                  <Input placeholder={`Prix personnalisé (défaut: ${Number(selected.ticket_price || 0).toLocaleString('fr-FR')})`} type="number" value={newTicket.amount} onChange={(e) => setNewTicket({ ...newTicket, amount: e.target.value })} />
+                  <p className="text-[10px] text-muted-foreground">Le tarif est calculé par le serveur depuis la configuration de l’événement. Toute remise exceptionnelle doit être configurée avant l’émission du billet.</p>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Nombre de billets</label>
                     <div className="flex items-center gap-2">
                       <Button size="sm" variant="outline" type="button" onClick={() => setNewTicket({ ...newTicket, quantity: Math.max(1, (Number(newTicket.quantity) || 1) - 1) })} className="h-8 w-8 p-0">−</Button>
                       <Input type="number" min={1} max={50} value={newTicket.quantity} onChange={(e) => setNewTicket({ ...newTicket, quantity: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} className="text-center w-16" />
                       <Button size="sm" variant="outline" type="button" onClick={() => setNewTicket({ ...newTicket, quantity: Math.min(50, (Number(newTicket.quantity) || 1) + 1) })} className="h-8 w-8 p-0">+</Button>
-                      <span className="text-xs text-muted-foreground ml-1">× {Number(newTicket.amount || selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
+                      <span className="text-xs text-muted-foreground ml-1">× {Number(selected.ticket_price || 0).toLocaleString('fr-FR')} FCFA</span>
                     </div>
                   </div>
                   <Button size="sm" disabled={!newTicket.buyer_name.trim() || !newTicket.buyer_phone.trim() || !newTicket.buyer_location.trim() || creatingTicket} onClick={createTicket} className="gap-2 w-full">
