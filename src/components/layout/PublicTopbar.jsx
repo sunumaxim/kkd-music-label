@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
-  Search, ChevronLeft, ChevronRight, Upload, Library, ListMusic,
+  Search, ChevronLeft, ChevronRight, Upload,
   LogOut, LayoutDashboard, X, ShieldCheck, Settings
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -18,7 +18,6 @@ const QUICK_FILTERS = [
   { label: 'Morceaux', path: '/musique' },
   { label: 'Artistes', path: '/artistes' },
   { label: 'Clips', path: '/videos' },
-  { label: 'Concerts', path: '/evenements' },
 ];
 
 export default function PublicTopbar() {
@@ -161,16 +160,6 @@ export default function PublicTopbar() {
                 <DropdownMenuItem asChild>
                   <Link to="/mon-espace" className="flex items-center gap-2 cursor-pointer hover:bg-secondary">
                     <LayoutDashboard size={15} /> Tableau de Bord Artiste / Label
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/mes-achats" className="flex items-center gap-2 cursor-pointer hover:bg-secondary">
-                    <Library size={15} /> Mes Titres Achetés & Masters
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/playlists" className="flex items-center gap-2 cursor-pointer hover:bg-secondary">
-                    <ListMusic size={15} /> Mes Playlists
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

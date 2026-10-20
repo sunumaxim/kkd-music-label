@@ -24,7 +24,6 @@ import ArtistProfileView from '@/components/partner/ArtistProfileView';
 import ArtistAccessRequestForm from '@/components/partner/ArtistAccessRequestForm';
 import ArtistEarnings from '@/components/partner/ArtistEarnings';
 import PartnerOverview from '@/components/partner/PartnerOverview';
-import LicenseManager from '@/components/partner/LicenseManager';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -56,17 +55,17 @@ const REQUEST_LABELS = {
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'artiste', label: 'Mon Artiste', icon: User },
-  { id: 'revenus', label: 'Revenus', icon: Wallet },
   { id: 'publications', label: 'Publications', icon: Music },
-  { id: 'licences', label: 'Licences', icon: FileText },
-  { id: 'promotion', label: 'Promotion', icon: Megaphone },
-  { id: 'evenements', label: 'Événements', icon: CalendarDays },
   { id: 'demandes', label: 'Demandes', icon: FileText },
 ];
 
 export default function PartnerDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dashboard');
+  const [activeTab, setActiveTab] = useState(
+    TABS.some((tab) => tab.id === searchParams.get('tab'))
+      ? searchParams.get('tab')
+      : 'dashboard'
+  );
   const [showPublishForm, setShowPublishForm] = useState(false);
   const [editingPublication, setEditingPublication] = useState(null);
   const [showPublishEventForm, setShowPublishEventForm] = useState(false);
@@ -453,21 +452,7 @@ export default function PartnerDashboard() {
                 </button>
               )}
             </div>
-
-            {/* Studio Vidéo IA */}
-            <Link to="/studio-video"
-              className="flex items-center gap-4 p-5 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent hover:from-primary/20 transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/30 transition-colors">
-                <Sparkles size={24} className="text-primary" />
-              </div>
-              <div className="text-left flex-1">
-                <p className="font-display font-extrabold text-base">Studio Vidéo IA</p>
-                <p className="text-sm text-muted-foreground">Générez des clips animés à partir de vos images</p>
-              </div>
-              <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
-            </Link>
-
-          </div>
+</div>
         )}
 
         {/* ── ARTISTE TAB ── */}
@@ -635,28 +620,7 @@ export default function PartnerDashboard() {
             )}
           </div>
         )}
-
-        {/* ── LICENCES TAB ── */}
-        {activeTab === 'licences' && (
-          <LicenseManager
-            user={user}
-            linkedArtistId={linkedArtistId}
-            linkedArtistName={linkedArtistName}
-            managedArtists={managedArtists}
-          />
-        )}
-
-        {/* ── PROMOTION TAB ── */}
-        {activeTab === 'promotion' && (
-          <div className="space-y-6">
-            {linkedArtistName ? (
-              <PartnerPromoVideo artistName={linkedArtistName} />
-            ) : (
-              <div className="bg-card border border-border/50 rounded-2xl p-6 text-center text-sm text-muted-foreground">
-                Réclamez votre profil artiste pour générer des vidéos promo de vos sorties.
-              </div>
-            )}
-            <PartnerPromotions user={user} />
+<PartnerPromotions user={user} />
           </div>
         )}
 
