@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  Home, Compass, Search, Music2, Users, Video, CalendarDays,
+  Home, Search, Music2, Users, Video, CalendarDays, Newspaper,
   Library, ListMusic, Ticket, ShieldCheck, Heart,
   Plus, Sparkles, CheckCircle2, ChevronRight, Settings
 } from 'lucide-react';
@@ -93,15 +93,15 @@ export default function PublicSidebar() {
         </Link>
 
         <Link
-          to="/explorer"
+          to="/actualites"
           className={`flex items-center gap-4 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-            isActive('/explorer')
+            isActive('/actualites')
               ? 'bg-primary/10 text-primary font-bold shadow-sm'
               : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
           }`}
         >
-          <Compass size={20} className={isActive('/explorer') ? 'text-primary' : ''} />
-          <span>Explorer & Tendances</span>
+          <Newspaper size={20} className={isActive('/actualites') ? 'text-primary' : ''} />
+          <span>Actualités</span>
         </Link>
 
         <Link
@@ -135,7 +135,7 @@ export default function PublicSidebar() {
                 <Music2 size={18} className={isActive('/musique') ? 'text-primary' : ''} />
                 <span>Musique & Singles</span>
               </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 font-mono font-bold border border-amber-500/30">D2C</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 font-mono font-bold border border-amber-500/30">Écoute</span>
             </Link>
 
             <Link
@@ -157,45 +157,11 @@ export default function PublicSidebar() {
               <Video size={18} className={isActive('/videos') && !location.pathname.startsWith('/studio-video') ? 'text-primary' : ''} />
               <span>Clips & Live Sessions</span>
             </Link>
-
-            <Link
-              to="/studio-video"
-              className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/studio-video') ? 'bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Sparkles size={18} className="text-amber-400" />
-                <span>Studio Vidéo & TikTok</span>
-              </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono font-bold border border-amber-500/30">Créer</span>
-            </Link>
-
-            <Link
-              to="/evenements"
-              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/evenements') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
-            >
-              <CalendarDays size={18} className={isActive('/evenements') ? 'text-primary' : ''} />
-              <span>Concerts & Billetterie</span>
-            </Link>
-
-            <Link
-              to="/studio-video"
-              className={`flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                isActive('/studio-video') ? 'bg-primary/10 text-primary font-bold' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}
-            >
-              <Sparkles size={18} className={isActive('/studio-video') ? 'text-primary' : ''} />
-              <span>Studio Vidéo IA</span>
-              <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold uppercase">New</span>
-            </Link>
           </div>
         </div>
 
         {/* ── Spotify "Votre Bibliothèque" Module ── */}
-        <div className="bg-secondary/60 border border-border rounded-2xl p-3 space-y-2.5">
+        <div className="hidden bg-secondary/60 border border-border rounded-2xl p-3 space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <Link to="/mes-achats" className="flex items-center gap-2 text-xs font-bold text-foreground hover:text-primary transition-colors">
               <Library size={16} className="text-primary" />
@@ -350,7 +316,7 @@ export default function PublicSidebar() {
         </div>
 
         {/* ── Espace Partenaires & Créateurs (Audiomack Creators) ── */}
-        <div className="bg-gradient-to-br from-primary/5 via-secondary/40 to-background border border-primary/20 rounded-2xl p-3.5 space-y-2">
+        <div className="hidden bg-gradient-to-br from-primary/5 via-secondary/40 to-background border border-primary/20 rounded-2xl p-3.5 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
               <Sparkles size={13} /> Espace Créateurs

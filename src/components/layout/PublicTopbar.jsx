@@ -89,7 +89,7 @@ export default function PublicTopbar() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Que souhaitez-vous écouter ou acheter ?"
+            placeholder="Rechercher un artiste, un titre ou un clip…"
             className="w-full pl-10 pr-9 py-2 rounded-full bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all shadow-inner"
           />
           {q && (
@@ -123,14 +123,14 @@ export default function PublicTopbar() {
 
       {/* ── Droite : Actions Vente & Profil ── */}
       <div className="flex items-center gap-2 ml-auto shrink-0">
-        {/* Action Button Publier / Vendre ma musique */}
+        {/* Action Button Publier / Soumettre ma musique */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('kkd:publish'))}
           className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary text-white text-xs sm:text-sm font-bold hover:brightness-110 shadow-md shadow-primary/20 transition-all active:scale-95 shrink-0"
         >
           <Upload size={14} />
-          <span className="hidden sm:inline">Vendre ma musique</span>
-          <span className="sm:hidden">Vendre</span>
+          <span className="hidden sm:inline">Soumettre ma musique</span>
+          <span className="sm:hidden">Soumettre</span>
         </button>
 
         {user ? (

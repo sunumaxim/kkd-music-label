@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import {
-  Users, Music, Video, Newspaper, CalendarDays,
-  LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft,
-  Menu, X, ChevronRight, UploadCloud, Mail, Share2, Megaphone, Image as ImageIcon, Wallet, Ticket, Mic, Scissors, FileText,
-  ShieldCheck, Sparkles
-} from 'lucide-react';
+import { Users, Music, Video, Newspaper, LayoutDashboard, Inbox, UserPlus, LogOut, ArrowLeft, Menu, X, ChevronRight, UploadCloud, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import BrandLogo from '@/components/brand/BrandLogo';
 import { LOGO_MAIN as LOGO_URL } from '@/lib/logos';
@@ -14,41 +9,25 @@ const navGroups = [
   {
     label: null,
     links: [
-      { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+      { label: 'Vue d’ensemble', path: '/admin', icon: LayoutDashboard },
     ]
   },
   {
-    label: 'Administration & Rôles',
+    label: 'Accès',
     links: [
-      { label: 'Utilisateurs & Accès', path: '/admin/utilisateurs', icon: ShieldCheck },
+      { label: 'Utilisateurs', path: '/admin/utilisateurs', icon: ShieldCheck },
+      { label: 'Demandes artistes', path: '/admin/demandes', icon: Inbox },
+      { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
     ]
   },
   {
-    label: 'Contenu',
+    label: 'Catalogue musical',
     links: [
       { label: 'Artistes', path: '/admin/artistes', icon: Users },
-      { label: 'Sorties', path: '/admin/sorties', icon: Music },
-      { label: 'Vidéos', path: '/admin/videos', icon: Video },
+      { label: 'Sorties musicales', path: '/admin/sorties', icon: Music },
+      { label: 'Clips & vidéos', path: '/admin/videos', icon: Video },
       { label: 'Actualités', path: '/admin/actualites', icon: Newspaper },
-      { label: 'Événements', path: '/admin/evenements', icon: CalendarDays },
-    ]
-  },
-  {
-    label: 'Partenaires',
-    links: [
-      { label: 'Demandes', path: '/admin/demandes', icon: Inbox },
-      { label: 'Publications', path: '/admin/publications', icon: UploadCloud },
-      { label: 'Promotions', path: '/admin/promotions', icon: Megaphone },
-      { label: 'Bannières & Annonces', path: '/admin/promo-banners', icon: ImageIcon },
-      { label: 'Mailing', path: '/admin/mailing', icon: Mail },
-      { label: 'Artistes & Labels', path: '/admin/invitations', icon: UserPlus },
-      { label: 'Réseaux Sociaux', path: '/admin/social', icon: Share2 },
-      { label: 'Paiements Wave', path: '/admin/paiements', icon: Wallet },
-      { label: 'Billetterie', path: '/admin/tickets', icon: Ticket },
-      { label: 'Studios & Caméramans', path: '/admin/studios', icon: Mic },
-      { label: 'Studio Médias', path: '/admin/studio-medias', icon: Scissors },
-      { label: 'Studio Vidéo IA', path: '/admin/studio-video', icon: Sparkles },
-      { label: 'Documents & Licences', path: '/admin/documents', icon: FileText },
+      { label: 'Soumissions à valider', path: '/admin/publications', icon: UploadCloud },
     ]
   },
 ];

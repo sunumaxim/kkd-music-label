@@ -8,14 +8,9 @@ import LatestReleases from '@/components/home/LatestReleases';
 import TrendingSongs from '@/components/home/TrendingSongs';
 import TopAlbums from '@/components/home/TopAlbums';
 import PopularArtists from '@/components/home/PopularArtists';
-import PlaylistsShelf from '@/components/home/PlaylistsShelf';
-import RecentlyPlayed from '@/components/home/RecentlyPlayed';
-import UpcomingEvents from '@/components/home/UpcomingEvents';
 import LatestVideos from '@/components/home/LatestVideos';
 import LatestNews from '@/components/home/LatestNews';
-import StudioCarousel from '@/components/home/StudioCarousel';
 import PartnersCTA from '@/components/home/PartnersCTA';
-import SponsoredShelf from '@/components/home/SponsoredShelf';
 import usePullToRefresh from '@/hooks/usePullToRefresh';
 
 export default function Home() {
@@ -41,16 +36,11 @@ export default function Home() {
     queryKey: ['news-home'],
     queryFn: () => base44.entities.News.list('-created_date', 4),
   });
-  const { data: events = [] } = useQuery({
-    queryKey: ['events-home'],
-    queryFn: () => base44.entities.Event.list('event_date', 6),
-  });
-
   return (
     <div ref={containerRef}>
       <PageMeta
         title="KKD Music — Streaming & Distribution Musicale Africaine"
-        description="Écoutez la musique africaine en streaming illimité. Artistes, clips, concerts, licences musicales et billetterie sur KKD Music — la plateforme de la scène ouest-africaine."
+        description="Découvrez les artistes KKD Music, écoutez leurs sorties, regardez leurs clips et suivez les actualités du label."
       />
       {(isRefreshing || pullY > 20) && (
         <div className="md:hidden flex justify-center py-3 text-primary">
@@ -62,9 +52,7 @@ export default function Home() {
         </div>
       )}
 
-      <HeroSlider releases={releases} videos={videos} events={events} news={news} />
-
-      <SponsoredShelf />
+      <HeroSlider releases={releases} videos={videos} events={[]} news={news} />
 
       {/* 1. Nouveautés */}
       <LatestReleases releases={releases} />
@@ -78,17 +66,9 @@ export default function Home() {
       {/* 4. Artistes populaires */}
       <PopularArtists artists={artists} />
 
-      {/* 5. Playlists */}
-      <PlaylistsShelf />
-
-      {/* 6. Recommandé pour toi */}
-      <RecentlyPlayed />
-
-      {/* Sections marque */}
-      <UpcomingEvents events={events} />
+      {/* Sections essentielles du label */}
       <LatestVideos videos={videos} />
       <LatestNews news={news} />
-      <StudioCarousel />
       <PartnersCTA />
     </div>
   );

@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { mediaSyncSchedulerService } from '@/services/mediaSyncSchedulerService';
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -34,8 +33,6 @@ import Videos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
 import Actualites from './pages/Actualites';
 import ArticleDetail from './pages/ArticleDetail';
-import Events from './pages/Events';
-import EventDetail from './pages/EventDetail';
 import Partnership from './pages/Partnership';
 import About from './pages/About';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -47,7 +44,6 @@ import ControleAcces from './pages/ControleAcces';
 import PublicVerifTicket from './pages/PublicVerifTicket';
 import Playlists from './pages/Playlists';
 import DocumentViewer from './pages/DocumentViewer';
-import VideoStudio from './pages/VideoStudio';
 import ArtistLinktree from './pages/ArtistLinktree';
 import Showcase from './pages/Showcase';
 
@@ -58,24 +54,12 @@ import AdminArtists from './pages/admin/AdminArtists.jsx';
 import AdminReleases from './pages/admin/AdminReleases';
 import AdminVideos from './pages/admin/AdminVideos.jsx';
 import AdminNews from './pages/admin/AdminNews.jsx';
-import AdminEvents from './pages/admin/AdminEvents';
 import AdminRequests from './pages/admin/AdminRequests';
 import AdminInvites from './pages/admin/AdminInvites.jsx';
 import AdminPublications from './pages/admin/AdminPublications';
-import AdminPromotions from './pages/admin/AdminPromotions';
-import AdminPromoBanners from './pages/admin/AdminPromoBanners';
-import AdminMailing from './pages/admin/AdminMailing';
-import AdminSocial from './pages/admin/AdminSocial';
-import AdminPayments from './pages/admin/AdminPayments';
-import AdminTickets from './pages/admin/AdminTickets';
-import AdminStudios from './pages/admin/AdminStudios.jsx';
-import AdminMediaStudio from './pages/admin/AdminMediaStudio.jsx';
-import AdminLicenses from './pages/admin/AdminLicenses.jsx';
-import AdminVideoStudio from './pages/admin/AdminVideoStudio.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
 import DevenirArtiste from './pages/DevenirArtiste.jsx';
 import AccountSettings from './pages/AccountSettings.jsx';
-import TikTokOAuthCallback from './pages/TikTokOAuthCallback';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
@@ -137,11 +121,11 @@ const AuthenticatedApp = () => {
         <Route path="/musique/:slug" element={<ReleaseDetail />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/videos/:id" element={<VideoDetail />} />
-        <Route path="/studio-video" element={<VideoStudio />} />
+        <Route path="/studio-video" element={<Navigate to="/videos" replace />} />
         <Route path="/actualites" element={<Actualites />} />
         <Route path="/actualites/:id" element={<ArticleDetail />} />
-        <Route path="/evenements" element={<Events />} />
-        <Route path="/evenements/:slug" element={<EventDetail />} />
+        <Route path="/evenements" element={<Navigate to="/actualites" replace />} />
+        <Route path="/evenements/:slug" element={<Navigate to="/actualites" replace />} />
         <Route path="/partenaires" element={<Partnership />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/confidentialite" element={<PrivacyPolicy />} />
@@ -178,39 +162,34 @@ const AuthenticatedApp = () => {
           <Route path="/admin/sorties" element={<AdminReleases />} />
           <Route path="/admin/videos" element={<AdminVideos />} />
           <Route path="/admin/actualites" element={<AdminNews />} />
-          <Route path="/admin/evenements" element={<AdminEvents />} />
+          <Route path="/admin/evenements" element={<Navigate to="/admin" replace />} />
           <Route path="/admin/demandes" element={<AdminRequests />} />
           <Route path="/admin/invitations" element={<AdminInvites />} />
           <Route path="/admin/publications" element={<AdminPublications />} />
-          <Route path="/admin/promotions" element={<AdminPromotions />} />
-          <Route path="/admin/promo-banners" element={<AdminPromoBanners />} />
-          <Route path="/admin/mailing" element={<AdminMailing />} />
-          <Route path="/admin/social" element={<AdminSocial />} />
-          <Route path="/admin/paiements" element={<AdminPayments />} />
-          <Route path="/admin/tickets" element={<AdminTickets />} />
-          <Route path="/admin/studios" element={<AdminStudios />} />
-          <Route path="/admin/studio-medias" element={<AdminMediaStudio />} />
-          <Route path="/admin/studio-video" element={<AdminVideoStudio />} />
-          <Route path="/admin/documents" element={<AdminLicenses />} />
+          <Route path="/admin/promotions" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/promo-banners" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/mailing" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/social" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/paiements" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/tickets" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/studios" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/studio-medias" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/studio-video" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/documents" element={<Navigate to="/admin" replace />} />
         </Route>
       </Route>
 
       <Route path="/l/:slug" element={<ArtistLinktree />} />
       <Route path="/showcase" element={<Showcase />} />
       <Route path="/document/:id" element={<DocumentViewer />} />
-      <Route path="/auth/tiktok/callback" element={<TikTokOAuthCallback />} />
-      <Route path="/auth/callback" element={<TikTokOAuthCallback />} />
+      <Route path="/auth/tiktok/callback" element={<Navigate to="/videos" replace />} />
+      <Route path="/auth/callback" element={<Navigate to="/videos" replace />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
 
 function App() {
-  useEffect(() => {
-    // Initialisation du planificateur de synchronisation des clips et chansons à 14h
-    mediaSyncSchedulerService.init14hScheduler();
-  }, []);
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>

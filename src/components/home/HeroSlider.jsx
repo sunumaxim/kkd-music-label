@@ -47,10 +47,10 @@ function BrandFallback() {
       <div className="relative z-10 text-center px-4 flex flex-col items-center">
         <BrandLogo height={64} />
         <p className="mt-6 text-muted-foreground text-base md:text-lg" style={{ fontWeight: 500 }}>La scène ouest-africaine, en direct de chez vous.</p>
-        <p className="mt-2 text-xs text-muted-foreground uppercase tracking-widest">Streaming · Vente directe · Événements</p>
+        <p className="mt-2 text-xs text-muted-foreground uppercase tracking-widest">Musique · Artistes · Clips</p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/musique" className="kkd-btn-primary"><Play size={16} fill="currentColor" /> Écouter maintenant</Link>
-          <Link to="/partenaires" className="kkd-btn-outline">Travailler avec nous</Link>
+          <Link to="/devenir-artiste" className="kkd-btn-outline">Proposer ma musique</Link>
         </div>
       </div>
     </section>

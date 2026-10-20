@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Search, Library, User } from 'lucide-react';
+import { Home, Music2, Users, Video, User } from 'lucide-react';
 
 const TABS = [
   { label: 'Accueil', path: '/', icon: Home },
-  { label: 'Explorer', path: '/explorer', icon: Compass },
-  { label: 'Recherche', path: '/recherche', icon: Search },
-  { label: 'Bibliothèque', path: '/mes-achats', icon: Library },
-  { label: 'Mon Espace', path: '/mon-espace', icon: User },
+  { label: 'Musique', path: '/musique', icon: Music2 },
+  { label: 'Artistes', path: '/artistes', icon: Users },
+  { label: 'Clips', path: '/videos', icon: Video },
+  { label: 'Mon espace', path: '/mon-espace', icon: User },
 ];
 
 export default function MobileBottomTabs() {
