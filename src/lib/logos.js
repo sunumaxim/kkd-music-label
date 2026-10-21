@@ -3,19 +3,19 @@
 
 // Logo principal — en-tête, navbar, splash, footer, administration
 export const LOGO_MAIN =
-  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 // Logo section Artistes — pages artistes, Linktree, espace partenaire
 export const LOGO_ARTIST =
-  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 // Logo UI / documentation — Open Graph, partages sociaux, favicon
 export const LOGO_UI =
-  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 // Logo signature — documents officiels, licences, contrats, emails
 export const LOGO_SIGNATURE =
-  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+  'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 // Alias pour rétro-compatibilité
 export const KKD_LOGO = LOGO_MAIN;

@@ -3,7 +3,7 @@ import { jsPDF } from 'npm:jspdf@4.2.1';
 import qrcode from 'npm:qrcode-generator@1.4.4';
 import { getTheme } from '../../shared/ticketThemes.ts';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 function bufToB64(buf) {
   const bytes = new Uint8Array(buf);

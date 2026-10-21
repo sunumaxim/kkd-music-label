@@ -9,7 +9,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import BrandLogo from "@/components/brand/BrandLogo";
 
-const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png";
+const LOGO_URL = "https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");

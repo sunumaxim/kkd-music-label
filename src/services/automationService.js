@@ -7,7 +7,7 @@ import { localDb } from '@/api/localStore';
 
 const LOGS_STORAGE_KEY = 'kkd_automation_execution_logs_v1';
 const SETTINGS_STORAGE_KEY = 'kkd_automation_rules_config_v1';
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 
 export const AUTOMATION_TYPES = {
   event_reminder: {

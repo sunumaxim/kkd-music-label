@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2, Megaphone, AlertTriangle } from 'lucide-react';
 
-const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/f5ef11765_file_00000000648c81f4ace37a820cecfea2.png';
+const LOGO_URL = 'https://media.base44.com/images/public/6a1cbc29f199c6e829efde07/3a6e79b2c_generated_ba12aee6.png';
 const ACCENT = '#E60000';
 
 const FORMATS = {
