@@ -3,7 +3,18 @@
 import { createClient } from '@base44/sdk';
 import { localDb } from './localStore';
 import { appParams } from '@/lib/app-params';
-import { firestoreService } from '../lib/firebase';
+
+// Firebase (Firestore) n'est plus chargé au démarrage : il n'est téléchargé
+// qu'au premier besoin réel, ce qui accélère fortement l'ouverture du site.
+let firestoreServicePromise = null;
+function loadFirestore() {
+  if (!firestoreServicePromise) {
+    firestoreServicePromise = import('@/lib/firebase')
+      .then((mod) => mod.firestoreService)
+      .catch(() => null);
+  }
+  return firestoreServicePromise;
+}
 
 // Interception préventive des logs d'erreurs réseau de l'intercepteur Axios du SDK Base44
 if (typeof window !== 'undefined' && console && console.error) {
@@ -99,13 +110,16 @@ if (base44?.functions) {
     // Traitement backend résilient avec Firestore
     if (fnName === 'incrementPlay') {
       if (params?.release_id) {
-        firestoreService.getDocument('releases', params.release_id).then(rel => {
-          if (rel) {
-            firestoreService.setDocument('releases', rel.id, {
-              plays_count: (rel.plays_count || 0) + 1
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+        loadFirestore().then((fs) => {
+          if (!fs) return;
+          fs.getDocument('releases', params.release_id).then(rel => {
+            if (rel) {
+              fs.setDocument('releases', rel.id, {
+                plays_count: (rel.plays_count || 0) + 1
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        });
       }
       return { success: true };
     }
@@ -120,14 +134,17 @@ if (base44?.functions) {
         sent_at: new Date().toISOString(),
         status: 'envoye'
       };
-      firestoreService.setDocument('mailings', mailingRecord.id, mailingRecord).catch(() => {});
-      firestoreService.addDocument('notifications', {
-        title: params.subject || 'Nouveau message officiel',
-        message: params.message || '',
-        created_at: new Date().toISOString(),
-        user_email: 'all',
-        read: false
-      }).catch(() => {});
+      loadFirestore().then((fs) => {
+        if (!fs) return;
+        fs.setDocument('mailings', mailingRecord.id, mailingRecord).catch(() => {});
+        fs.addDocument('notifications', {
+          title: params.subject || 'Nouveau message officiel',
+          message: params.message || '',
+          created_at: new Date().toISOString(),
+          user_email: 'all',
+          read: false
+        }).catch(() => {});
+      });
       return { success: true, count: params.recipient_count || 1, sent_at: mailingRecord.sent_at };
     }
 
@@ -138,13 +155,16 @@ if (base44?.functions) {
         recipient_email: params.recipient_email,
         sent_at: new Date().toISOString()
       };
-      firestoreService.addDocument('notifications', {
-        user_email: params.recipient_email,
-        title: 'Votre Licence Officielle KKD Music',
-        message: `Votre licence ${params.license_number || ''} a été émise avec succès.`,
-        created_at: new Date().toISOString(),
-        read: false
-      }).catch(() => {});
+      loadFirestore().then((fs) => {
+        if (!fs) return;
+        fs.addDocument('notifications', {
+          user_email: params.recipient_email,
+          title: 'Votre Licence Officielle KKD Music',
+          message: `Votre licence ${params.license_number || ''} a été émise avec succès.`,
+          created_at: new Date().toISOString(),
+          read: false
+        }).catch(() => {});
+      });
       return { success: true, sent_to: params.recipient_email };
     }
 
@@ -219,7 +239,8 @@ if (base44?.entities) {
                 // Collections catalogue : jamais de données de secours périmées (Firestore / cache local)
                 if (authoritativeCollections.has(collectionName)) return [];
                 // Tentative via Firestore en priorité de fallback
-                const firestoreItems = await firestoreService.getCollection(collectionName);
+                const fs = await loadFirestore();
+                const firestoreItems = fs ? await fs.getCollection(collectionName) : [];
                 if (Array.isArray(firestoreItems) && firestoreItems.length > 0) {
                   localDb.setCollection(collectionName, firestoreItems);
                   return firestoreItems;
@@ -262,7 +283,8 @@ if (base44?.entities) {
                   return await handlerTarget.get(id);
                 }
                 if (authoritativeCollections.has(collectionName)) return null;
-                const doc = await firestoreService.getDocument(collectionName, id);
+                const fs = await loadFirestore();
+                const doc = fs ? await fs.getDocument(collectionName, id) : null;
                 if (doc) return doc;
                 const list = localDb.getCollection(collectionName);
                 return list.find(i => i.id === id) || null;
@@ -291,8 +313,11 @@ if (base44?.entities) {
                 }
                 const item = res || { ...data, id: data.id || `doc_${Date.now()}_${Math.random().toString(36).substr(2, 6)}` };
                 localDb.insertItem(collectionName, item);
-                firestoreService.setDocument(collectionName, item.id, item).catch((fe) => {
-                  console.warn(`[Firestore sync warning]:`, fe?.message);
+                loadFirestore().then((fs) => {
+                  if (!fs) return;
+                  fs.setDocument(collectionName, item.id, item).catch((fe) => {
+                    console.warn(`[Firestore sync warning]:`, fe?.message);
+                  });
                 });
                 return item;
               } catch (err) {
@@ -321,8 +346,11 @@ if (base44?.entities) {
                 }
                 const updated = res || { id, ...data };
                 localDb.updateItem(collectionName, id, data);
-                firestoreService.setDocument(collectionName, id, updated).catch((fe) => {
-                  console.warn(`[Firestore sync warning]:`, fe?.message);
+                loadFirestore().then((fs) => {
+                  if (!fs) return;
+                  fs.setDocument(collectionName, id, updated).catch((fe) => {
+                    console.warn(`[Firestore sync warning]:`, fe?.message);
+                  });
                 });
                 return updated;
               } catch (err) {
@@ -347,7 +375,9 @@ if (base44?.entities) {
                   throw new Error(`Suppression distante indisponible pour ${entityName}; la suppression locale a été annulée.`);
                 }
                 localDb.deleteItem(collectionName, id);
-                firestoreService.deleteDocument(collectionName, id).catch(() => {});
+                loadFirestore().then((fs) => {
+                  if (fs) fs.deleteDocument(collectionName, id).catch(() => {});
+                });
                 return true;
               } catch (err) {
                 if (authoritativeCollections.has(collectionName)) throw err;
