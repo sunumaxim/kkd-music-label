@@ -229,6 +229,7 @@ export default function AdminEvents() {
                   {event.published_status === 'en_attente' && <span className="text-[10px] bg-amber-500/15 text-amber-500 px-2 py-0.5 rounded-full">En attente</span>}
                   {event.published_status === 'refuse' && <span className="text-[10px] bg-red-500/15 text-red-500 px-2 py-0.5 rounded-full">Refusé</span>}
                   {event.published_status === 'clarification_demandee' && <span className="text-[10px] bg-blue-500/15 text-blue-500 px-2 py-0.5 rounded-full">Clarification demandée</span>}
+                  {String(event.external_ref || '').startsWith('showofkkd:') && <span className="text-[10px] bg-violet-500/15 text-violet-500 px-2 py-0.5 rounded-full">Show Of KKD</span>}
                   {event.is_ticketed && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1"><Ticket size={9} /> {Number(event.ticket_price || 0).toLocaleString('fr-FR')} F</span>}
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">

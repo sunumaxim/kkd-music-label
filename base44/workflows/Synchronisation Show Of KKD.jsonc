@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sync_show_of_kkd_events",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sync_events": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncShowOfKKDEvents",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Synchroniser les \u00e9v\u00e9nements",
+            "description": "Envoi et r\u00e9ception Show Of KKD"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */6 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Paris",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Synchronisation Show Of KKD",
+  "description": "\u00c9change les \u00e9v\u00e9nements avec le portail Show Of KKD toutes les 6 heures : envoie nos \u00e9v\u00e9nements approuv\u00e9s (avec lien de paiement direct) et r\u00e9cup\u00e8re les leurs en attente de validation."
+}
