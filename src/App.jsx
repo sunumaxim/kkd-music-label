@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -77,6 +77,12 @@ import AccountSettings from './pages/AccountSettings.jsx';
 import SplashScreen from './components/shared/SplashScreen';
 import InstallPrompt from '@/components/shared/InstallPrompt';
 import PublishHost from '@/components/shared/PublishHost';
+
+const RouteLoadingFallback = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+  </div>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -211,7 +217,9 @@ function App() {
         <PlayerProvider>
           <SplashScreen />
           <Router>
-            <AuthenticatedApp />
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <AuthenticatedApp />
+            </Suspense>
             <PublishHost />
           </Router>
           <Toaster />

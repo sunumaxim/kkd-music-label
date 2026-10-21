@@ -69,7 +69,7 @@ export default function Home() {
               <h2 className="text-2xl md:text-3xl font-extrabold mt-1">Concerts & événements</h2>
               <p className="text-sm text-muted-foreground mt-1">Découvrez les dates, partagez les événements et réservez vos billets.</p>
             </div>
-            <a href="/evenements" className="text-sm font-semibold text-primary hover:underline">Toute la billetterie →</a>
+            <Link to="/evenements" className="text-sm font-semibold text-primary hover:underline">Toute la billetterie →</Link>
           </div>
           <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.filter((event) => (!event.published_status || event.published_status === 'approuve') && new Date(event.event_date) >= new Date()).slice(0, 3).map((event) => (

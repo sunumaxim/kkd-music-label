@@ -3,69 +3,10 @@
 
 // Clés de stockage local
 const USER_STORAGE_KEY = 'kkd_current_user_v1';
-const DB_STORAGE_KEY = 'kkd_local_db_v1';
+// v2 : purge des anciennes données de démonstration stockées dans le navigateur
+const DB_STORAGE_KEY = 'kkd_local_db_v2';
 
-// Données d'exemple pré-remplies pour garantir un affichage immédiat même en cas d'erreur réseau Base44
-const INITIAL_RELEASES = [
-  {
-    id: 'rel_1',
-    title: 'Dakar Night Groove',
-    artist_name: 'Amadou & The Band',
-    artist_id: 'art_1',
-    release_type: 'album',
-    genre: 'Afrobeats',
-    cover_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80',
-    audio_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
-    price: 3500,
-    currency: 'XOF',
-    description: 'Une fusion envoûtante de rythmes traditionnels sénégalais et d’afro-fusion moderne.',
-    play_count: 14200,
-    created_date: '2025-01-15T12:00:00Z',
-    is_premium: false,
-    tracklist: [
-      { title: 'Dakar Night Groove', duration: '3:45', audio_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3' },
-      { title: 'Teranga Soul', duration: '4:12', audio_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' }
-    ]
-  },
-  {
-    id: 'rel_2',
-    title: 'Lagos Vibrations',
-    artist_name: 'Kemi Beats',
-    artist_id: 'art_2',
-    release_type: 'single',
-    genre: 'Afro-fusion',
-    cover_url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80',
-    audio_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=electronic-future-beats-117997.mp3',
-    price: 1500,
-    currency: 'XOF',
-    description: 'Banger afro-house prêt pour les clubs et les challenges viraux TikTok.',
-    play_count: 28500,
-    created_date: '2025-02-01T10:00:00Z',
-    is_premium: true,
-    tracklist: [
-      { title: 'Lagos Vibrations', duration: '3:18', audio_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3' }
-    ]
-  },
-  {
-    id: 'rel_3',
-    title: 'Abidjan Coupé Étoile',
-    artist_name: 'DJ Rodrigue',
-    artist_id: 'art_3',
-    release_type: 'single',
-    genre: 'Coupé Décalé',
-    cover_url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80',
-    audio_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=tropical-house-110041.mp3',
-    price: 2000,
-    currency: 'XOF',
-    description: 'Rythme endiablé pour faire danser toute l’Afrique de l’Ouest.',
-    play_count: 19800,
-    created_date: '2025-02-14T08:30:00Z',
-    is_premium: false,
-    tracklist: [
-      { title: 'Abidjan Coupé Étoile', duration: '3:30', audio_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3' }
-    ]
-  }
-];
+// Aucune donnée fictive : le cache local ne conserve que les données réellement servies par le backend.
 
 class LocalDatabase {
   constructor() {
@@ -77,12 +18,8 @@ class LocalDatabase {
       if (typeof window === 'undefined') return;
       if (!localStorage.getItem(DB_STORAGE_KEY)) {
         const initial = {
-          releases: INITIAL_RELEASES,
-          artists: [
-            { id: 'art_1', name: 'Amadou & The Band', country: 'Sénégal', verified: true, tiktok_username: 'amadou_band' },
-            { id: 'art_2', name: 'Kemi Beats', country: 'Nigeria', verified: true, tiktok_username: 'kemibeats' },
-            { id: 'art_3', name: 'DJ Rodrigue', country: 'Côte d’Ivoire', verified: true, tiktok_username: 'djrodrigue_ci' }
-          ],
+          releases: [],
+          artists: [],
           videos: [],
           events: [],
           purchases: [],
@@ -220,9 +157,24 @@ class LocalDatabase {
   }
 
   setCollection(name, items) {
-    const data = this._read();
-    data[name] = items;
-    this._write(data, false);
+    // Mise en cache différée : elle ne bloque jamais l'affichage de la page.
+    try {
+      if (typeof window === 'undefined') return;
+      if (!this._pendingWrites) {
+        this._pendingWrites = new Map();
+        setTimeout(() => {
+          const pending = this._pendingWrites;
+          this._pendingWrites = null;
+          if (!pending || !pending.size) return;
+          const data = this._read();
+          pending.forEach((value, key) => { data[key] = value; });
+          this._write(data, false);
+        }, 400);
+      }
+      this._pendingWrites.set(name, items);
+    } catch (e) {
+      console.warn('[LocalDb] setCollection warning:', e);
+    }
   }
 
   insertItem(collectionName, item) {

@@ -6,9 +6,20 @@ import { queryClientInstance } from '@/lib/query-client';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  // Démarrage immédiat : la session déjà connue du navigateur est réutilisée tout
+  // de suite, pendant que le serveur la reconfirme en arrière-plan.
+  const [cachedUser] = useState(() => {
+    try {
+      const u = localDb.getCurrentUser();
+      return u && u.email ? u : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [user, setUser] = useState(cachedUser);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!cachedUser);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!cachedUser);
   const [isLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
