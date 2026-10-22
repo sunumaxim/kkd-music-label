@@ -79,6 +79,27 @@ function remotePayload(event) {
   };
 }
 
+// Mise à jour d'un concert déjà présent sur Show Of KKD : uniquement les faits du concert.
+// Le statut (publié, brouillon, archivé), le concert mis en avant, les textes, l'affiche,
+// le lien de billet et l'adresse d'accès de l'artiste appartiennent à Show Of KKD une fois
+// le concert créé ; les renvoyer ici republierait un concert que le label a masqué ou archivé,
+// et écraserait ce qui a été rédigé là-bas.
+function remoteUpdatePayload(event) {
+  const full = remotePayload(event);
+  return {
+    title: full.title,
+    event_date: full.event_date,
+    event_time: full.event_time,
+    venue: full.venue,
+    city: full.city,
+    price_presale: full.price_presale,
+    currency: full.currency,
+    source: full.source,
+    official_event_id: full.official_event_id,
+    official_synced_at: full.official_synced_at,
+  };
+}
+
 // Leur événement -> notre événement (en attente de validation admin)
 function localPayload(remote, ref) {
   const categories = [];
@@ -148,7 +169,7 @@ export default async function (req) {
         continue;
       }
       try {
-        const payload = JSON.stringify(remotePayload(event));
+        const payload = JSON.stringify(existing ? remoteUpdatePayload(event) : remotePayload(event));
         if (existing) {
           await callApi(`${remoteEventsUrl}/${existing.id}`, { method: 'PUT', headers, body: payload });
           sent.updated += 1;
