@@ -1,5 +1,5 @@
 // Service worker KKD Music — réseau d'abord, cache de secours (offline / PWA)
-const CACHE = 'kkd-pwa-v1';
+const CACHE = 'kkd-pwa-v2';
 const CORE = ['/', '/index.html', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -23,8 +23,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Les pages HTML ne doivent jamais être servies depuis le cache du navigateur :
+  // sinon un visiteur déjà venu continue de voir l'ancienne version publiée.
+  const isHtml = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+
   event.respondWith(
-    fetch(req)
+    fetch(req, isHtml ? { cache: 'no-store' } : undefined)
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
