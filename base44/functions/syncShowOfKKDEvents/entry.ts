@@ -192,32 +192,36 @@ export default async function (req) {
 
     for (const remote of incoming) {
       const ref = `${REF_PREFIX}${remote.id}`;
-      if (knownRefs.has(ref)) { received.skipped += 1; continue; }
-      const payload = localPayload(remote, ref);
-      if (!payload.title || !payload.event_date) { received.skipped += 1; continue; }
-      if (dryRun) { received.created += 1; knownRefs.add(ref); continue; }
-      try {
-        const created = await base44.asServiceRole.entities.Event.create(payload);
-        knownRefs.add(ref);
-        received.created += 1;
-
-        // Retourner l'identifiant de l'événement KKD au site Show : son bouton de réservation
-        // pointe alors vers le bon concert dans cette application, sans créer de doublon au prochain sync.
-        if (created?.id) {
+      const existingLocal = ourEvents.find((e) => e.external_ref === ref);
+      if (existingLocal) {
+        // Ne rendre la billetterie accessible depuis Show qu'après validation de l'événement par le label.
+        if (existingLocal.published_status === 'approuve' && remote.official_event_id !== existingLocal.id) {
           try {
             await callApi(`${remoteEventsUrl}/${remote.id}`, {
               method: 'PUT',
               headers,
               body: JSON.stringify({
-                official_event_id: created.id,
+                official_event_id: existingLocal.id,
                 source: 'official',
                 official_synced_at: new Date().toISOString(),
               }),
             });
           } catch (linkError) {
-            received.errors.push(`${remote.title}: événement créé, mais lien de retour Show non confirmé (${linkError.message})`);
+            received.errors.push(`${remote.title}: événement déjà connu, mais lien de billetterie non confirmé (${linkError.message})`);
           }
         }
+        received.skipped += 1;
+        continue;
+      }
+      if (knownRefs.has(ref)) { received.skipped += 1; continue; }
+      const payload = localPayload(remote, ref);
+      if (!payload.title || !payload.event_date) { received.skipped += 1; continue; }
+      if (dryRun) { received.created += 1; knownRefs.add(ref); continue; }
+      try {
+        await base44.asServiceRole.entities.Event.create(payload);
+        knownRefs.add(ref);
+        received.created += 1;
+        // Le lien retour vers Show sera activé au prochain passage après approbation admin.
       } catch (error) {
         received.errors.push(`${remote.title}: ${error.message}`);
       }
