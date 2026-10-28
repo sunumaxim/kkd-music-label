@@ -218,7 +218,7 @@ export default function TicketPurchase({ event }) {
           </form>
         )
       ) : (
-        <Link to="/login" className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-primary text-primary-foreground font-bold">
+        <Link to={`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="inline-flex items-center gap-2 px-5 h-11 rounded-full bg-primary text-primary-foreground font-bold">
           <LogIn size={16} /> Se connecter pour acheter
         </Link>
       )}
