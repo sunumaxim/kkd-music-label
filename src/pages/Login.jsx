@@ -160,7 +160,7 @@ export default function Login() {
           <div className="pt-2 text-center text-sm text-muted-foreground space-y-2">
             <p>
               Pas encore de compte ?{" "}
-              <Link to="/register" className="text-primary font-medium hover:underline">Créer un compte</Link>
+              <Link to={`/register?returnTo=${encodeURIComponent(targetRedirect)}`} className="text-primary font-medium hover:underline">Créer un compte</Link>
             </p>
             <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/80 pt-2">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
