@@ -195,7 +195,7 @@ export default async function (req) {
       const existingLocal = ourEvents.find((e) => e.external_ref === ref);
       if (existingLocal) {
         // Ne rendre la billetterie accessible depuis Show qu'après validation de l'événement par le label.
-        if (existingLocal.published_status === 'approuve' && remote.official_event_id !== existingLocal.id) {
+        if (!dryRun && existingLocal.published_status === 'approuve' && remote.official_event_id !== existingLocal.id) {
           try {
             await callApi(`${remoteEventsUrl}/${remote.id}`, {
               method: 'PUT',
