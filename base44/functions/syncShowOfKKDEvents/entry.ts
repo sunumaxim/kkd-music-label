@@ -158,7 +158,8 @@ export default async function (req) {
     // 1) Envoi : nos événements approuvés (à venir) vers Show Of KKD
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const toSend = ourEvents.filter(
-      (e) => e.published_status === 'approuve' && e.event_date && new Date(e.event_date).getTime() >= cutoff
+      (e) => e.published_status === 'approuve' && !String(e.external_ref || '').startsWith(REF_PREFIX)
+        && e.event_date && new Date(e.event_date).getTime() >= cutoff
     );
     const sent = { created: 0, updated: 0, errors: [] };
 
@@ -196,9 +197,27 @@ export default async function (req) {
       if (!payload.title || !payload.event_date) { received.skipped += 1; continue; }
       if (dryRun) { received.created += 1; knownRefs.add(ref); continue; }
       try {
-        await base44.asServiceRole.entities.Event.create(payload);
+        const created = await base44.asServiceRole.entities.Event.create(payload);
         knownRefs.add(ref);
         received.created += 1;
+
+        // Retourner l'identifiant de l'événement KKD au site Show : son bouton de réservation
+        // pointe alors vers le bon concert dans cette application, sans créer de doublon au prochain sync.
+        if (created?.id) {
+          try {
+            await callApi(`${remoteEventsUrl}/${remote.id}`, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({
+                official_event_id: created.id,
+                source: 'official',
+                official_synced_at: new Date().toISOString(),
+              }),
+            });
+          } catch (linkError) {
+            received.errors.push(`${remote.title}: événement créé, mais lien de retour Show non confirmé (${linkError.message})`);
+          }
+        }
       } catch (error) {
         received.errors.push(`${remote.title}: ${error.message}`);
       }
