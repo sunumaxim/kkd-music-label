@@ -115,6 +115,11 @@ const AuthenticatedApp = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Checkout public : les commandes sont créées dans la même base que les scanners. */}
+        <Route path="/evenements" element={<Events />} />
+        <Route path="/evenements/:slug" element={<EventDetail />} />
+        <Route path="/mes-billets" element={<MesBillets />} />
+        <Route path="/billet/:number" element={<PublicVerifTicket />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
           <Route element={<ControleLayout />}>
             <Route path="/controle-acces" element={<ControleAcces />} />
