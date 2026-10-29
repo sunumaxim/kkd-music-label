@@ -53,6 +53,18 @@ const THEME_STYLES = {
     headerBg: 'bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-700',
     tagBg: 'bg-zinc-100 text-zinc-800 border-zinc-300',
   },
+  sahel: {
+    accent: '#E2A657',
+    border: 'border-amber-500/30',
+    headerBg: 'bg-gradient-to-r from-slate-950 via-blue-950 to-amber-700',
+    tagBg: 'bg-amber-50 text-amber-900 border-amber-300',
+  },
+  teranga: {
+    accent: '#209160',
+    border: 'border-emerald-500/30',
+    headerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-800 to-yellow-700',
+    tagBg: 'bg-emerald-50 text-emerald-900 border-emerald-300',
+  },
 };
 
 export default function TicketCard({ ticket, onDownload, downloading = false }) {
