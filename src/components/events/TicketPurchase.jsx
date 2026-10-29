@@ -28,6 +28,7 @@ export default function TicketPurchase({ event }) {
   const [submitting, setSubmitting] = useState(false);
   const [pendingMethod, setPendingMethod] = useState('wave');
   const [squareLoading, setSquareLoading] = useState(false);
+  const [waveLoading, setWaveLoading] = useState(false);
 
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me(), retry: false });
   const email = me?.email;
@@ -81,6 +82,38 @@ export default function TicketPurchase({ event }) {
     } catch (err) {
       toast({ title: 'Erreur', description: err.response?.data?.error || err.message, variant: 'destructive' });
     } finally { setSubmitting(false); }
+  };
+
+  const handleWaveCheckout = async (e) => {
+    e?.preventDefault?.();
+    if (!name.trim()) { toast({ title: 'Saisissez votre nom', variant: 'destructive' }); return; }
+    setWaveLoading(true);
+    try {
+      const orderResponse = await base44.functions.invoke('createTicketOrder', {
+        event_id: event.id,
+        buyer_name: name.trim(),
+        buyer_phone: phone.trim(),
+        payment_method: 'wave_api',
+      });
+      const order = orderResponse?.data || orderResponse;
+      const ticket = order?.ticket;
+      if (!ticket?.id) throw new Error(order?.error || 'Impossible de préparer votre commande');
+      const checkoutResponse = await base44.functions.invoke('createWaveCheckout', {
+        ticket_id: ticket.id,
+        origin: window.location.origin,
+      });
+      const checkout = checkoutResponse?.data || checkoutResponse;
+      if (!checkout?.url) throw new Error(checkout?.error || 'Lien Wave introuvable');
+      window.location.assign(checkout.url);
+    } catch (err) {
+      const data = err?.response?.data || {};
+      toast({
+        title: data.code === 'WAVE_NOT_CONFIGURED' ? 'Wave automatique non configuré' : 'Paiement Wave impossible',
+        description: data.error || err.message || 'Réessayez ou utilisez le mode manuel de secours.',
+        variant: 'destructive',
+      });
+      if (data.code === 'WAVE_NOT_CONFIGURED') setPendingMethod('wave');
+    } finally { setWaveLoading(false); }
   };
 
   const handleSquare = async (e) => {
@@ -166,15 +199,15 @@ export default function TicketPurchase({ event }) {
       {me ? (
         step === 'pay' ? (
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => { setPendingMethod('square'); setStep('confirm'); }} className="bg-primary gap-2">
-              <CreditCard size={16} /> Payer par carte (Square)
-            </Button>
-            <a href={WAVE_PAY_LINK} target="_blank" rel="noreferrer"
-              onClick={() => { setPendingMethod('wave'); setStep('confirm'); }}
-              className="inline-flex items-center gap-2 px-5 h-9 rounded-full text-white font-bold shadow transition-transform hover:scale-[1.02]"
-              style={{ background: 'linear-gradient(135deg,#00A6E8,#0066B3)' }}>
+            <Button onClick={() => { setPendingMethod('wave_api'); setStep('confirm'); }} className="gap-2 text-white shadow-md" style={{ background: 'linear-gradient(135deg,#00A6E8,#0066B3)' }}>
               <WaveIcon /> Payer avec Wave
-            </a>
+            </Button>
+            <Button onClick={() => { setPendingMethod('square'); setStep('confirm'); }} variant="outline" className="gap-2">
+              <CreditCard size={16} /> Carte bancaire
+            </Button>
+            <button type="button" onClick={() => { setPendingMethod('wave'); setStep('confirm'); }} className="w-full text-left text-xs text-muted-foreground underline underline-offset-4">
+              Autre option : paiement Wave manuel (secours)
+            </button>
           </div>
         ) : (
           <form onSubmit={submit} className="bg-card border border-border/60 rounded-xl p-4 space-y-3">
@@ -193,21 +226,35 @@ export default function TicketPurchase({ event }) {
 
             {pendingMethod === 'wave' ? (
               <>
+                <p className="text-xs text-muted-foreground">Mode de secours : ouvrez le lien Wave, payez le montant exact, puis saisissez la référence de la transaction. La validation sera manuelle.</p>
+                <a href={WAVE_PAY_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 font-bold text-white" style={{ background: 'linear-gradient(135deg,#00A6E8,#0066B3)' }}>
+                  <WaveIcon /> Ouvrir Wave · {priceStr}
+                </a>
                 <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Référence transaction Wave" required />
                 <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 bg-secondary hover:bg-secondary/80 text-xs">
                   <Upload size={14} /> {uploading ? 'Envoi…' : proof ? 'Capture ✓' : 'Capture du reçu (facultatif)'}
                   <input type="file" className="hidden" onChange={handleProof} accept="image/*" />
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button type="submit" disabled={submitting || !ref.trim() || !name.trim()} className="bg-primary gap-2">
-                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Confirmer
+                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Envoyer pour validation
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setStep('pay')}>Annuler</Button>
+                </div>
+              </>
+            ) : pendingMethod === 'wave_api' ? (
+              <>
+                <p className="text-xs text-muted-foreground">Vous serez redirigé vers le paiement Wave sécurisé, avec le montant exact de {priceStr}. Le billet sera validé après vérification serveur de la transaction.</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={handleWaveCheckout} disabled={waveLoading || !name.trim()} className="gap-2 text-white" style={{ background: 'linear-gradient(135deg,#00A6E8,#0066B3)' }}>
+                    {waveLoading ? <Loader2 size={16} className="animate-spin" /> : <WaveIcon />} Payer {priceStr} avec Wave
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setStep('pay')}>Annuler</Button>
                 </div>
               </>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">Vous serez redirigé vers le paiement sécurisé Square. Votre billet QR est généré automatiquement après confirmation du paiement.</p>
+                <p className="text-xs text-muted-foreground">Vous serez redirigé vers le paiement sécurisé par carte. Votre billet QR sera généré après confirmation serveur.</p>
                 <div className="flex gap-2">
                   <Button type="button" onClick={handleSquare} disabled={squareLoading || !name.trim()} className="bg-primary gap-2">
                     {squareLoading ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />} Payer par carte
