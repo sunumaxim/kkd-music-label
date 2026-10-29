@@ -175,8 +175,29 @@ export default function EventDetail() {
           description: event.description,
           image: event.image_url,
           startDate: event.event_date,
-          location: { '@type': 'Place', name: event.location, address: event.city },
-          organizer: event.organizer_name ? { '@type': 'Organization', name: event.organizer_name } : undefined,
+          eventStatus: isPast ? 'https://schema.org/EventCompleted' : 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          inLanguage: 'fr-SN',
+          url: shareUrl,
+          location: {
+            '@type': 'Place',
+            name: event.location || event.city || 'Sénégal',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: event.city || event.location || '',
+              addressCountry: 'SN',
+            },
+          },
+          offers: event.is_ticketed && Number(event.ticket_price) > 0 ? {
+            '@type': 'Offer',
+            price: Number(event.ticket_price),
+            priceCurrency: 'XOF',
+            availability: Number(event.ticket_capacity) > 0 && Number(event.tickets_sold || 0) >= Number(event.ticket_capacity)
+              ? 'https://schema.org/SoldOut'
+              : isPast ? 'https://schema.org/Discontinued' : 'https://schema.org/InStock',
+            url: shareUrl,
+          } : undefined,
+          organizer: event.organizer_name ? { '@type': 'Organization', name: event.organizer_name } : { '@type': 'Organization', name: 'KKD Music' },
         }}
       />
       <MobileHeader title={event.title} backPath="/evenements" />
