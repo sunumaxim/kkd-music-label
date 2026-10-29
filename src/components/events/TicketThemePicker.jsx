@@ -57,6 +57,24 @@ export const TICKET_THEMES = [
     badgeCls: 'bg-zinc-800 text-white',
     borderCls: 'border-zinc-700/40',
   },
+  {
+    value: 'sahel',
+    label: 'Sahel Nuit',
+    desc: 'Bleu profond, cuivre & or',
+    accentColor: '#E2A657',
+    swatch: 'linear-gradient(135deg, #172A46 0%, #090F1D 58%, #B97835 100%)',
+    badgeCls: 'bg-amber-700 text-white',
+    borderCls: 'border-amber-500/40',
+  },
+  {
+    value: 'teranga',
+    label: 'Teranga',
+    desc: 'Vert profond & or chaleureux',
+    accentColor: '#209160',
+    swatch: 'linear-gradient(135deg, #0B5137 0%, #071C17 65%, #D6AE55 100%)',
+    badgeCls: 'bg-emerald-800 text-white',
+    borderCls: 'border-emerald-500/40',
+  },
 ];
 
 export const TICKET_CATEGORIES = [
