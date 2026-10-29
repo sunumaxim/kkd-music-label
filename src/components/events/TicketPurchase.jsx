@@ -35,8 +35,9 @@ export default function TicketPurchase({ event }) {
   const { data: myTicket } = useQuery({
     queryKey: ['my-ticket', email, event.id],
     queryFn: async () => {
-      const list = await base44.entities.Ticket.filter({ event_id: event.id });
-      return list[0] || null;
+      if (!email) return null;
+      const list = await base44.entities.Ticket.filter({ event_id: event.id, buyer_email: email });
+      return list.sort((a, b) => (b.created_date || '').localeCompare(a.created_date || ''))[0] || null;
     },
     enabled: !!email,
   });
