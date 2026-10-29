@@ -272,7 +272,7 @@ export default function TicketPurchase({ event }) {
       )}
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Paiement par carte (Square) ou Wave ({WAVE_MERCHANT}). Lecture sur KKD uniquement. Commission KKD : 10 %.
+        Wave Mobile Money en priorité, carte bancaire en option. Le mode Wave manuel reste disponible en secours et nécessite une validation KKD. Un billet n'est valide qu'après confirmation du paiement. Marchand : {WAVE_MERCHANT}.
       </p>
     </div>
   );
