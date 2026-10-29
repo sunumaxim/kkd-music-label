@@ -4,28 +4,28 @@
   "properties": {
     "event_id": {
       "type": "string",
-      "description": "ID de l'événement"
+      "description": "ID de l'\u00e9v\u00e9nement"
     },
     "event_title": {
       "type": "string",
-      "description": "Titre de l'événement (dénormalisé)"
+      "description": "Titre de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
     },
     "event_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Date de l'événement (dénormalisé)"
+      "description": "Date de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
     },
     "event_image_url": {
       "type": "string",
-      "description": "Affiche de l'événement (dénormalisé)"
+      "description": "Affiche de l'\u00e9v\u00e9nement (d\u00e9normalis\u00e9)"
     },
     "artist_name": {
       "type": "string",
-      "description": "Artiste lié (dénormalisé)"
+      "description": "Artiste li\u00e9 (d\u00e9normalis\u00e9)"
     },
     "organizer_email": {
       "type": "string",
-      "description": "Email de l'organisateur (dénormalisé)"
+      "description": "Email de l'organisateur (d\u00e9normalis\u00e9)"
     },
     "managers": {
       "type": "array",
@@ -33,11 +33,11 @@
         "type": "string"
       },
       "default": [],
-      "description": "Contrôleurs d'accès autorisés (dénormalisé)"
+      "description": "Contr\u00f4leurs d'acc\u00e8s autoris\u00e9s (d\u00e9normalis\u00e9)"
     },
     "buyer_email": {
       "type": "string",
-      "description": "Email de l'acheteur (optionnel — si fourni, le billet est visible dans 'Mes Billets' après connexion)"
+      "description": "Email de l'acheteur (optionnel \u2014 si fourni, le billet est visible dans 'Mes Billets' apr\u00e8s connexion)"
     },
     "buyer_name": {
       "type": "string",
@@ -45,7 +45,7 @@
     },
     "buyer_phone": {
       "type": "string",
-      "description": "Téléphone de l'acheteur"
+      "description": "T\u00e9l\u00e9phone de l'acheteur"
     },
     "buyer_location": {
       "type": "string",
@@ -53,30 +53,31 @@
     },
     "ticket_number": {
       "type": "string",
-      "description": "Numéro unique généré après validation (format KKD...SM)"
+      "description": "Num\u00e9ro unique g\u00e9n\u00e9r\u00e9 apr\u00e8s validation (format KKD...SM)"
     },
     "security_hash": {
       "type": "string",
-      "description": "Hash de sécurité cryptographique inclus dans le QR code pour empêcher la falsification"
+      "description": "Hash de s\u00e9curit\u00e9 cryptographique inclus dans le QR code pour emp\u00eacher la falsification"
     },
     "batch_id": {
       "type": "string",
-      "description": "Identifiant du lot de génération automatique (si billet créé en lot)"
+      "description": "Identifiant du lot de g\u00e9n\u00e9ration automatique (si billet cr\u00e9\u00e9 en lot)"
     },
     "amount": {
       "type": "number",
       "default": 0,
-      "description": "Montant payé en FCFA"
+      "description": "Montant pay\u00e9 en FCFA"
     },
     "commission_pct": {
       "type": "number",
       "default": 10,
-      "description": "Commission KKD (%) dénormalisée"
+      "description": "Commission KKD (%) d\u00e9normalis\u00e9e"
     },
     "payment_method": {
       "type": "string",
       "enum": [
         "wave",
+        "wave_api",
         "square"
       ],
       "default": "wave",
@@ -84,15 +85,23 @@
     },
     "wave_reference": {
       "type": "string",
-      "description": "Référence de transaction Wave"
+      "description": "R\u00e9f\u00e9rence de transaction Wave"
     },
     "square_order_ref": {
       "type": "string",
       "description": "ID du payment link Square"
     },
+    "wave_checkout_id": {
+      "type": "string",
+      "description": "Identifiant de session Wave Checkout, utilis\u00e9 pour confirmer le paiement c\u00f4t\u00e9 serveur"
+    },
+    "wave_transaction_id": {
+      "type": "string",
+      "description": "R\u00e9f\u00e9rence de transaction retourn\u00e9e par Wave apr\u00e8s paiement confirm\u00e9"
+    },
     "proof_file_url": {
       "type": "string",
-      "description": "Capture du reçu (facultatif)"
+      "description": "Capture du re\u00e7u (facultatif)"
     },
     "status": {
       "type": "string",
@@ -113,35 +122,35 @@
     "checked_in": {
       "type": "boolean",
       "default": false,
-      "description": "Actuellement à l'intérieur de l'événement"
+      "description": "Actuellement \u00e0 l'int\u00e9rieur de l'\u00e9v\u00e9nement"
     },
     "checked_in_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Heure de la dernière entrée"
+      "description": "Heure de la derni\u00e8re entr\u00e9e"
     },
     "checked_in_by": {
       "type": "string",
-      "description": "Email du contrôleur ayant validé l'entrée"
+      "description": "Email du contr\u00f4leur ayant valid\u00e9 l'entr\u00e9e"
     },
     "checked_out": {
       "type": "boolean",
       "default": false,
-      "description": "A quitté l'événement"
+      "description": "A quitt\u00e9 l'\u00e9v\u00e9nement"
     },
     "checked_out_date": {
       "type": "string",
       "format": "date-time",
-      "description": "Heure de la dernière sortie"
+      "description": "Heure de la derni\u00e8re sortie"
     },
     "checked_out_by": {
       "type": "string",
-      "description": "Email du contrôleur ayant validé la sortie"
+      "description": "Email du contr\u00f4leur ayant valid\u00e9 la sortie"
     },
     "entry_count": {
       "type": "number",
       "default": 0,
-      "description": "Nombre total d'entrées (inclut les ré-entrées)"
+      "description": "Nombre total d'entr\u00e9es (inclut les r\u00e9-entr\u00e9es)"
     },
     "exit_count": {
       "type": "number",
@@ -168,12 +177,12 @@
           },
           "by": {
             "type": "string",
-            "description": "Email du contrôleur"
+            "description": "Email du contr\u00f4leur"
           }
         }
       },
       "default": [],
-      "description": "Historique complet des entrées/sorties"
+      "description": "Historique complet des entr\u00e9es/sorties"
     },
     "description": {
       "type": "string",
@@ -186,11 +195,11 @@
     },
     "ticket_category": {
       "type": "string",
-      "description": "Catégorie du billet (Prévente, Porte, VIP...)"
+      "description": "Cat\u00e9gorie du billet (Pr\u00e9vente, Porte, VIP...)"
     },
     "ticket_theme": {
       "type": "string",
-      "description": "Thème de design du billet (dénormalisé)"
+      "description": "Th\u00e8me de design du billet (d\u00e9normalis\u00e9)"
     }
   },
   "required": [
