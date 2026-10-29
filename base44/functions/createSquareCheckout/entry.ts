@@ -13,7 +13,12 @@ Deno.serve(async (req) => {
     if (!ticket_id) return Response.json({ error: 'ticket_id requis' }, { status: 400 });
 
     // Origine de redirection (liste blanche)
+    // Autoriser uniquement les origines officielles du parcours de billetterie KKD.
+    // Show Of KKD envoie les acheteurs vers controle.kkdmusic.com.
     const ALLOWED_ORIGINS = [
+      'https://controle.kkdmusic.com',
+      'https://label.kkdmusic.com',
+      'https://kkdlabel.base44.app',
       'https://kkdmusic.com',
       'http://localhost:5173',
       'http://localhost:3000',
