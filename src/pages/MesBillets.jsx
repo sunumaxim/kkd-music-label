@@ -30,22 +30,27 @@ export default function MesBillets() {
   useEffect(() => {
     if (!email) return;
     const p = new URLSearchParams(window.location.search);
-    if (!p.get('square') || !p.get('ticket')) return;
     const ticketId = p.get('ticket');
+    const isWave = p.get('wave') === '1';
+    const isSquare = p.get('square') === '1';
+    if ((!isWave && !isSquare) || !ticketId) return;
     const orderId = p.get('orderId') || '';
     window.history.replaceState({}, '', '/mes-billets');
     setVerifying(true);
-    base44.functions.invoke('verifySquarePayment', { ticket_id: ticketId, order_id: orderId })
+    const verifier = isWave
+      ? base44.functions.invoke('verifyWavePayment', { ticket_id: ticketId })
+      : base44.functions.invoke('verifySquarePayment', { ticket_id: ticketId, order_id: orderId });
+    verifier
       .then((response) => {
         const res = response?.data || response || {};
         if (res?.status === 'valide') {
-          toast({ title: 'Paiement confirmé 🎉', description: 'Votre billet est validé.' });
+          toast({ title: 'Paiement confirmé 🎉', description: 'Votre billet QR est validé et prêt.' });
         } else {
-          toast({ title: 'Paiement en cours de confirmation', description: 'Votre billet sera validé sous peu.' });
+          toast({ title: 'Paiement en cours de confirmation', description: 'Si Wave confirme le paiement, le billet apparaîtra ici automatiquement après vérification.' });
         }
         qc.invalidateQueries({ queryKey: ['my-tickets', email] });
       })
-      .catch(() => toast({ title: 'Vérification impossible', variant: 'destructive' }))
+      .catch((error) => toast({ title: 'Vérification impossible', description: error?.response?.data?.error || 'Réessayez dans quelques instants.', variant: 'destructive' }))
       .finally(() => setVerifying(false));
   }, [email]);
 
