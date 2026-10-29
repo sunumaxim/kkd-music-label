@@ -36,13 +36,14 @@ export default function MesBillets() {
     window.history.replaceState({}, '', '/mes-billets');
     setVerifying(true);
     base44.functions.invoke('verifySquarePayment', { ticket_id: ticketId, order_id: orderId })
-      .then((res) => {
+      .then((response) => {
+        const res = response?.data || response || {};
         if (res?.status === 'valide') {
           toast({ title: 'Paiement confirmé 🎉', description: 'Votre billet est validé.' });
-          qc.invalidateQueries({ queryKey: ['my-tickets', email] });
         } else {
           toast({ title: 'Paiement en cours de confirmation', description: 'Votre billet sera validé sous peu.' });
         }
+        qc.invalidateQueries({ queryKey: ['my-tickets', email] });
       })
       .catch(() => toast({ title: 'Vérification impossible', variant: 'destructive' }))
       .finally(() => setVerifying(false));
