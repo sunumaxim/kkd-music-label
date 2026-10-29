@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const event_id = clean(body.event_id, 64);
-    const payment_method = body.payment_method === 'square' ? 'square' : body.payment_method === 'wave' ? 'wave' : '';
+    const payment_method = body.payment_method === 'square' ? 'square' : body.payment_method === 'wave_api' ? 'wave_api' : body.payment_method === 'wave' ? 'wave' : '';
     const buyer_name = clean(body.buyer_name, 80);
     const buyer_phone = clean(body.buyer_phone, 30);
     const buyer_location = clean(body.buyer_location, 80);
@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
     }
 
     // Square : réutiliser la commande en attente au lieu d'en créer une nouvelle à chaque clic
-    if (payment_method === 'square') {
-      const reuse = pending.find((t: any) => t.payment_method === 'square' && !t.wave_reference);
+    if (payment_method === 'square' || payment_method === 'wave_api') {
+      const reuse = pending.find((t: any) => t.payment_method === payment_method && !t.wave_reference);
       if (reuse) return Response.json({ ticket: { id: reuse.id, status: reuse.status, amount: reuse.amount }, reused: true });
     }
     if (pending.length >= MAX_PENDING_PER_USER) {
