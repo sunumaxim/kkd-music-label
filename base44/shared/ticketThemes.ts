@@ -52,6 +52,22 @@ export const TICKET_THEMES = {
     accentText: '#9CA3AF',
     swatch: 'linear-gradient(135deg, #1F2937 0%, #111827 100%)',
   },
+  sahel: {
+    label: 'Sahel Nuit',
+    primary: [226, 166, 87],
+    bg: [13, 24, 42],
+    sidebar: [248, 241, 225],
+    accentText: '#E2A657',
+    swatch: 'linear-gradient(135deg, #172A46 0%, #090F1D 58%, #B97835 100%)',
+  },
+  teranga: {
+    label: 'Teranga',
+    primary: [32, 145, 96],
+    bg: [7, 28, 23],
+    sidebar: [246, 244, 230],
+    accentText: '#209160',
+    swatch: 'linear-gradient(135deg, #0B5137 0%, #071C17 65%, #D6AE55 100%)',
+  },
   poster: {
     label: 'Affiche',
     primary: [232, 184, 74],
