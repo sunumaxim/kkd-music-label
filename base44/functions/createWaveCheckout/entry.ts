@@ -12,14 +12,6 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user?.email) return Response.json({ error: 'Connexion requise' }, { status: 401 });
 
-    const apiKey = Deno.env.get('WAVE_API_KEY');
-    if (!apiKey) {
-      return Response.json({
-        code: 'WAVE_NOT_CONFIGURED',
-        error: "Le paiement Wave automatique n'est pas encore configuré. Aucun paiement n'a été lancé.",
-      }, { status: 503 });
-    }
-
     const body = await req.json().catch(() => ({}));
     const ticketId = String(body.ticket_id || '').trim();
     let origin = '';
@@ -38,6 +30,18 @@ Deno.serve(async (req) => {
     }
     if (ticket.payment_method !== 'wave_api' || ticket.status !== 'en_attente') {
       return Response.json({ error: 'Cette commande ne peut pas être payée par Wave' }, { status: 400 });
+    }
+    const apiKey = Deno.env.get('WAVE_API_KEY');
+    if (!apiKey) {
+      // Évite de laisser une commande fantôme bloquer l'achat manuel de secours.
+      await base44.asServiceRole.entities.Ticket.update(ticket.id, {
+        status: 'annule',
+        admin_notes: 'Commande annulée automatiquement : clé API Wave Checkout non configurée.',
+      }).catch(() => {});
+      return Response.json({
+        code: 'WAVE_NOT_CONFIGURED',
+        error: "Le paiement Wave automatique n'est pas encore configuré. Aucun paiement n'a été lancé.",
+      }, { status: 503 });
     }
     const amount = Math.round(Number(ticket.amount));
     if (!Number.isFinite(amount) || amount <= 0) return Response.json({ error: 'Montant du billet invalide' }, { status: 400 });
