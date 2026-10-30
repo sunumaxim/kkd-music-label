@@ -282,7 +282,7 @@ export default function QuickCatalogImporterModal({
               <h2 className="font-display font-extrabold text-lg flex items-center gap-2">
                 Alimentation Rapide du Catalogue
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] uppercase tracking-wider">
-                  Spotify · YouTube · Deezer
+                  Multi-plateformes
                 </Badge>
               </h2>
               <p className="text-xs text-muted-foreground">
