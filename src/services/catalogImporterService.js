@@ -153,36 +153,43 @@ export const catalogImporterService = {
    * et les clips / vidéos YouTube.
    */
   async fetchArtistDiscographyAndVideos(artistName, options = {}) {
-    const { platformId, platform = 'deezer', youtubeId } = options;
+    const { platformId, platform = 'deezer', youtubeId, sources = {} } = options;
     const name = (artistName || '').trim();
     if (!name) return { releases: [], videos: [] };
 
-    // Requêtes parallèles : Deezer/Base44 + iTunes Lookup/Search + Base44 YouTube
+    // Synchronisation multi-sources : Spotify, Deezer, Audiomack, Apple/iTunes et YouTube.
     const promises = [];
+    const platformIds = {
+      spotify: sources.spotify?.id || (platform === 'spotify' ? platformId : ''),
+      deezer: sources.deezer?.id || (platform === 'deezer' ? platformId : ''),
+      audiomack: sources.audiomack?.id || (platform === 'audiomack' ? platformId : ''),
+      youtube: sources.youtube?.id || youtubeId || '',
+    };
 
-    // 1) Deezer content via Base44 ou direct
-    if (platform === 'deezer' && platformId) {
+    for (const source of ['spotify', 'deezer', 'audiomack']) {
+      if (!platformIds[source]) continue;
       promises.push(
         base44.functions.invoke('searchArtistOnPlatforms', {
           action: 'fetch_content',
-          platform: 'deezer',
-          platform_artist_id: platformId,
-        }).then(r => ({ type: 'deezer_releases', data: r.data?.content || [] })).catch(() => ({ type: 'deezer_releases', data: [] }))
+          platform: source,
+          platform_artist_id: platformIds[source],
+        }).then(r => ({ type: `platform_${source}`, data: r.data?.content || [] }))
+          .catch(() => ({ type: `platform_${source}`, data: [] }))
       );
-    } else {
+    }
+
+    // Sans identifiant Deezer vérifié, compléter par une recherche de sorties.
+    if (!platformIds.deezer) {
       promises.push(
         fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(name)}&limit=25`)
           .then(r => r.json())
           .then(d => ({
             type: 'deezer_search',
             data: (d.data || []).map(a => ({
-              id: a.id,
-              title: a.title,
+              id: a.id, title: a.title,
               cover_url: a.cover_xl || a.cover_big || a.cover_medium,
               release_type: a.record_type || 'single',
-              release_date: a.release_date || '',
-              deezer_url: a.link,
-              spotify_url: `https://open.spotify.com/search/${encodeURIComponent(`${name} ${a.title}`)}`,
+              release_date: a.release_date || '', deezer_url: a.link,
               artist_name: a.artist?.name || name,
             }))
           }))
