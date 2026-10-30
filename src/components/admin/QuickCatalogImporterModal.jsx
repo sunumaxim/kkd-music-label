@@ -102,6 +102,7 @@ export default function QuickCatalogImporterModal({
     loadArtistContent(artist.name, {
       platformId: artist.platformId,
       platform: artist.platform,
+      sources: artist.sources || {},
     });
   };
 
