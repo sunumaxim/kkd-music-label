@@ -206,12 +206,12 @@ export const catalogImporterService = {
     );
 
     // 3) YouTube videos via Base44
-    if (youtubeId) {
+    if (platformIds.youtube) {
       promises.push(
         base44.functions.invoke('searchArtistOnPlatforms', {
           action: 'fetch_content',
           platform: 'youtube',
-          platform_artist_id: youtubeId,
+          platform_artist_id: platformIds.youtube,
         }).then(r => ({ type: 'youtube_videos', data: r.data?.content || [] })).catch(() => ({ type: 'youtube_videos', data: [] }))
       );
     } else {
@@ -231,7 +231,7 @@ export const catalogImporterService = {
     let rawVideos = [];
 
     for (const r of results) {
-      if (r.type === 'deezer_releases' || r.type === 'deezer_search') {
+      if (r.type === 'deezer_releases' || r.type === 'deezer_search' || r.type.startsWith('platform_')) {
         rawReleases = rawReleases.concat(r.data);
       } else if (r.type === 'itunes_songs') {
         itunesSongs = r.data;
