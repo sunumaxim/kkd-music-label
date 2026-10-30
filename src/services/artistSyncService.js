@@ -190,6 +190,11 @@ export const artistSyncService = {
         updates.genre = options.genre;
       }
 
+      // Enrichir les liens des plateformes sans écraser les liens déjà validés.
+      for (const field of ['spotify_url', 'deezer_url', 'apple_music_url', 'audiomack_url', 'youtube_url']) {
+        if (!existing[field] && options[field]) updates[field] = options[field];
+      }
+
       if (Object.keys(updates).length > 0) {
         try {
           const updated = await base44.entities.Artist.update(existing.id, updates);
