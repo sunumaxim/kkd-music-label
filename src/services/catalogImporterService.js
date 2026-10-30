@@ -412,7 +412,11 @@ export const catalogImporterService = {
         photo_url: artist.image || '',
         genre: (artist.genres && artist.genres[0]) || 'Afrobeats / Musique Urbaine',
         biography: `Artiste ${artistName} répertorié sur le réseau KKD Music & NIA.`,
-        spotify_url: artist.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(artistName)}`,
+        spotify_url: artist.sources?.spotify?.url || artist.spotifyUrl || `https://open.spotify.com/search/${encodeURIComponent(artistName)}`,
+        deezer_url: artist.sources?.deezer?.url || '',
+        apple_music_url: artist.sources?.itunes?.url || '',
+        audiomack_url: artist.sources?.audiomack?.url || '',
+        youtube_url: artist.sources?.youtube?.url || '',
         is_verified: Boolean(artist.is_verified),
       });
       if (artistEntity) {
