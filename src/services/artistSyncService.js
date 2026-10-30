@@ -219,6 +219,7 @@ export const artistSyncService = {
       spotify_url: options.spotify_url || `https://open.spotify.com/search/${encodeURIComponent(name)}`,
       deezer_url: options.deezer_url || `https://www.deezer.com/search/${encodeURIComponent(name)}`,
       apple_music_url: options.apple_music_url || '',
+      audiomack_url: options.audiomack_url || '',
       youtube_url: options.youtube_url || '',
       created_date: new Date().toISOString(),
       order: 0,
