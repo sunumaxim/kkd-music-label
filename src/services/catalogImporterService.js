@@ -94,51 +94,54 @@ export const catalogImporterService = {
     const bData = base44Res.status === 'fulfilled' ? base44Res.value?.data || {} : {};
     const iData = itunesRes.status === 'fulfilled' ? itunesRes.value?.results || [] : [];
 
-    const artistProfiles = [];
-    const seenNames = new Set();
-
-    // Ajouter d'abord les profils Deezer (très complets)
-    if (Array.isArray(bData.deezer)) {
-      for (const p of bData.deezer) {
-        if (!p.id || seenNames.has(p.name?.toLowerCase())) continue;
-        seenNames.add(p.name?.toLowerCase());
-        artistProfiles.push({
-          id: `deezer-${p.id}`,
-          platformId: p.id,
-          platform: 'deezer',
-          name: p.name,
-          image: p.image || '',
-          followers: typeof p.followers === 'number' ? `${p.followers.toLocaleString()} fans` : p.followers || '',
-          genres: p.genres || [],
-          url: p.url || `https://www.deezer.com/artist/${p.id}`,
-          spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(p.name)}`,
-        });
-      }
-    }
-
-    // Ajouter les profils iTunes
-    for (const it of iData) {
-      const nameKey = it.artistName?.toLowerCase();
-      if (!nameKey || seenNames.has(nameKey)) continue;
-      seenNames.add(nameKey);
-      artistProfiles.push({
-        id: `itunes-${it.artistId}`,
-        platformId: it.artistId,
-        platform: 'itunes',
-        name: it.artistName,
-        image: '', // iTunes artist endpoint ne donne pas directement l'image de profil
+    // Fusionner les résultats par nom normalisé afin d'éviter 4 fiches du même artiste.
+    const normalize = (value = '') => value.toLowerCase().normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const grouped = new Map();
+    const addSource = (p, platform, id, url, image = '', genres = [], followers = '') => {
+      if (!p?.name || !id) return;
+      const key = normalize(p.name);
+      if (!key) return;
+      const current = grouped.get(key) || {
+        id: `artist-${key.replace(/\\s+/g, '-')}`,
+        name: p.name,
+        image: '',
+        genres: [],
         followers: '',
-        genres: it.primaryGenreName ? [it.primaryGenreName] : [],
-        url: it.artistLinkUrl || '',
-        spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(it.artistName)}`,
-      });
-    }
+        sources: {},
+        platform: platform,
+        platformId: String(id),
+        url: url || '',
+      };
+      current.sources[platform] = { id: String(id), url: url || '' };
+      if (!current.image && image) current.image = image;
+      if (!current.genres.length && genres?.length) current.genres = genres;
+      if (!current.followers && followers) current.followers = followers;
+      // Prefer a Deezer or Spotify source as the primary import source.
+      if (platform === 'deezer' || (platform === 'spotify' && current.platform !== 'deezer')) {
+        current.platform = platform;
+        current.platformId = String(id);
+        current.url = url || current.url;
+      }
+      grouped.set(key, current);
+    };
 
-    // Chaînes YouTube trouvées
+    for (const p of (bData.spotify || [])) addSource(p, 'spotify', p.id, p.url, p.image, p.genres, p.followers);
+    for (const p of (bData.deezer || [])) addSource(p, 'deezer', p.id, p.url, p.image, p.genres, p.followers);
+    for (const p of (bData.audiomack || [])) addSource(p, 'audiomack', p.id, p.url, p.image, p.genres, p.followers);
+    for (const it of iData) addSource({
+      name: it.artistName,
+      image: '',
+      genres: it.primaryGenreName ? [it.primaryGenreName] : [],
+    }, 'itunes', it.artistId, it.artistLinkUrl, '', it.primaryGenreName ? [it.primaryGenreName] : []);
     const youtubeChannels = Array.isArray(bData.youtube) ? bData.youtube : [];
+    for (const channel of youtubeChannels) {
+      const match = [...grouped.values()].find(a => normalize(a.name) === normalize(channel.name));
+      if (match) match.sources.youtube = { id: String(channel.id), url: channel.url || '' };
+    }
 
     return {
-      artists: artistProfiles,
+      artists: [...grouped.values()],
       youtubeChannels,
       raw: bData,
     };
